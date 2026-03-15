@@ -3,7 +3,6 @@ package com.example.se405.android_native_frontend.core.navigations
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,6 +11,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.example.se405.android_native_frontend.core.presentation.components.ButtonApp
+import com.example.se405.android_native_frontend.core.presentation.components.ButtonType
+import com.example.se405.android_native_frontend.core.utils.PreviewTaskData
+import com.example.se405.android_native_frontend.features.tasks_management.presentation.components.TaskCard
 import com.example.se405.android_native_frontend.navigation.ScreenANav
 import com.example.se405.android_native_frontend.navigation.ScreenBNav
 
@@ -58,7 +61,8 @@ fun ScreenA(navController: NavHostController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Button(onClick = { navController.navigate(ScreenBNav("John", 25)) }) {
+        PreviewTaskData.tasks.forEach { TaskCard(it, {})  }
+        ButtonApp (onClick = { navController.navigate(ScreenBNav("John", 25)) }) {
             Text(text = "Go to Screen B")
         }
     }
@@ -71,7 +75,7 @@ fun ScreenB(navController: NavHostController, name: String?, age: Int = 10) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Button(onClick = { navController.navigate(ScreenANav) }) {
+        ButtonApp(onClick = { navController.navigate(ScreenANav) }, type = ButtonType.OUTLINED) {
             Text(text = "Hello {$name} - {$age}, move to Screen A")
         }
     }

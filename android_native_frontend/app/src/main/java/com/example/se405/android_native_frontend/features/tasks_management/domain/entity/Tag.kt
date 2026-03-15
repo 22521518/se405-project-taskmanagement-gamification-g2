@@ -13,6 +13,7 @@ constructor(
     val uuid: Uuid,
     val name: String,
     val color: Int,
+    val label: HabitLabels?,
 
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,

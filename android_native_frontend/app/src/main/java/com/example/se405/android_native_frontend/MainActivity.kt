@@ -28,12 +28,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ScreenAPreview() {
     Android_native_frontendTheme {
-        
-
-
-
-
-
+        val navController = rememberNavController()
+        MainNavHost(navController)
 
     }
 }

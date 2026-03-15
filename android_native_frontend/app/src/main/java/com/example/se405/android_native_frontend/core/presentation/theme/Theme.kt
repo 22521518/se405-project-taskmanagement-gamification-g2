@@ -11,25 +11,54 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    // primary group
+    primary = Blue90,            // pallet2-1st
+    onPrimary = Blue40,          // pallet2-accent
+    primaryContainer = White,
+
+    // secondary group
+    secondary = Blue80,          // pallet2-2nd
+    secondaryContainer = BlueGrey70, // pallet-2nd-2nd
+    onSecondary = Blue40,
+
+    // accent / tertiary
+    tertiary = Blue60,           // pallet2-2nd-accent
+    onTertiary = White,
+
+    // background / surface
+    background = Blue90,
+    surface = BlueGrey80,
+    onBackground = Blue40,
+    onSurface = Blue40,
+
+    // extra accent
+    outline = Gold40
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    // primary group
+    primary = White,            // white
+    onPrimary = Blue40,          // pallet2-accent
+    primaryContainer = Blue90,   // pallet2-1st
+
+    // secondary group
+    secondary = Blue80,          // pallet2-2nd
+    secondaryContainer = BlueGrey70, // pallet-2nd-2nd
+        onSecondary = Blue40,
+
+    // accent / tertiary
+    tertiary = Blue60,           // pallet2-2nd-accent
+    onTertiary = White,
+
+    // background / surface
+    background = Blue90,
+    surface = BlueGrey80,       // pallet2-grey
+    onBackground = Blue40,
+    onSurface = Blue40,
+
+    // extra accent
+    outline = Gold40        // pallet2-contrast-accent
 )
 
 @Composable
