@@ -3,19 +3,26 @@
 package com.example.se405.android_native_frontend.features.tasks_management.presentation.components
 
 import android.util.Log
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.Wallpapers
+import androidx.compose.ui.unit.dp
+import com.example.se405.android_native_frontend.R
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
 import com.example.se405.android_native_frontend.core.presentation.theme.AppText
 import com.example.se405.android_native_frontend.core.presentation.theme.BlueGrey80
@@ -45,32 +52,60 @@ fun TaskGroup(
     TreeList(
         roots = roots,
         modifier = modifier,
-        indentDp = 0,
+        indentDp = 4,
         branchContent = { node, _, expanded ->
+            val rotation by animateFloatAsState(
+                targetValue = if (!expanded) 180f else 0f,
+                label = "icon rotation"
+            )
+            val iconWorkspace = if (expanded) "▼" else "▶"
+
             when (val data = node.data) {
                 is WorkspaceTreeData.WorkspaceData ->
-                    Text(
-                        text = data.workspace.name,
-                        style = AppText.DisplayBold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                is WorkspaceTreeData.ProjectData ->
-                    Row(modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
+                    Row (modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp, horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ){
                         Text(
-                            text = data.project.name,
-                            style = AppText.BodyBold,
-                            color = MaterialTheme.colorScheme.outline,
+                            text = "$iconWorkspace ${data.workspace.name}",
+                            style = AppText.DisplayBold,
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
-
                         Text(
-                            text = data.project.tasks.size.toString(),
-                            style = AppText.CaptionRegular,
+                            text = "${data.workspace.projects.size} projects",
+                            style = AppText.Body2SemiBold,
                             color = BlueGrey80,
                         )
                     }
-                is WorkspaceTreeData.TaskData -> {}   // branch never a leaf
+                is WorkspaceTreeData.ProjectData ->
+                    Row (modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp, horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(text = data.project.name,
+                                style = AppText.BodyBold,
+                                color = MaterialTheme.colorScheme.outline,)
+
+                        Row(modifier = Modifier.padding(start = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                               horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = data.project.tasks.size.toString(),
+                                style = AppText.CaptionRegular,
+                                color = BlueGrey80,
+                            )
+                            Icon(
+                                painter = painterResource(id = R.drawable.icon_arrow_down),
+                                contentDescription = null,
+                                modifier = Modifier.rotate(rotation),
+                                tint = BlueGrey80
+                            )
+                        }
+                    }
+                else -> {}
             }
         },
         leafContent = { node, _ ->
@@ -112,38 +147,29 @@ fun Workspace.toTree(): TreeNode<WorkspaceTreeData> = TreeNode(
 )
 
 
-@Preview(
-    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE,
-    showBackground = true,
-    apiLevel = 36,
-    backgroundColor = 0xFFccccc1
-)
+@Preview(showBackground = true)
 @Composable
 fun TaskGroupPreview() {
-    val habits = listOf(
-        Project(
-            id = Uuid.random(),
-            name = "Personal Habits",
-            tasks = PreviewTaskData.tasks
+    val habits = Workspace(
+        id = Uuid.random(),
+        name = "Habits",
+        projects = listOf(
+            Project(
+                id = Uuid.random(),
+                name = "Personal Habits",
+                tasks = PreviewTaskData.tasks
+            )
         )
     )
 
-    val tree1 = remember(PreviewWPData.workspaces) { PreviewWPData.workspaces.map { it.toTree() } }
-    val tree2 = remember(habits) { habits.map { it.toTree() } }
+    val tree = remember(PreviewWPData.workspaces, habits) {
+        (PreviewWPData.workspaces + habits).map { it.toTree() }
+    }
 
     Android_native_frontendTheme {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Workspace tree
             TaskGroup(
-                roots = tree1,
-                modifier = Modifier.weight(1f),
-                onTaskClick = { task -> println("Clicked: ${task.title}") }
-            )
-
-            HorizontalDivider()
-            // Standalone project tree (habits)
-            TaskGroup(
-                roots = tree2,
+                roots = tree,
                 modifier = Modifier.weight(1f),
                 onTaskClick = { task -> println("Clicked: ${task.title}") }
             )

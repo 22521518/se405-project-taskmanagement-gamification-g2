@@ -14,15 +14,21 @@ object PreviewWPData {
             id = Uuid.random(),
             name = "Android App",
             tasks = listOf(
-                PreviewTaskData.tasks[0]
+                PreviewTaskData.tasks[0].copy(uuid = Uuid.random()),
+                PreviewTaskData.tasks[0].copy(uuid = Uuid.random()),
+                PreviewTaskData.tasks[0].copy(uuid = Uuid.random()),
+                PreviewTaskData.tasks[0].copy(uuid = Uuid.random()),
             )
         ),
         Project(
             id = Uuid.random(),
             name = "Personal Habits",
             tasks = listOf(
-                PreviewTaskData.tasks[1],
-                PreviewTaskData.tasks[2]
+                PreviewTaskData.tasks[1].copy(uuid = Uuid.random()),
+                PreviewTaskData.tasks[2].copy(uuid = Uuid.random()),
+                PreviewTaskData.tasks[2].copy(uuid = Uuid.random()),
+                PreviewTaskData.tasks[2].copy(uuid = Uuid.random()),
+                PreviewTaskData.tasks[2].copy(uuid = Uuid.random()),
             )
         )
     )

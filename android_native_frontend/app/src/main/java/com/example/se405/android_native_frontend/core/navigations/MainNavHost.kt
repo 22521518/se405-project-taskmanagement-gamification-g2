@@ -1,20 +1,26 @@
 package com.example.se405.android_native_frontend.core.navigations
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.se405.android_native_frontend.core.presentation.components.ButtonApp
 import com.example.se405.android_native_frontend.core.presentation.components.ButtonType
-import com.example.se405.android_native_frontend.core.utils.PreviewTaskData
-import com.example.se405.android_native_frontend.features.tasks_management.presentation.components.TaskCard
+import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
+import com.example.se405.android_native_frontend.features.tasks_management.presentation.components.TaskGroupPreview
 import com.example.se405.android_native_frontend.navigation.ScreenANav
 import com.example.se405.android_native_frontend.navigation.ScreenBNav
 
@@ -54,17 +60,20 @@ fun MainNavHost(
 }
 
 
+
 @Composable
 fun ScreenA(navController: NavHostController) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.primaryContainer)
+            .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        PreviewTaskData.tasks.forEach { TaskCard(it, {})  }
         ButtonApp (onClick = { navController.navigate(ScreenBNav("John", 25)) }) {
             Text(text = "Go to Screen B")
         }
+        TaskGroupPreview()
     }
 }
 
@@ -81,3 +90,14 @@ fun ScreenB(navController: NavHostController, name: String?, age: Int = 10) {
     }
 }
 
+
+
+@Preview(showBackground = true)
+@Composable
+fun ScreenAPreview() {
+    Android_native_frontendTheme {
+        val navController = rememberNavController()
+        MainNavHost(navController)
+
+    }
+}

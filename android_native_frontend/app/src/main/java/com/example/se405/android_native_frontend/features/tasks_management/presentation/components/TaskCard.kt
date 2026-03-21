@@ -14,10 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import com.example.se405.android_native_frontend.R
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
@@ -32,11 +30,6 @@ import com.example.se405.android_native_frontend.features.tasks_management.domai
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskPriority
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskStatus
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskType
-
-data class StatusUI<T>(
-    val content: T,
-    val color: Color
-)
 
 @Composable
 fun TaskCard(
@@ -117,12 +110,7 @@ fun TaskStatus(
     }
 }
 
-@Preview(
-    wallpaper = Wallpapers.RED_DOMINATED_EXAMPLE,
-    showBackground = true,
-    apiLevel = 36,
-    backgroundColor = 0xFFccccc1
-)
+@Preview(showBackground = true)
 @Composable
 fun TaskCardPreview() {
     Android_native_frontendTheme {

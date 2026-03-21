@@ -15,17 +15,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.Wallpapers
 import androidx.compose.ui.unit.dp
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
+import com.example.se405.android_native_frontend.core.presentation.theme.Blue40
+import com.example.se405.android_native_frontend.core.presentation.theme.White
 
 enum class ButtonType {  FILLED, OUTLINED, ROUNDED, TEXT }
 
-@Preview(
-    wallpaper = Wallpapers.YELLOW_DOMINATED_EXAMPLE,
-    showBackground = true,
-    backgroundColor = 0xFFccccc1
-)
+@Preview(showBackground = true)
 @Composable
 fun ButtonCTAPreview() {
     Android_native_frontendTheme {
@@ -66,8 +63,10 @@ fun ButtonCTA(
     Button(onClick = onClick,
         shape = shape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.onPrimary,
-            contentColor = MaterialTheme.colorScheme.primary
+//            containerColor = MaterialTheme.colorScheme.onPrimary,
+//            contentColor = MaterialTheme.colorScheme.primary
+            containerColor = Blue40,
+            contentColor = White
         ),
         modifier = Modifier.then(modifier)
         ){
