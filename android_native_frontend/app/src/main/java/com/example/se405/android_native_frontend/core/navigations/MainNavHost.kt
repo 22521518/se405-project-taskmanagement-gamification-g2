@@ -20,7 +20,7 @@ import androidx.navigation.toRoute
 import com.example.se405.android_native_frontend.core.presentation.components.ButtonApp
 import com.example.se405.android_native_frontend.core.presentation.components.ButtonType
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
-import com.example.se405.android_native_frontend.features.tasks_management.presentation.components.TaskGroupPreview
+import com.example.se405.android_native_frontend.features.tasks_management.presentation.components.TaskDetailEditPopUpPreview
 import com.example.se405.android_native_frontend.navigation.ScreenANav
 import com.example.se405.android_native_frontend.navigation.ScreenBNav
 
@@ -73,7 +73,7 @@ fun ScreenA(navController: NavHostController) {
         ButtonApp (onClick = { navController.navigate(ScreenBNav("John", 25)) }) {
             Text(text = "Go to Screen B")
         }
-        TaskGroupPreview()
+        TaskDetailEditPopUpPreview()
     }
 }
 

@@ -17,7 +17,6 @@ object TaskMapper {
             priority = dto.priority,
             creator = dto.creator,
             tags = dto.tags,
-            habitLabels = dto.habitLabels,
             taskCompletionLog = dto.taskCompletionLog,
             startDate = dto.startDate,
             dueDate = dto.dueDate

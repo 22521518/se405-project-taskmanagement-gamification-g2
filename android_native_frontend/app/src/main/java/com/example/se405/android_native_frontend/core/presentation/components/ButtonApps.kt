@@ -3,7 +3,9 @@ package com.example.se405.android_native_frontend.core.presentation.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -21,41 +23,27 @@ import com.example.se405.android_native_frontend.core.presentation.theme.Blue40
 import com.example.se405.android_native_frontend.core.presentation.theme.White
 
 enum class ButtonType {  FILLED, OUTLINED, ROUNDED, TEXT }
-
-@Preview(showBackground = true)
-@Composable
-fun ButtonCTAPreview() {
-    Android_native_frontendTheme {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            ButtonType.entries.forEach { type ->  ButtonApp(onClick = {}, type = type) {
-                Text("Button $type")
-            } }
-        }
-    }
-}
-
 @Composable
 fun ButtonApp(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(vertical = 0.dp, horizontal = 16.dp),
+    border: BorderStroke = BorderStroke(2.dp,MaterialTheme.colorScheme.onPrimary),
     type: ButtonType = ButtonType.FILLED,
     content: @Composable () -> Unit
 ) {
     when (type) {
-        ButtonType.FILLED -> ButtonCTA(onClick, modifier, content = content)
-        ButtonType.OUTLINED -> ButtonCTAOutline(onClick, modifier, content = content)
-        ButtonType.ROUNDED -> ButtonCTA(onClick, modifier, RoundedCornerShape(999.dp), content)
-        ButtonType.TEXT -> ButtonCTAText(onClick, modifier, content)
+        ButtonType.FILLED -> ButtonCTA(onClick, contentPadding = contentPadding, modifier = modifier, content = content)
+        ButtonType.OUTLINED -> ButtonCTAOutline(onClick,  contentPadding = contentPadding, modifier = modifier, border = border, content = content)
+        ButtonType.ROUNDED -> ButtonCTA(onClick,  contentPadding = contentPadding, modifier = modifier, RoundedCornerShape(999.dp), content)
+        ButtonType.TEXT -> ButtonCTAText(onClick,  contentPadding = contentPadding, modifier = modifier, content = content)
     }
 }
 
 @Composable
 fun ButtonCTA(
     onClick: () -> Unit,
+    contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(8.dp),
     content: @Composable () -> Unit = {},
@@ -68,6 +56,7 @@ fun ButtonCTA(
             containerColor = Blue40,
             contentColor = White
         ),
+        contentPadding = contentPadding,
         modifier = Modifier.then(modifier)
         ){
         content()
@@ -77,8 +66,10 @@ fun ButtonCTA(
 @Composable
 fun ButtonCTAOutline(
     onClick: () -> Unit,
+    contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(8.dp),
+    border: BorderStroke,
     content: @Composable () -> Unit = {},
 ) {
     OutlinedButton(onClick = onClick,
@@ -87,10 +78,8 @@ fun ButtonCTAOutline(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary
         ),
-        border = BorderStroke(
-            2.dp,
-            MaterialTheme.colorScheme.onPrimary
-        ),
+        border = border,
+        contentPadding = contentPadding,
         modifier = Modifier.then(modifier)
     ){
         content()
@@ -101,11 +90,36 @@ fun ButtonCTAOutline(
 fun ButtonCTAText(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable () -> Unit = {},
 ) {
     TextButton(onClick = onClick,
-        modifier = Modifier.then(modifier)
+        modifier = Modifier.padding(0.dp).then(modifier),
+        contentPadding = contentPadding,
     ){
         content()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ButtonCTAPreview() {
+    Android_native_frontendTheme {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            ButtonType.entries.forEach { type ->  ButtonApp(onClick = {}, type = type) {
+                val textColor = when (type) {
+                    ButtonType.FILLED -> MaterialTheme.colorScheme.primary
+                    ButtonType.OUTLINED -> MaterialTheme.colorScheme.onPrimary
+                    ButtonType.ROUNDED -> MaterialTheme.colorScheme.primary
+                    ButtonType.TEXT -> MaterialTheme.colorScheme.onPrimary
+                }
+
+                Text("Button $type", color = textColor)
+            } }
+        }
     }
 }

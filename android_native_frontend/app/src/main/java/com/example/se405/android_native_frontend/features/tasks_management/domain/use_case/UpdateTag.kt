@@ -1,0 +1,12 @@
+package com.example.se405.android_native_frontend.features.tasks_management.domain.use_case
+
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Tag
+import com.example.se405.android_native_frontend.features.tasks_management.domain.repository.TagRepository
+
+class UpdateTag(
+    private val repo: TagRepository,
+) {
+    suspend operator fun invoke(tag: Tag): Tag {
+        return repo.updateTag(tag)
+    }
+}

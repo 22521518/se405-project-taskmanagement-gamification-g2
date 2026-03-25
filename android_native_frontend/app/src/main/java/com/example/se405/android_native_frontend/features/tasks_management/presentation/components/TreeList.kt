@@ -36,7 +36,11 @@ data class FlatNode<T>(
     val isLeaf: Boolean = node.children.isEmpty(),
 )
 
-// ===== Composable =====
+/**
+ * Generic expandable/collapsible tree renderer.
+ *
+ * Callers own the tree data shape and provide branch/leaf content composables.
+ */
 @Composable
 fun <T> TreeList(
     roots: List<TreeNode<T>>,
@@ -85,6 +89,9 @@ fun <T> TreeList(
     }
 }
 
+/**
+ * Flattens nested tree data into visible rows based on current expansion flags.
+ */
 private  fun <T> flattenTree(
     nodes: List<TreeNode<T>>,
     depth: Int = 0,
@@ -101,7 +108,13 @@ private  fun <T> flattenTree(
     return result
 }
 
-// ---- Preview ----
+/**
+ * Preview for TreeList.
+ *
+ * Usage guide:
+ * - In production, map domain objects to `TreeNode<T>` outside this composable.
+ * - Keep side effects (navigation, analytics) in callbacks passed to content lambdas.
+ */
 @Preview(showBackground = true)
 @Composable
 fun TreeListPreview() {

@@ -26,15 +26,14 @@ import com.example.se405.android_native_frontend.R
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
 import com.example.se405.android_native_frontend.core.presentation.theme.AppText
 import com.example.se405.android_native_frontend.core.presentation.theme.BlueGrey80
-import com.example.se405.android_native_frontend.core.utils.PreviewTaskData
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Project
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.PreviewDomainEntityData
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Task
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Workspace
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 private const val TAG = "TaskGroup"
-
-data class Workspace(val id: Uuid, val name: String, val projects: List<Project>)
-data class Project(val id: Uuid, val name: String, val tasks: List<Task>)
 
 sealed class WorkspaceTreeData {
     data class WorkspaceData(val workspace: Workspace) : WorkspaceTreeData()
@@ -42,7 +41,11 @@ sealed class WorkspaceTreeData {
     data class TaskData(val task: Task) : WorkspaceTreeData()
 }
 
-// Compose use TreeList
+/**
+ * Hierarchical task group UI using workspace -> project -> task tree nodes.
+ *
+ * This composable is stateless: callers provide tree data and click callback.
+ */
 @Composable
 fun TaskGroup(
     roots: List<TreeNode<WorkspaceTreeData>>,
@@ -54,12 +57,6 @@ fun TaskGroup(
         modifier = modifier,
         indentDp = 4,
         branchContent = { node, _, expanded ->
-            val rotation by animateFloatAsState(
-                targetValue = if (!expanded) 180f else 0f,
-                label = "icon rotation"
-            )
-            val iconWorkspace = if (expanded) "▼" else "▶"
-
             when (val data = node.data) {
                 is WorkspaceTreeData.WorkspaceData ->
                     Row (modifier = Modifier
@@ -68,6 +65,8 @@ fun TaskGroup(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ){
+                        val iconWorkspace = if (expanded) "▼" else "▶"
+
                         Text(
                             text = "$iconWorkspace ${data.workspace.name}",
                             style = AppText.DisplayBold,
@@ -97,6 +96,12 @@ fun TaskGroup(
                                 style = AppText.CaptionRegular,
                                 color = BlueGrey80,
                             )
+
+                            val rotation by animateFloatAsState(
+                                targetValue = if (!expanded) 180f else 0f,
+                                label = "icon rotation"
+                            )
+
                             Icon(
                                 painter = painterResource(id = R.drawable.icon_arrow_down),
                                 contentDescription = null,
@@ -124,7 +129,9 @@ fun TaskGroup(
     )
 }
 
-// ===== Convert domain -> TreeNode =====
+/**
+ * Maps a project domain model into tree node format used by `TreeList`.
+ */
 fun Project.toTree(): TreeNode<WorkspaceTreeData> = TreeNode(
     id = id.hashCode(),
     name = name,
@@ -139,6 +146,9 @@ fun Project.toTree(): TreeNode<WorkspaceTreeData> = TreeNode(
 )
 
 
+/**
+ * Maps a workspace domain model into tree node format used by `TreeList`.
+ */
 fun Workspace.toTree(): TreeNode<WorkspaceTreeData> = TreeNode(
     id = id.hashCode(),
     name = name,
@@ -147,6 +157,13 @@ fun Workspace.toTree(): TreeNode<WorkspaceTreeData> = TreeNode(
 )
 
 
+/**
+ * Preview for TaskGroup.
+ *
+ * Usage guide:
+ * - In production, build `roots` from ViewModel state (domain models -> tree).
+ * - Keep navigation/popups outside this composable via `onTaskClick` callback.
+ */
 @Preview(showBackground = true)
 @Composable
 fun TaskGroupPreview() {
@@ -157,13 +174,13 @@ fun TaskGroupPreview() {
             Project(
                 id = Uuid.random(),
                 name = "Personal Habits",
-                tasks = PreviewTaskData.tasks
+                tasks = PreviewDomainEntityData.tasks
             )
         )
     )
 
-    val tree = remember(PreviewWPData.workspaces, habits) {
-        (PreviewWPData.workspaces + habits).map { it.toTree() }
+    val tree = remember(PreviewDomainEntityData.workspaces, habits) {
+        (PreviewDomainEntityData.workspaces + habits).map { it.toTree() }
     }
 
     Android_native_frontendTheme {

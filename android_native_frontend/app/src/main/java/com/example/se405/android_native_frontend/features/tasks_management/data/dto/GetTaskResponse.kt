@@ -1,7 +1,7 @@
 package com.example.se405.android_native_frontend.features.tasks_management.data.dto
 
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskCompletionLog
-import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.HabitLabels
+import com.example.se405.android_native_frontend.core.presentation.components.HabitLabel
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Tag
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskPriority
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskStatus
@@ -44,6 +44,6 @@ constructor(
     val taskCompletionLogIds: List<Uuid>,
 
     val tags: List<Tag>,
-    val habitLabels: List<HabitLabels>,
+    val habitLabels: List<HabitLabel>,
     val taskCompletionLog: List<TaskCompletionLog>,
 )

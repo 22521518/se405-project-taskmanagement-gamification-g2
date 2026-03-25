@@ -16,7 +16,6 @@ constructor(
     val priority: TaskPriority,
     val creator: User?,
     val tags: List<Tag>,
-    val habitLabels: List<HabitLabels>,
     val taskCompletionLog: List<TaskCompletionLog>,
 
     val startDate: LocalDate,
