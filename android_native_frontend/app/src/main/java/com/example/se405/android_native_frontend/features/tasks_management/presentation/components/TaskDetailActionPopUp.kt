@@ -4,13 +4,11 @@ package com.example.se405.android_native_frontend.features.tasks_management.pres
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import com.example.se405.android_native_frontend.core.presentation.components.PopUpLayout
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,8 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -236,49 +232,39 @@ fun TaskDetailActionBasePopUp(
         ?.user
         ?.displayName
 
-    BoxWithConstraints {
-        val targetWidth = maxWidth * 0.80f
-        val targetMaxHeight = maxHeight * 0.90f
-        Column(
-            modifier = Modifier
-                .widthIn(min = 300.dp, max = targetWidth)
-                .heightIn(max = targetMaxHeight)
-                .background(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(16.dp),
-                )
-                .padding(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    PopUpLayout(
+        widthRatio = 0.8f,
+        heightRatio = 0.9f,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable(onClick = onCancel),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    modifier = Modifier.clickable(onClick = onCancel),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = title,
-                        style = AppText.HeadBold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                }
-
-                ButtonCTAText(
-                    onClick = onCancel,
-                    contentPadding = PaddingValues(2.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.icon_cross_thin),
-                        contentDescription = "Close",
-                        tint = Color.Black,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
+                Text(
+                    text = title,
+                    style = AppText.HeadBold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
             }
+
+            ButtonCTAText(
+                onClick = onCancel,
+                contentPadding = PaddingValues(2.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.icon_cross_thin),
+                    contentDescription = "Close",
+                    tint = Color.Black,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
 
             TextFieldApp(
                 labelTitle = "Task Name",
@@ -595,7 +581,6 @@ fun TaskDetailActionBasePopUp(
                 ) {
                     Text("Save")
                 }
-            }
         }
     }
 }

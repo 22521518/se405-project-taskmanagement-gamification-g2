@@ -95,7 +95,7 @@ fun BuiltinLabelPreview() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             BuiltinLabels.forEach { label ->
-                BuiltinLabelIcon(label)
+                BuiltinLabelIcon(label, tint = Color.Red)
             }
         }
     }

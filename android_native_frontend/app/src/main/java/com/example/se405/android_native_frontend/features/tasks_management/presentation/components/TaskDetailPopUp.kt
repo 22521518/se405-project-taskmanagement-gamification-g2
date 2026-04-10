@@ -1,9 +1,7 @@
 package com.example.se405.android_native_frontend.features.tasks_management.presentation.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,9 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +27,7 @@ import com.example.se405.android_native_frontend.R
 import com.example.se405.android_native_frontend.core.presentation.components.ButtonApp
 import com.example.se405.android_native_frontend.core.presentation.components.ButtonCTAText
 import com.example.se405.android_native_frontend.core.presentation.components.ButtonType
+import com.example.se405.android_native_frontend.core.presentation.components.PopUpLayout
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
 import com.example.se405.android_native_frontend.core.presentation.theme.AppText
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.PreviewDomainEntityData
@@ -53,102 +50,92 @@ fun TaskDetailPopUp(
 ) {
     val taskStatusDescription = extractTaskStatusDescription(task)
 
-    BoxWithConstraints {
-        val targetWidth = maxWidth * 0.80f
-
-        Column(
-            modifier = Modifier
-                .widthIn(min = 300.dp, max = targetWidth)
-                .background(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(16.dp),
-                )
-                .padding(vertical = 16.dp, horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    PopUpLayout(
+        modifier = Modifier.padding(horizontal = 20.dp),
+        widthRatio = 0.8f,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable(onClick = { onEditClick(task) }),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    modifier = Modifier.clickable(onClick = { onEditClick(task) }),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_edit_pencil),
-                        contentDescription = "Edit",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                    )
-                    Text(
-                        text = task.title,
-                        style = AppText.HeadBold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                }
-
-                ButtonCTAText(
-                    onClick = onClose,
-                    contentPadding = PaddingValues(2.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.icon_cross_thin),
-                        contentDescription = "Close",
-                        tint = Color.Black,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_edit_pencil),
+                    contentDescription = "Edit",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                )
+                Text(
+                    text = task.title,
+                    style = AppText.HeadBold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+            ButtonCTAText(
+                onClick = onClose,
+                contentPadding = PaddingValues(2.dp),
             ) {
-                BulletTaskText(taskStatusDescription.statusScript, AppText.BodySemiBold)
-                TaskStatus(task)
+                Icon(
+                    painter = painterResource(R.drawable.icon_cross_thin),
+                    contentDescription = "Close",
+                    tint = Color.Black,
+                    modifier = Modifier.size(16.dp),
+                )
             }
-            BulletTaskText(
-                taskStatusDescription.taskPriority,
-                AppText.BodySemiBold,
-                modifier = Modifier.fillMaxWidth(),
-            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            BulletTaskText(taskStatusDescription.statusScript, AppText.BodySemiBold)
+            TaskStatus(task)
+        }
+        BulletTaskText(
+            taskStatusDescription.taskPriority,
+            AppText.BodySemiBold,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LabelTextInput(text = "Tags:")
             Row(
-                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                LabelTextInput(text = "Tags:")
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    task.tags.forEach { tag ->
-                        Icon(
-                            painter = painterResource(tag.label.icon),
-                            tint = Color(tag.color),
-                            contentDescription = tag.name,
-                            modifier = Modifier.size(20.dp),
-                        )
-                    }
+                task.tags.forEach { tag ->
+                    Icon(
+                        painter = painterResource(tag.label.icon),
+                        tint = Color(tag.color),
+                        contentDescription = tag.name,
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
             }
-
-            Text(
-                text = task.description,
-                style = AppText.CaptionRegular.copy(lineHeight = 20.sp),
-                color = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 320.dp)
-                    .verticalScroll(rememberScrollState()),
-            )
-            TaskDetailCTASection(
-                onDone = { onDone(task) },
-                onWontDo = { onWontDo(task) },
-                onDelete = { onDelete(task) },
-            )
         }
+
+        Text(
+            text = task.description,
+            style = AppText.CaptionRegular.copy(lineHeight = 20.sp),
+            color = MaterialTheme.colorScheme.tertiary,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 320.dp)
+                .verticalScroll(rememberScrollState()),
+        )
+        TaskDetailCTASection(
+            onDone = { onDone(task) },
+            onWontDo = { onWontDo(task) },
+            onDelete = { onDelete(task) },
+        )
     }
 }
 

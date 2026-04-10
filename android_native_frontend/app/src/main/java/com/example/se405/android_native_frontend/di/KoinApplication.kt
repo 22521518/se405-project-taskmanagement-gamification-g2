@@ -4,6 +4,7 @@ import android.app.Application
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import com.example.se405.android_native_frontend.features.tasks_management.taskManagementModule
 
 class KoinApplication : Application() {
     override fun onCreate() {
@@ -13,6 +14,7 @@ class KoinApplication : Application() {
             androidLogger()
             androidContext(this@KoinApplication)
             modules(appModule, viewModelModule)
+            modules(taskManagementModule)
         }
     }
 }
