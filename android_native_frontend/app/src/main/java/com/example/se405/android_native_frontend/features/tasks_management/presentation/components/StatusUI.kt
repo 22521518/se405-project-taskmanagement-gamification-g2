@@ -23,7 +23,7 @@ import com.example.se405.android_native_frontend.core.presentation.theme.BlueGre
 import com.example.se405.android_native_frontend.core.presentation.theme.Gold40
 import com.example.se405.android_native_frontend.core.presentation.theme.Green40
 import com.example.se405.android_native_frontend.core.presentation.theme.Orange40
-import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.PreviewDomainEntityData
+import com.example.se405.android_native_frontend.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Task
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskPriority
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskStatus

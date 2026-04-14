@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
+import com.example.se405.android_native_frontend.features.tasks_management.__test_data__.preview.PreviewTreeData
 
 data class TreeNode<T>(
     val id: Int,
@@ -34,6 +35,7 @@ data class FlatNode<T>(
     val node: TreeNode<T>,
     val depth: Int,
     val isLeaf: Boolean = node.children.isEmpty(),
+    val key: String
 )
 
 /**
@@ -56,7 +58,7 @@ fun <T> TreeList(
     LazyColumn(modifier = modifier.fillMaxSize()) {
         items(
             items = visibleNodes,
-            key = { flat -> "${flat.node.id}_${flat.depth}" }
+            key = { flat -> flat.key }
         ) { flat ->
 
             if (flat.isLeaf) {
@@ -92,16 +94,25 @@ fun <T> TreeList(
 /**
  * Flattens nested tree data into visible rows based on current expansion flags.
  */
-private  fun <T> flattenTree(
+private fun <T> flattenTree(
     nodes: List<TreeNode<T>>,
     depth: Int = 0,
+    parentPath: String = ""
 ): List<FlatNode<T>> {
     val result = mutableListOf<FlatNode<T>>()
 
-    for (node in nodes) {
-        result.add(FlatNode(node = node, depth = depth))
+    for ((index, node) in nodes.withIndex()) {
+        // Create a unique key using the full path to this node
+        val currentKey = if (parentPath.isEmpty()) {
+            "${node.id}_$index"
+        } else {
+            "${parentPath}_${node.id}_$index"
+        }
+
+        result.add(FlatNode(node = node, depth = depth, key = currentKey))
+        
         if (node.isExpanded && node.children.isNotEmpty()) {
-            result.addAll(flattenTree(node.children, depth + 1))
+            result.addAll(flattenTree(node.children, depth + 1, currentKey))
         }
     }
 

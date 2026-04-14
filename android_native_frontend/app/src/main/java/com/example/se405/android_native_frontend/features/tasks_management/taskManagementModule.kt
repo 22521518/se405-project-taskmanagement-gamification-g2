@@ -4,6 +4,15 @@ import com.example.se405.android_native_frontend.features.tasks_management.data.
 import com.example.se405.android_native_frontend.features.tasks_management.data.repository.*
 import com.example.se405.android_native_frontend.features.tasks_management.domain.repository.*
 import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.*
+import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.crud.CreateTag
+import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.crud.DeleteTag
+import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.crud.GetMembersByWorkspace
+import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.crud.GetProjectsByWorkspace
+import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.crud.GetTagsByUser
+import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.crud.GetTagsByWorkspace
+import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.crud.GetTagsForTaskOwnership
+import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.crud.GetTask
+import com.example.se405.android_native_frontend.features.tasks_management.domain.use_case.crud.UpdateTag
 import com.example.se405.android_native_frontend.features.tasks_management.presentation.viewmodel.TaskManagementViewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.module.dsl.bind

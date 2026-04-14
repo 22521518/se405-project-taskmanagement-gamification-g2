@@ -16,6 +16,5 @@ constructor(
 
 enum class WorkspaceRole {
     OWNER,
-    ADMIN,
     MEMBER,
 }

@@ -5,8 +5,8 @@ import java.time.LocalDate
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-data class Task@OptIn(ExperimentalUuidApi::class)
-constructor(
+@OptIn(ExperimentalUuidApi::class)
+data class Task(
     val uuid: Uuid,
     val title: String,
     val description: String,
@@ -20,7 +20,8 @@ constructor(
 
     val startDate: LocalDate,
     val dueDate: LocalDate,
-    )
+    val projectId: Uuid? = null,
+)
 
 enum class TaskType { PROJECT, HABIT }
 enum class TaskStatus {  TODO, IN_PROGRESS, DONE, CANCELLED }

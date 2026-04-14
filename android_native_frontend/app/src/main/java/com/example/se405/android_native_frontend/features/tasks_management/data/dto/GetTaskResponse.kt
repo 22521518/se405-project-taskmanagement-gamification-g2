@@ -13,8 +13,8 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 
-data class GetTaskResponse@OptIn(ExperimentalUuidApi::class)
-constructor(
+@OptIn(ExperimentalUuidApi::class)
+data class GetTaskResponse(
     val uuid: Uuid,
     val title: String,
     val description: String,

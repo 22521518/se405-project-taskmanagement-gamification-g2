@@ -15,4 +15,19 @@ class TaskRepositoryImpl(
         val response = api.getTasks(userId)
         return response.map { TaskMapper.toDomain(it) }
     }
+
+    override suspend fun createTask(task: Task): Task {
+        val response = api.createTask(task)
+        return response
+    }
+
+    override suspend fun updateTask(task: Task): Task {
+        val response = api.updateTask(task)
+        return response
+    }
+
+    override suspend fun deleteTask(task: Task): Task {
+        val response = api.deleteTask(task)
+        return response
+    }
 }

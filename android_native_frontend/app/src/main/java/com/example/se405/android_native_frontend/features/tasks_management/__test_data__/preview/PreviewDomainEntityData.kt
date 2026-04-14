@@ -1,8 +1,19 @@
 @file:OptIn(ExperimentalUuidApi::class)
 
-package com.example.se405.android_native_frontend.features.tasks_management.domain.entity
+package com.example.se405.android_native_frontend.features.tasks_management.__test_data__.preview
 
 import com.example.se405.android_native_frontend.core.presentation.components.BuiltinLabels
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Project
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Tag
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TagOwnershipType
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Task
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskCompletionLog
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskPriority
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskStatus
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskType
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Workspace
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.WorkspaceMember
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.WorkspaceRole
 import com.example.se405.android_native_frontend.features.users_management.domain.entity.User
 import java.time.LocalDate
 import java.time.LocalDateTime

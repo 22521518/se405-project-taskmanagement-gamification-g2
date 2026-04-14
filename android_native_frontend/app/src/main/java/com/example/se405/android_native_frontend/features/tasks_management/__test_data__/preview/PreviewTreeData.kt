@@ -1,4 +1,6 @@
-package com.example.se405.android_native_frontend.features.tasks_management.presentation.components
+package com.example.se405.android_native_frontend.features.tasks_management.__test_data__.preview
+
+import com.example.se405.android_native_frontend.features.tasks_management.presentation.components.TreeNode
 
 object PreviewTreeData {
     val trees = listOf(

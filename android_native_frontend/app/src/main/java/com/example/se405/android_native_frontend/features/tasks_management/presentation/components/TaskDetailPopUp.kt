@@ -30,7 +30,7 @@ import com.example.se405.android_native_frontend.core.presentation.components.Bu
 import com.example.se405.android_native_frontend.core.presentation.components.PopUpLayout
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
 import com.example.se405.android_native_frontend.core.presentation.theme.AppText
-import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.PreviewDomainEntityData
+import com.example.se405.android_native_frontend.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Task
 
 /**

@@ -1,28 +1,12 @@
 package com.example.se405.android_native_frontend.core.navigations
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
-import com.example.se405.android_native_frontend.core.presentation.components.ButtonApp
-import com.example.se405.android_native_frontend.core.presentation.components.ButtonType
-import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
-import com.example.se405.android_native_frontend.features.tasks_management.presentation.components.TaskDetailEditPopUpPreview
-import com.example.se405.android_native_frontend.navigation.ScreenANav
-import com.example.se405.android_native_frontend.navigation.ScreenBNav
+import com.example.se405.android_native_frontend.features.tasks_management.presentation.screen.TaskManagementScreen
+import com.example.se405.android_native_frontend.navigation.TaskManagementNav
 
 /**
  * Defines navigation route models for the application using
@@ -31,16 +15,7 @@ import com.example.se405.android_native_frontend.navigation.ScreenBNav
  * This file demonstrates a type-safe navigation approach where
  * each destination is represented as a serializable Kotlin type
  * instead of a raw string route.
- *
- * All destinations must:
- * - Be annotated with @Serializable
- * - Contain only serializable argument types
- *
- * The Compose Navigation type-safe API will automatically:
- * - Serialize arguments into route format
- * - Deserialize them from the NavBackStackEntry
  */
-
 @Composable
 fun MainNavHost(
     navController: NavHostController,
@@ -48,56 +23,11 @@ fun MainNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = ScreenANav,
+        startDestination = TaskManagementNav,
         modifier = modifier,
     ) {
-        composable<ScreenANav> { ScreenA(navController) }
-        composable<ScreenBNav> {
-            val args = it.toRoute<ScreenBNav>()
-            ScreenB(navController, args.arg1, args.arg2)
+        composable<TaskManagementNav> { 
+            TaskManagementScreen() 
         }
-    }
-}
-
-
-
-@Composable
-fun ScreenA(navController: NavHostController) {
-    Column(
-        modifier = Modifier.fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.primaryContainer)
-            .padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        ButtonApp (onClick = { navController.navigate(ScreenBNav("John", 25)) }) {
-            Text(text = "Go to Screen B")
-        }
-        TaskDetailEditPopUpPreview()
-    }
-}
-
-@Composable
-fun ScreenB(navController: NavHostController, name: String?, age: Int = 10) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        ButtonApp(onClick = { navController.navigate(ScreenANav) }, type = ButtonType.OUTLINED) {
-            Text(text = "Hello {$name} - {$age}, move to Screen A")
-        }
-    }
-}
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun ScreenAPreview() {
-    Android_native_frontendTheme {
-        val navController = rememberNavController()
-        MainNavHost(navController)
-
     }
 }

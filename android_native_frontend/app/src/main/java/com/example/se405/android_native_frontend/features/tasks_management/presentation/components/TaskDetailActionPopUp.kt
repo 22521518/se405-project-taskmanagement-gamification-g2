@@ -47,11 +47,12 @@ import com.example.se405.android_native_frontend.core.presentation.components.me
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
 import com.example.se405.android_native_frontend.core.presentation.theme.AppText
 import com.example.se405.android_native_frontend.core.presentation.theme.BlueGrey80
-import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.PreviewDomainEntityData
+import com.example.se405.android_native_frontend.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Project
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Tag
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Task
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskPriority
+import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.TaskType
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.WorkspaceMember
 import java.time.Instant
 import java.time.LocalDate
@@ -63,6 +64,7 @@ private const val DEFAULT_MAX_TAGS = 3
 
 data class TaskDetailActionUiState(
     val title: String,
+    val taskType: TaskType,
     val selectedTags: List<Tag>,
     val priority: TaskPriority,
     val description: String,
@@ -123,6 +125,8 @@ fun TaskDetailEditPopUp(
         onDone = onDone,
         onCancel = onCancel,
         onMaxTagSelectionReached = onMaxTagSelectionReached,
+        canChangeTaskType = false,
+        onTaskTypeChange = {},
     )
 }
 
@@ -138,7 +142,8 @@ fun TaskDetailCreatePopUp(
     availableTags: List<Tag>,
     projectsInWorkspace: List<Project>,
     membersInWorkspace: List<WorkspaceMember>,
-    isProject: Boolean,
+    canChangeTaskType: Boolean = true,
+    onTaskTypeChange: (TaskType) -> Unit,
     onTitleChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onPriorityChange: (TaskPriority) -> Unit,
@@ -158,7 +163,6 @@ fun TaskDetailCreatePopUp(
         availableTags = availableTags,
         projectsInWorkspace = projectsInWorkspace,
         membersInWorkspace = membersInWorkspace,
-        isProject = isProject,
         onTitleChange = onTitleChange,
         onDescriptionChange = onDescriptionChange,
         onPriorityChange = onPriorityChange,
@@ -170,6 +174,8 @@ fun TaskDetailCreatePopUp(
         onDone = onDone,
         onCancel = onCancel,
         onMaxTagSelectionReached = onMaxTagSelectionReached,
+        canChangeTaskType = canChangeTaskType,
+        onTaskTypeChange = onTaskTypeChange,
     )
 }
 
@@ -198,8 +204,9 @@ fun TaskDetailActionBasePopUp(
     availableTags: List<Tag>,
     projectsInWorkspace: List<Project>,
     membersInWorkspace: List<WorkspaceMember>,
-    isProject: Boolean = false,
+    canChangeTaskType: Boolean = false,
     maxTagSelection: Int = DEFAULT_MAX_TAGS,
+    onTaskTypeChange: (TaskType) -> Unit = {},
     onTitleChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onPriorityChange: (TaskPriority) -> Unit,
@@ -214,6 +221,8 @@ fun TaskDetailActionBasePopUp(
 ) {
     val selectedStartDateMillis = uiState.selectedStartDateMillis
     val selectedDueDateMillis = uiState.selectedDueDateMillis
+
+    val isProject = uiState.taskType == TaskType.PROJECT
 
     val viewTask = task.copy(
         title = uiState.title,
@@ -272,6 +281,62 @@ fun TaskDetailActionBasePopUp(
                 onValueChange = onTitleChange,
                 maxTextLen = 20,
             )
+
+            LabelRowContent(
+                labelName = "Task Type: ",
+                modifier = Modifier.padding(horizontal = 20.dp)
+            ) {
+                if (canChangeTaskType) {
+                    var isTaskTypeExpanded by remember { mutableStateOf(false) }
+                    val rotation by animateFloatAsState(
+                        targetValue = if (!isTaskTypeExpanded) 180f else 0f,
+                        label = "icon rotation"
+                    )
+
+                    Box {
+                        Row(
+                            modifier = Modifier,
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(text = uiState.taskType.name, style = AppText.CaptionRegular)
+                            ButtonApp(
+                                onClick = { isTaskTypeExpanded = true },
+                                type = ButtonType.TEXT,
+                                contentPadding = PaddingValues(0.dp),
+                                border = BorderStroke(0.dp, MaterialTheme.colorScheme.secondaryContainer),
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_arrow_down),
+                                    contentDescription = null,
+                                    modifier = Modifier.rotate(rotation).size(16.dp),
+                                    tint = BlueGrey80
+                                )
+                            }
+                        }
+                        val taskTypeItems = TaskType.entries.map {
+                            MenuSelectionItem(
+                                data = it,
+                                selected = uiState.taskType == it,
+                            )
+                        }
+                        MenuDropDownApp(
+                            expanded = isTaskTypeExpanded,
+                            onExpandedChange = { expanded -> isTaskTypeExpanded = expanded },
+                            items = taskTypeItems,
+                            onDismiss = { isTaskTypeExpanded = false },
+                            onItemClick = { dropdownItem ->
+                                onTaskTypeChange(dropdownItem.data)
+                                isTaskTypeExpanded = false
+                            },
+                        ) { item ->
+                            Text(item.data.name)
+                        }
+                    }
+                } else {
+                    Text(text = uiState.taskType.name, style = AppText.CaptionRegular)
+                }
+            }
 
             LabelRowContent(labelName = "Tags: ", modifier = Modifier.padding(horizontal = 20.dp)) {
                 Row(
@@ -406,7 +471,7 @@ fun TaskDetailActionBasePopUp(
                 }
             }
 
-            if (!isProject) {
+            if (isProject) {
                 LabelRowContent(
                     labelName = "Project: ",
                     modifier = Modifier.padding(horizontal = 20.dp)
@@ -632,6 +697,7 @@ fun TaskDetailEditPopUpPreview() {
         mutableStateOf(
             TaskDetailActionUiState(
                 title = previewTask.title,
+                taskType = previewTask.type,
                 selectedTags = previewTask.tags,
                 priority = previewTask.priority,
                 description = previewTask.description,
@@ -657,6 +723,8 @@ fun TaskDetailEditPopUpPreview() {
                 availableTags = PreviewDomainEntityData.tags,
                 projectsInWorkspace = PreviewDomainEntityData.projects,
                 membersInWorkspace = PreviewDomainEntityData.workspaceMembers,
+                canChangeTaskType = true,
+                onTaskTypeChange = { newType -> uiState = uiState.copy(taskType = newType) },
                 onTitleChange = { newTitle -> uiState = uiState.copy(title = newTitle) },
                 onDescriptionChange = { newDescription -> uiState = uiState.copy(description = newDescription) },
                 onPriorityChange = { newPriority -> uiState = uiState.copy(priority = newPriority) },

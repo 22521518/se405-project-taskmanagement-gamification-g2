@@ -80,6 +80,9 @@ class PopupController {
      */
     private val _stack = mutableStateListOf<PopupConfig>()
 
+    private var lastPushTime = 0L
+    private val DEBOUNCE_TIME_MS = 300L
+
     /**
      * Read-only snapshot of the current popup stack.
      *
@@ -119,7 +122,13 @@ class PopupController {
     fun push(
         dismissOnBackPress: Boolean = true,
         content: @Composable (onDismiss: () -> Unit) -> Unit
-    ): PopupConfig {
+    ): PopupConfig? {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastPushTime < DEBOUNCE_TIME_MS) {
+            return null // Prevent double-click from pushing multiple popups
+        }
+        lastPushTime = currentTime
+
         val config = PopupConfig(
             dismissOnBackPress = dismissOnBackPress,
             content = content

@@ -5,7 +5,9 @@ package com.example.se405.android_native_frontend.features.tasks_management.pres
 import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,11 +25,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.se405.android_native_frontend.R
+import com.example.se405.android_native_frontend.core.presentation.components.ButtonApp
+import com.example.se405.android_native_frontend.core.presentation.components.ButtonType
 import com.example.se405.android_native_frontend.core.presentation.theme.Android_native_frontendTheme
 import com.example.se405.android_native_frontend.core.presentation.theme.AppText
 import com.example.se405.android_native_frontend.core.presentation.theme.BlueGrey80
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Project
-import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.PreviewDomainEntityData
+import com.example.se405.android_native_frontend.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Task
 import com.example.se405.android_native_frontend.features.tasks_management.domain.entity.Workspace
 import kotlin.uuid.ExperimentalUuidApi
@@ -51,11 +55,32 @@ fun TaskGroup(
     roots: List<TreeNode<WorkspaceTreeData>>,
     modifier: Modifier = Modifier,
     onTaskClick: (Task) -> Unit = {},
+    onAddTaskClick: () -> Unit = {},
 ) {
-    TreeList(
-        roots = roots,
-        modifier = modifier,
-        indentDp = 4,
+    Column(modifier = modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), contentAlignment = Alignment.CenterEnd) {
+            ButtonApp(
+                onClick = onAddTaskClick,
+                type = ButtonType.FILLED,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.icon_plus),
+                        contentDescription = "Add Task",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text("Add Task", color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
+        TreeList(
+            roots = roots,
+            modifier = Modifier.weight(1f),
+            indentDp = 4,
         branchContent = { node, _, expanded ->
             when (val data = node.data) {
                 is WorkspaceTreeData.WorkspaceData ->
@@ -127,6 +152,7 @@ fun TaskGroup(
             }
         }
     )
+    }
 }
 
 /**
@@ -188,7 +214,8 @@ fun TaskGroupPreview() {
             TaskGroup(
                 roots = tree,
                 modifier = Modifier.weight(1f),
-                onTaskClick = { task -> println("Clicked: ${task.title}") }
+                onTaskClick = { task -> println("Clicked: ${task.title}") },
+                onAddTaskClick = { println("Clicked: Add Task") }
             )
         }
     }
