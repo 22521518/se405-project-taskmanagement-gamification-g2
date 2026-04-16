@@ -1,0 +1,206 @@
+# ═══════════════════════════════════════════════════════════════
+# Enums — mirror frontend Kotlin enums exactly
+# ═══════════════════════════════════════════════════════════════
+
+enum TaskType       { PROJECT HABIT }
+enum TaskStatus     { TODO IN_PROGRESS DONE CANCELLED }
+enum TaskPriority   { LOW MEDIUM HIGH }
+enum TagOwnershipType { WORKSPACE PERSONAL }
+enum WorkspaceRole  { OWNER MEMBER }
+
+# ═══════════════════════════════════════════════════════════════
+# Root operations
+# ═══════════════════════════════════════════════════════════════
+
+type Query {
+    # Task
+    getTasks(userId: ID!): [Task!]!
+    getTaskCompletionLogs(taskId: ID!): [TaskCompletionLog!]!
+
+    # Tag / Label
+    getTagsByUser(userId: ID!): [Tag!]!
+    getTagsByWorkspace(workspaceId: ID!): [Tag!]!
+    getTagsForTaskOwnership(taskId: ID!): [Tag!]!
+    getHabitLabels: [HabitLabel!]!
+
+    # Workspace
+    getWorkspace(uuid: ID!): Workspace
+    getProjectsByWorkspace(workspaceId: ID!): [Project!]!
+    getMembersByWorkspace(workspaceId: ID!): [WorkspaceMember!]!
+}
+
+type Mutation {
+    # Task CRUD
+    createTask(input: CreateTaskInput!): Task!
+    updateTask(input: UpdateTaskInput!): Task!
+    deleteTask(uuid: ID!): Task!
+
+    # Task completion
+    markTaskDone(input: MarkTaskDoneInput!): TaskCompletionLog!
+    markTaskWontDo(input: MarkTaskDoneInput!): TaskCompletionLog!
+
+    # Tag CRUD
+    createTag(input: CreateTagInput!): Tag!
+    updateTag(input: UpdateTagInput!): Tag!
+    deleteTag(uuid: ID!): Tag!
+
+    # Workspace / Project
+    createWorkspace(input: CreateWorkspaceInput!): Workspace!
+    deleteWorkspace(uuid: ID!): Workspace!
+    createProject(input: CreateProjectInput!): Project!
+    deleteProject(uuid: ID!): Project!
+}
+
+# ═══════════════════════════════════════════════════════════════
+# Core types — full objects for all FK relations
+# ═══════════════════════════════════════════════════════════════
+
+type Task {
+    uuid: ID!
+    title: String!
+    description: String
+    repetition: Int
+    type: TaskType!
+    status: TaskStatus!
+    priority: TaskPriority!
+    # Only set when type = PROJECT
+    projectId: ID
+    startDate: String
+    dueDate: String
+    # Resolved full objects
+    creator: User
+    tags: [Tag!]!
+    taskCompletionLogs: [TaskCompletionLog!]!
+}
+
+type Tag {
+    uuid: ID!
+    name: String!
+    color: Int!
+    ownershipType: TagOwnershipType!
+    workspaceId: ID
+    createdBy: ID!
+    createdAt: String!
+    updatedAt: String!
+    # Resolved full objects
+    creator: User
+    label: HabitLabel
+    tasks: [Task!]!
+}
+
+type TaskCompletionLog {
+    taskCompletionId: ID!
+    taskId: ID!
+    userId: ID!
+    date: String!
+    completedAt: String!
+    # Resolved full objects
+    task: Task
+    user: User
+}
+
+type Workspace {
+    uuid: ID!
+    name: String!
+    # Resolved full objects
+    projects: [Project!]!
+    members: [WorkspaceMember!]!
+}
+
+type Project {
+    uuid: ID!
+    name: String!
+    workspaceId: ID!
+    # Resolved full object
+    workspace: Workspace
+}
+
+type WorkspaceMember {
+    workspaceId: ID!
+    userId: ID!
+    role: WorkspaceRole!
+    joinedAt: String!
+    # Resolved full object
+    user: User
+}
+
+type HabitLabel {
+    uuid: ID!
+    name: String!
+    description: String!
+}
+
+type User {
+    uuid: ID!
+    email: String!
+    username: String!
+    displayName: String!
+    avatarUrl: String
+    createdAt: String!
+    updatedAt: String!
+}
+
+# ═══════════════════════════════════════════════════════════════
+# Input types
+# ═══════════════════════════════════════════════════════════════
+
+input CreateTaskInput {
+    title: String!
+    description: String
+    type: TaskType!
+    status: TaskStatus!
+    priority: TaskPriority!
+    creatorId: ID
+    # projectId required if type = PROJECT; startDate/dueDate only set when projectId != null
+    projectId: ID
+    startDate: String
+    dueDate: String
+    tagIds: [ID!]
+}
+
+input UpdateTaskInput {
+    uuid: ID!
+    title: String
+    description: String
+    type: TaskType
+    status: TaskStatus
+    priority: TaskPriority
+    projectId: ID
+    startDate: String
+    dueDate: String
+    tagIds: [ID!]
+}
+
+input MarkTaskDoneInput {
+    taskId: ID!
+    userId: ID!
+    # ISO date string (yyyy-MM-dd) of the day being tracked
+    date: String!
+}
+
+input CreateTagInput {
+    name: String!
+    color: Int!
+    ownershipType: TagOwnershipType!
+    createdBy: ID!
+    workspaceId: ID
+    labelId: ID
+}
+
+input UpdateTagInput {
+    uuid: ID!
+    name: String
+    color: Int
+    ownershipType: TagOwnershipType
+    workspaceId: ID
+    labelId: ID
+}
+
+input CreateWorkspaceInput {
+    name: String!
+}
+
+input CreateProjectInput {
+    name: String!
+    workspaceId: ID!
+}

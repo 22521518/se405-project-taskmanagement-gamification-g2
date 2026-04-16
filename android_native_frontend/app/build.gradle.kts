@@ -3,14 +3,15 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.apollo.plugin)
 }
 
 android {
-    namespace = "com.example.se405.android_native_frontend"
+    namespace = "com.example.se405.android"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.se405.android_native_frontend"
+        applicationId = "com.example.se405.android"
         minSdk = 30
         targetSdk = 36
         versionCode = 1
@@ -45,6 +46,13 @@ kotlin {
     }
 }
 
+apollo {
+    service("service") {
+        packageName.set("com.example.se405.android.graphql")
+        srcDir("src/main/java/com/example/se405/android/graphql")
+    }
+}
+
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -60,6 +68,7 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(libs.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.apollo.runtime)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

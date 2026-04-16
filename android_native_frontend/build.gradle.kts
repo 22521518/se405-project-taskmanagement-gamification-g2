@@ -3,6 +3,5 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
-
-    kotlin("jvm") version "2.3.10"
+    alias(libs.plugins.apollo.plugin) apply false
 }
