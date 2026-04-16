@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "android_native_frontend"
+rootProject.name = "android"
 include(":app")

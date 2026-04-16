@@ -1,0 +1,34 @@
+query GetWorkspace($uuid: ID!) {
+  getWorkspace(uuid: $uuid) {
+    uuid
+    name
+    projects {
+      uuid
+      name
+      workspaceId
+    }
+    members {
+      workspaceId
+      userId
+      role
+      joinedAt
+    }
+  }
+}
+
+query GetProjectsByWorkspace($workspaceId: ID!) {
+  getProjectsByWorkspace(workspaceId: $workspaceId) {
+    uuid
+    name
+    workspaceId
+  }
+}
+
+query GetMembersByWorkspace($workspaceId: ID!) {
+  getMembersByWorkspace(workspaceId: $workspaceId) {
+    workspaceId
+    userId
+    role
+    joinedAt
+  }
+}

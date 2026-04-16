@@ -38,3 +38,7 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Environment Files ###
+**/.env
+**/import_env.bat
