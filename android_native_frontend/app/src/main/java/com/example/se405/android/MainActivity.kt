@@ -1,7 +1,6 @@
 package com.example.se405.android
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
@@ -11,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.rememberNavController
 import com.example.se405.android.core.navigations.MainNavHost
 import com.example.se405.android.core.presentation.popup.LocalPopupController
@@ -18,7 +18,7 @@ import com.example.se405.android.core.presentation.popup.PopupController
 import com.example.se405.android.core.presentation.popup.PopupHost
 import com.example.se405.android.core.presentation.theme.Android_Theme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

@@ -8,3 +8,12 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 object TaskManagementNav
+
+@Serializable
+object BiometricAuthNav
+
+@Serializable
+object AuthSettingsNav
+
+@Serializable
+object DeviceAuthSuccessNav

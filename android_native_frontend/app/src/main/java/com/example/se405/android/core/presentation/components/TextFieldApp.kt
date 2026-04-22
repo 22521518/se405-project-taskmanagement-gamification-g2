@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.se405.android.R
 import com.example.se405.android.core.presentation.theme.AppText
@@ -33,6 +34,7 @@ fun TextFieldApp(
     style: TextStyle = AppText.Body2Regular.copy(color = MaterialTheme.colorScheme.secondaryContainer),
     singleLine: Boolean = true,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     TextField(
         value = value,
@@ -46,6 +48,7 @@ fun TextFieldApp(
         singleLine = singleLine,
         maxLines = maxLines,
         textStyle = style,
+        visualTransformation = visualTransformation,
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,

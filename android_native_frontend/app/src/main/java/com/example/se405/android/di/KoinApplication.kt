@@ -1,6 +1,8 @@
 package com.example.se405.android.di
 
 import android.app.Application
+import com.example.se405.android.core.authentication.authModule
+import com.example.se405.android.di.networkModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -13,7 +15,8 @@ class KoinApplication : Application() {
         startKoin {
             androidLogger()
             androidContext(this@KoinApplication)
-            modules(appModule, viewModelModule)
+            modules(appModule, networkModule, viewModelModule)
+            modules(authModule)
             modules(taskManagementModule)
         }
     }
