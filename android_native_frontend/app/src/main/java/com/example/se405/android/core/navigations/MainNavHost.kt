@@ -5,7 +5,13 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.se405.android.core.authentication.ui.AuthSettingsScreen
+import com.example.se405.android.core.authentication.ui.BiometricAuthScreen
+import com.example.se405.android.core.authentication.ui.DeviceAuthSuccessScreen
 import com.example.se405.android.features.tasks_management.presentation.screen.TaskManagementScreen
+import com.example.se405.android.navigation.AuthSettingsNav
+import com.example.se405.android.navigation.BiometricAuthNav
+import com.example.se405.android.navigation.DeviceAuthSuccessNav
 import com.example.se405.android.navigation.TaskManagementNav
 
 /**
@@ -23,11 +29,50 @@ fun MainNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = TaskManagementNav,
+        startDestination = BiometricAuthNav, // Start at login
         modifier = modifier,
     ) {
+        composable<BiometricAuthNav> {
+            BiometricAuthScreen(
+                onAuthenticated = {
+                    navController.navigate(AuthSettingsNav) {
+                        popUpTo(BiometricAuthNav) { inclusive = true }
+                    }
+                },
+                onGuestAuthenticated = {
+                    navController.navigate(DeviceAuthSuccessNav) {
+                        popUpTo(BiometricAuthNav) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        composable<DeviceAuthSuccessNav> {
+            DeviceAuthSuccessScreen(
+                onLogout = {
+                    navController.navigate(BiometricAuthNav) {
+                        popUpTo(DeviceAuthSuccessNav) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
         composable<TaskManagementNav> { 
-            TaskManagementScreen() 
+            TaskManagementScreen(
+                onSettingsClick = {
+                    navController.navigate(AuthSettingsNav)
+                }
+            )
+        }
+        
+        composable<AuthSettingsNav> {
+            AuthSettingsScreen(
+                onLogout = {
+                    navController.navigate(BiometricAuthNav) {
+                        popUpTo(TaskManagementNav) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }
