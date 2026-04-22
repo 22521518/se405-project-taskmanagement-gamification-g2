@@ -6,6 +6,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.context.annotation.Bean
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
+import com.example.se405.backend.main as appMain
 
 @TestConfiguration(proxyBeanMethods = false)
 class TestBackendApplication {
@@ -19,8 +20,7 @@ class TestBackendApplication {
 }
 
 fun main(args: Array<String>) {
-//    SpringApplication.from(com.example.se405.backend::main).with(TestBackendApplication::class.java).run(*args)
-    SpringApplication.from(::main)
+    SpringApplication.from(::appMain)
         .with(TestBackendApplication::class.java)
         .run(*args)
 }
