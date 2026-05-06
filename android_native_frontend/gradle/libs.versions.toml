@@ -1,6 +1,6 @@
 [versions]
 #noinspection AndroidGradlePluginVersion
-agp = "8.13.2"
+agp = "9.2.1"
 biometric = "1.1.0"
 koinCore = "4.2.1"
 kotlin = "2.3.10"
@@ -12,6 +12,7 @@ lifecycleRuntimeKtx = "2.10.0"
 lifeCycleViewModelCompose = "2.10.0"
 activityCompose = "1.13.0"
 composeBom = "2026.03.01"
+compose-icons = "1.6.0"
 composeNavigation = "2.9.7"
 serialization = "1.11.0"
 apollo = "4.4.3"
@@ -20,6 +21,7 @@ datastore = "1.2.1"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "compose-icons" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -45,6 +47,7 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

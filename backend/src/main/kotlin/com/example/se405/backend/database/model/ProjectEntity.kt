@@ -1,9 +1,10 @@
 package com.example.se405.backend.database.model
 
 import jakarta.persistence.*
+import org.springframework.graphql.test.tester.GraphQlTester
 import java.util.UUID
 
-@Entity
+@GraphQlTester.Entity
 @Table(name = "projects")
 data class ProjectEntity(
     @Id
