@@ -7,6 +7,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import com.example.se405.android.features.tasks_management.taskManagementModule
+import com.example.se405.android.features.chat_management.chatManagementModule
 
 class KoinApplication : Application() {
     override fun onCreate() {
@@ -18,6 +19,7 @@ class KoinApplication : Application() {
             modules(appModule, networkModule, viewModelModule)
             modules(authModule)
             modules(taskManagementModule)
+            modules(chatManagementModule)
         }
     }
 }

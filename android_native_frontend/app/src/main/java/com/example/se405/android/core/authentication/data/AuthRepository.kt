@@ -11,7 +11,7 @@ class AuthRepository(
     private val client: HttpClient,
     private val prefs: AuthPreferences
 ) {
-    private val baseUrl = "http://192.168.1.47:8080/api/auth" // Adjust based on environment
+    private val baseUrl = "http://10.0.2.2:8080/api/auth" // Adjust based on environment
 
     suspend fun login(req: LoginRequest): Result<AuthResponse> = runCatching {
         val response = client.post("$baseUrl/login") {

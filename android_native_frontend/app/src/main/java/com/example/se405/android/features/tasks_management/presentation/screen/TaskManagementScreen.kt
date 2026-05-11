@@ -26,6 +26,7 @@ import kotlin.uuid.ExperimentalUuidApi
 @Composable
 fun TaskManagementScreen(
     onSettingsClick: () -> Unit,
+    navigateToChat: (taskId: String, taskName: String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TaskManagementViewModel = koinViewModel()
 ) {
@@ -141,6 +142,10 @@ fun TaskManagementScreen(
                                      onCancel = { onDismissEdit() }
                                  )
                              }
+                        },
+                        onChatClick = { taskToChat ->
+                            onDismiss() // Đóng Popup
+                            navigateToChat(taskToChat.uuid.toString(), taskToChat.title) // Chuyển trang
                         },
                         onClose = { onDismiss() },
                         onDone = { onDismiss() },

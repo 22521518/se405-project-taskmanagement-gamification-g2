@@ -24,7 +24,7 @@ class AuthPreferences(private val context: Context) {
     val isBiometricEnabled: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_ENABLED_KEY] ?: false }
     val username: Flow<String?> = context.dataStore.data.map { it[USERNAME_KEY] }
     val displayName: Flow<String?> = context.dataStore.data.map { it[DISPLAY_NAME_KEY] }
-
+    val userId: Flow<String?> = context.dataStore.data.map { it[USER_ID_KEY] }
     suspend fun saveAuth(token: String, userId: String, username: String, displayName: String, biometricEnabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[TOKEN_KEY] = token

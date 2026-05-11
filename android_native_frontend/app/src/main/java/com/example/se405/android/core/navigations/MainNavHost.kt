@@ -5,14 +5,13 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.example.se405.android.core.authentication.ui.AuthSettingsScreen
 import com.example.se405.android.core.authentication.ui.BiometricAuthScreen
 import com.example.se405.android.core.authentication.ui.DeviceAuthSuccessScreen
 import com.example.se405.android.features.tasks_management.presentation.screen.TaskManagementScreen
-import com.example.se405.android.navigation.AuthSettingsNav
-import com.example.se405.android.navigation.BiometricAuthNav
-import com.example.se405.android.navigation.DeviceAuthSuccessNav
-import com.example.se405.android.navigation.TaskManagementNav
+import com.example.se405.android.core.navigations.TaskChatNav
+import com.example.se405.android.features.chat_management.presentation.screen.TaskChatScreen
 
 /**
  * Defines navigation route models for the application using
@@ -30,17 +29,20 @@ fun MainNavHost(
     NavHost(
         navController = navController,
         startDestination = BiometricAuthNav, // Start at login
+        //startDestination = TaskManagementNav,
         modifier = modifier,
     ) {
         composable<BiometricAuthNav> {
             BiometricAuthScreen(
                 onAuthenticated = {
-                    navController.navigate(AuthSettingsNav) {
+                    navController.navigate(TaskManagementNav) {
+                    //navController.navigate(AuthSettingsNav) {
                         popUpTo(BiometricAuthNav) { inclusive = true }
                     }
                 },
                 onGuestAuthenticated = {
-                    navController.navigate(DeviceAuthSuccessNav) {
+                    navController.navigate(TaskManagementNav) {
+                    //navController.navigate(DeviceAuthSuccessNav) {
                         popUpTo(BiometricAuthNav) { inclusive = true }
                     }
                 }
@@ -61,10 +63,25 @@ fun MainNavHost(
             TaskManagementScreen(
                 onSettingsClick = {
                     navController.navigate(AuthSettingsNav)
+                },
+                navigateToChat = { taskId, taskName ->
+                    navController.navigate(TaskChatNav(taskId = taskId, taskName = taskName))
                 }
             )
         }
-        
+
+        composable<TaskChatNav> { navBackStackEntry ->
+            // Type-safe deserialization of arguments (Trích xuất tham số an toàn)
+            val args = navBackStackEntry.toRoute<TaskChatNav>()
+
+            TaskChatScreen(
+                taskId = args.taskId,
+                taskName = args.taskName,
+                onBackClick = {
+                    navController.popBackStack() // Quay lại màn hình trước
+                }
+            )
+        }
         composable<AuthSettingsNav> {
             AuthSettingsScreen(
                 onLogout = {

@@ -20,8 +20,8 @@ import io.ktor.serialization.kotlinx.json.*
 val appModule = module {
     single {
         com.apollographql.apollo.ApolloClient.Builder()
-            .serverUrl("http://localhost:8080/graphql")
-//            .serverUrl("http://10.0.2.2:8080/graphql") // if using android emulator, uncommenting this line
+            //.serverUrl("http://localhost:8080/graphql")
+            .serverUrl("http://10.0.2.2:8080/graphql") // if using android emulator, uncommenting this line
             .build()
     }
 }

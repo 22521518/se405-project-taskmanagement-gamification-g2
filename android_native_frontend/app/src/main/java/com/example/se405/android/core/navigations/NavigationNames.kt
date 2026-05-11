@@ -1,4 +1,4 @@
-package com.example.se405.android.navigation
+package com.example.se405.android.core.navigations
 
 import kotlinx.serialization.Serializable
 
@@ -11,6 +11,12 @@ object TaskManagementNav
 
 @Serializable
 object BiometricAuthNav
+
+@Serializable
+data class TaskChatNav(
+    val taskId: String,
+    val taskName: String
+)
 
 @Serializable
 object AuthSettingsNav

@@ -38,8 +38,7 @@ fun TaskChatScreen(
 
     // 1. Tự động gọi API lấy tin nhắn khi vào màn hình với taskId tương ứng
     LaunchedEffect(taskId) {
-        // Tạm thời comment lại chờ bạn viết hàm này trong ViewModel
-        // viewModel.loadMessagesForTask(taskId)
+        viewModel.loadMessagesForTask(taskId)
     }
 
     // 2. Tự động cuộn xuống tin nhắn mới nhất khi có tin nhắn mới thêm vào
@@ -50,6 +49,9 @@ fun TaskChatScreen(
     }
 
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
         topBar = {
             ChatTopBar(
                 taskName = taskName,
@@ -59,7 +61,7 @@ fun TaskChatScreen(
         bottomBar = {
             ChatInputBar(
                 onSendMessage = { content ->
-                    viewModel.sendMessage(content)
+                    viewModel.sendMessage(taskId = taskId, content = content)
                 }
             )
         }
