@@ -13,13 +13,12 @@ object TaskManagementNav
 object BiometricAuthNav
 
 @Serializable
-data class TaskChatNav(
-    val taskId: String,
-    val taskName: String
-)
-
-@Serializable
 object AuthSettingsNav
 
 @Serializable
 object DeviceAuthSuccessNav
+
+@Serializable data object ConversationListNav
+@Serializable data class TaskChatNav(val taskId: String, val taskName: String)
+@Serializable data object NewMessageNav
+@Serializable data object SearchNav

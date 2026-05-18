@@ -18,7 +18,6 @@ import com.example.se405.android.core.presentation.theme.Android_Theme
 import com.example.se405.android.core.presentation.theme.AppText
 import com.example.se405.android.core.presentation.theme.Green40
 import com.example.se405.android.core.presentation.theme.Orange40
-import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Task
 import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
 import com.example.se405.android.features.tasks_management.domain.entity.TaskType
@@ -48,25 +47,5 @@ fun TaskStatus(
             tint= iconStatusUI.color
         )
         Text(taskDueDescription, color = iconStatusUI.color, style = AppText.CaptionRegular)
-    }
-}
-
-/**
- * Preview for TaskStatus.
- *
- * Usage guide:
- * - In production, pass real task model from state.
- * - This component is presentation-only and should not trigger side effects.
- */
-@Preview(showBackground = true)
-@Composable
-fun TaskStatusPreview() {
-    Android_Theme {
-        Column(modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-            PreviewDomainEntityData.tasks.forEach { task -> TaskStatus(task = task) }
-        }
     }
 }

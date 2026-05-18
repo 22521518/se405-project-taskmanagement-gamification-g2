@@ -17,7 +17,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.se405.android.core.presentation.theme.Android_Theme
 import com.example.se405.android.core.presentation.theme.AppText
-import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Task
 
 /**
@@ -64,28 +63,5 @@ fun TaskStatusDescription(
 
         BulletTaskText(taskStatusDescription.statusScript, AppText.Body2Regular)
         Text(taskStatusDescription.taskPriority.content, color = taskStatusDescription.taskPriority.color, style = AppText.CaptionRegular)
-    }
-}
-
-/**
- * Preview for TaskCard.
- *
- * Usage guide:
- * - In production, provide task list from ViewModel state.
- * - `onTaskClick` should dispatch selected task event to Screen/ViewModel.
- */
-@Preview(showBackground = true)
-@Composable
-fun TaskCardPreview() {
-    Android_Theme {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            PreviewDomainEntityData.tasks.forEach { task ->
-                TaskCard(task = task, onTaskClick = {})
-            }
-        }
     }
 }

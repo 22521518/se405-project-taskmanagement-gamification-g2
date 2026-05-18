@@ -37,7 +37,6 @@ import com.example.se405.android.core.presentation.components.ButtonType
 import com.example.se405.android.core.presentation.components.PopUpLayout
 import com.example.se405.android.core.presentation.theme.Android_Theme
 import com.example.se405.android.core.presentation.theme.AppText
-import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Task
 
 /**
@@ -255,28 +254,6 @@ private fun TaskDetailCTASection(
                     style = AppText.Body2SemiBold
                 )
             }
-        }
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0x00ECF7FB)
-@Composable
-fun TaskDetailPopUpPreview() {
-    Android_Theme {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            TaskDetailPopUp(
-                task = PreviewDomainEntityData.tasks[0],
-                onEditClick = {},
-                onChatClick = {},
-                onClose = {},
-                onDone = {},
-                onWontDo = {},
-                onDelete = {},
-            )
         }
     }
 }

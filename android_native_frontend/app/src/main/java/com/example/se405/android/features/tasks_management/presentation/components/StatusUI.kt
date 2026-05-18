@@ -23,7 +23,6 @@ import com.example.se405.android.core.presentation.theme.BlueGrey80
 import com.example.se405.android.core.presentation.theme.Gold40
 import com.example.se405.android.core.presentation.theme.Green40
 import com.example.se405.android.core.presentation.theme.Orange40
-import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Task
 import com.example.se405.android.features.tasks_management.domain.entity.TaskPriority
 import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
@@ -70,22 +69,3 @@ fun BulletTaskText(statusDesUI: StatusUI<String>, style: TextStyle, modifier: Mo
     }
 }
 
-/**
- * Preview for BulletTaskText.
- *
- * Usage guide:
- * - In production, pass display model from `extractTaskStatusDescription(task)`.
- * - Keep `style` consistent with surrounding typography to avoid visual mismatch.
- */
-@Preview(showBackground = true)
-@Composable
-fun BulletTaskTextPreview() {
-    Android_Theme {
-        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            for (task in PreviewDomainEntityData.tasks) {
-                val taskStatusDescription = extractTaskStatusDescription(task)
-                BulletTaskText(StatusUI(taskStatusDescription.statusScript.content, taskStatusDescription.statusScript.color), AppText.CaptionRegular)
-            }
-        }
-    }
-}

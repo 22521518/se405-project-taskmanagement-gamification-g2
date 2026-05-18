@@ -35,7 +35,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.se405.android.R
@@ -50,10 +49,8 @@ import com.example.se405.android.core.presentation.components.formatDate
 import com.example.se405.android.core.presentation.components.menu.MenuDropDownApp
 import com.example.se405.android.core.presentation.components.menu.MenuSelectionItem
 import com.example.se405.android.core.presentation.components.menu.MenuSelectionPopUp
-import com.example.se405.android.core.presentation.theme.Android_Theme
 import com.example.se405.android.core.presentation.theme.AppText
 import com.example.se405.android.core.presentation.theme.BlueGrey80
-import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Project
 import com.example.se405.android.features.tasks_management.domain.entity.Tag
 import com.example.se405.android.features.tasks_management.domain.entity.Task
@@ -213,9 +210,9 @@ fun TaskDetailActionBasePopUp(
         ?.displayName
 
     PopUpLayout(
-        widthRatio = 0.85f,
+        widthRatio = 0.95f,
         heightRatio = 0.9f,
-        verticalArrangement = Arrangement.spacedBy(0.dp), // Tách riêng spacing cho từng khu vực
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         // --- 1. HEADER CỐ ĐỊNH ---
         Row(
@@ -249,17 +246,17 @@ fun TaskDetailActionBasePopUp(
         // --- 2. BODY CÓ THỂ CUỘN ---
         Column(
             modifier = Modifier
-                .weight(1f) // Chiếm phần không gian còn lại
+                .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp) // Khoảng không gian thở giữa các vùng
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             TextFieldApp(
                 labelTitle = "Task Name",
                 value = uiState.title,
                 onValueChange = onTitleChange,
-                maxTextLen = 40, // Mở rộng thêm để đủ gõ tiêu đề
+                maxTextLen = 40,
             )
 
             LabelRowContent(
@@ -500,7 +497,6 @@ fun TaskDetailActionBasePopUp(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     uiState.selectedTags.forEach { tag ->
-                        // Sử dụng UI dạng Chip thay vì chỉ Icon
                         Row(
                             modifier = Modifier
                                 .background(
@@ -627,66 +623,6 @@ private fun colorSelectedItem(isSelected: Boolean): Color {
 @Composable
 private fun DueDatePickerSection(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     LabelColumnContent(labelName = "Start & Due Date: ", iconId = R.drawable.icon_time, content = content, modifier = modifier)
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFECF7FB)
-@Composable
-fun TaskDetailEditPopUpPreview() {
-    val previewTask = PreviewDomainEntityData.tasks[0]
-    var uiState by remember {
-        mutableStateOf(
-            TaskDetailActionUiState(
-                title = previewTask.title,
-                taskType = previewTask.type,
-                selectedTags = previewTask.tags,
-                priority = previewTask.priority,
-                description = previewTask.description,
-                selectedStartDateMillis = previewTask.startDate?.toEpochMillisAtStartOfDay(),
-                selectedDueDateMillis = previewTask.dueDate?.toEpochMillisAtStartOfDay(),
-                isTagSelectorVisible = false,
-                selectedProjectId = null,
-                selectedAssigneeId = null,
-            ),
-        )
-    }
-
-    Android_Theme {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            TaskDetailActionBasePopUp(
-                title = "Create new task",
-                task = previewTask,
-                uiState = uiState,
-                availableTags = PreviewDomainEntityData.tags,
-                projectsInWorkspace = PreviewDomainEntityData.projects,
-                membersInWorkspace = PreviewDomainEntityData.workspaceMembers,
-                canChangeTaskType = true,
-                onTaskTypeChange = { newType -> uiState = uiState.copy(taskType = newType) },
-                onTitleChange = { newTitle -> uiState = uiState.copy(title = newTitle) },
-                onDescriptionChange = { newDescription -> uiState = uiState.copy(description = newDescription) },
-                onPriorityChange = { newPriority -> uiState = uiState.copy(priority = newPriority) },
-                onToggleTag = { tag ->
-                    val isSelected = uiState.selectedTags.any { selectedTag -> selectedTag.uuid == tag.uuid }
-                    uiState = uiState.copy(
-                        selectedTags = if (isSelected) {
-                            uiState.selectedTags.filter { selectedTag -> selectedTag.uuid != tag.uuid }
-                        } else {
-                            uiState.selectedTags + tag
-                        },
-                    )
-                },
-                onProjectSelected = { projectId -> uiState = uiState.copy(selectedProjectId = projectId) },
-                onAssigneeSelected = { assigneeId -> uiState = uiState.copy(selectedAssigneeId = assigneeId) },
-                onTagSelectorVisibilityChange = { visible -> uiState = uiState.copy(isTagSelectorVisible = visible) },
-                onOpenDateRangePicker = {},
-                onDone = {},
-                onCancel = {},
-            )
-        }
-    }
 }
 
 private fun toLocalDate(timestamp: Long): LocalDate {

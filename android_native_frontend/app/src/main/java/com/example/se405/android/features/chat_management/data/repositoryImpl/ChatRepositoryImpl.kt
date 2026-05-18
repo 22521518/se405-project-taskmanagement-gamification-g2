@@ -14,6 +14,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
+import com.example.se405.android.graphql.GetMyConversationsQuery
+import com.example.se405.android.features.chat_management.domain.entity.Conversation
 
 @OptIn(ExperimentalUuidApi::class)
 class ChatRepositoryImpl(
@@ -35,19 +37,20 @@ class ChatRepositoryImpl(
         // 3. Map DTO (GraphQL) sang Entity (Giao diện)
         val messages = response.data?.getMessagesByTask?.map { dto ->
             MessageEntity(
-                uuid = Uuid.parse(dto.uuid),
+                uuid = Uuid.parse(dto.uuid.toString()),
                 content = dto.content,
                 taskUuid = Uuid.parse(taskId),
                 sender = User(
-                    uuid = Uuid.parse(dto.sender.uuid),
-                    displayName = dto.sender.displayName,
-                    // Mock các trường User không cần thiết cho UI chat
-                    email = "", username = "", passwordHash = "", avatarUrl = "",
-                    createdAt = LocalDateTime.now(), updatedAt = LocalDateTime.now()
+                    uuid = Uuid.parse(dto.sender.uuid.toString()),
+                    // Câu query tin nhắn thường không lấy email/username, ta truyền chuỗi rỗng để thỏa mãn Data Class
+                    email = "",
+                    username = "",
+                    displayName = dto.sender.displayName ?: "Người dùng ẩn danh",
+                    avatarUrl = ""
                 ),
-                createdAt = parseIsoDate(dto.createdAt),
+                createdAt = parseIsoDate(dto.createdAt.toString()),
                 // 4. Kiểm tra tin nhắn của mình bằng cách so sánh String ID
-                isOwnMessage = dto.sender.uuid == myUserId
+                isOwnMessage = dto.sender.uuid.toString() == myUserId
             )
         } ?: emptyList()
 
@@ -57,7 +60,7 @@ class ChatRepositoryImpl(
 
     override suspend fun sendMessage(taskId: String, content: String): Result<Unit> {
         return try {
-            val response = apolloClient.mutation(SendMessageMutation(taskId, content)).execute()
+            val response = apolloClient.mutation(SendMessageMutation(conversationId = taskId, content = content)).execute()
 
             if (response.hasErrors()) {
                 Result.failure(Exception(response.errors?.first()?.message))
@@ -69,9 +72,25 @@ class ChatRepositoryImpl(
         }
     }
 
-    /**
-     * Hàm hỗ trợ chuyển đổi chuỗi thời gian ISO-8601 từ Server thành LocalDateTime của Android
-     */
+    override fun getMyConversations(): Flow<List<Conversation>> = flow {
+        val response = apolloClient.query(GetMyConversationsQuery()).execute()
+
+        if (response.hasErrors()) {
+            throw Exception(response.errors?.first()?.message)
+        }
+
+        val conversations = response.data?.getMyConversations?.map { dto ->
+            Conversation(
+                uuid = dto.uuid.toString(),
+                type = dto.type.rawValue,
+                name = dto.name,
+                taskUuid = dto.taskId?.toString()
+            )
+        } ?: emptyList()
+
+        emit(conversations)
+    }
+
     private fun parseIsoDate(dateString: String): LocalDateTime {
         return try {
             // Định dạng phổ biến nhất của Backend trả về

@@ -1,0 +1,12 @@
+subscription OnMessageAdded($conversationId: ID!) {
+    messageAdded(conversationId: $conversationId) {
+        uuid
+        content
+        createdAt
+        sender {
+            uuid
+            displayName
+            avatarUrl
+        }
+    }
+}

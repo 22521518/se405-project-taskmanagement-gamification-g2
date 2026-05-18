@@ -2,7 +2,6 @@ package com.example.se405.android.features.tasks_management.presentation.viewmod
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Project
 import com.example.se405.android.features.tasks_management.domain.entity.Tag
 import com.example.se405.android.features.tasks_management.domain.entity.Workspace
@@ -34,15 +33,30 @@ class TaskManagementViewModel(
     val members: StateFlow<List<WorkspaceMember>> = _members.asStateFlow()
 
     init {
-        loadMockData()
+        loadData()
     }
 
-    private fun loadMockData() {
+    private fun loadData() {
         viewModelScope.launch {
-            _workspaces.value = PreviewDomainEntityData.workspaces
-            _availableTags.value = PreviewDomainEntityData.tags
-            _projects.value = PreviewDomainEntityData.projects
-            _members.value = PreviewDomainEntityData.workspaceMembers
+            try {
+
+                // Ví dụ (Hãy sửa tên hàm cho đúng với UseCase thực tế của bạn):
+
+                // val fetchedWorkspaces = workspaceUseCases.getWorkspaces()
+                // _workspaces.value = fetchedWorkspaces
+
+                // val fetchedTags = tagUseCases.getAllTags()
+                // _availableTags.value = fetchedTags
+
+                // val fetchedProjects = workspaceUseCases.getProjects()
+                // _projects.value = fetchedProjects
+
+                // val fetchedMembers = workspaceUseCases.getMembers()
+                // _members.value = fetchedMembers
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }

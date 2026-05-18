@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.se405.android.core.presentation.theme.Android_Theme
-import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewTreeData
 
 data class TreeNode<T>(
     val id: Int,
@@ -117,36 +116,4 @@ private fun <T> flattenTree(
     }
 
     return result
-}
-
-/**
- * Preview for TreeList.
- *
- * Usage guide:
- * - In production, map domain objects to `TreeNode<T>` outside this composable.
- * - Keep side effects (navigation, analytics) in callbacks passed to content lambdas.
- */
-@Preview(showBackground = true)
-@Composable
-fun TreeListPreview() {
-    val tree = PreviewTreeData.trees
-    Android_Theme {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TreeList(
-                roots = tree,
-                branchContent = { node, _, expanded ->
-                    Text(
-                        text = if (expanded) "▼ ${node.name}" else "▶ ${node.name}",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                },
-                leafContent = { node, _ ->
-                    Text(
-                        text = node.name,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            )
-        }
-    }
 }

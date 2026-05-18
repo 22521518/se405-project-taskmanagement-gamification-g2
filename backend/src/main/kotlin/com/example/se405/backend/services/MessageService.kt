@@ -1,39 +1,55 @@
 package com.example.se405.backend.services
 
 import com.example.se405.backend.database.model.MessageEntity
-import com.example.se405.backend.database.repository.MessageRepository
-import com.example.se405.backend.database.repository.TaskRepository
-import com.example.se405.backend.database.repository.UserRepository
+import com.example.se405.backend.database.repository.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.util.UUID
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 
 @Service
 class MessageService(
     private val messageRepository: MessageRepository,
-    private val taskRepository: TaskRepository,
+    private val conversationRepository: ConversationRepository,
+    private val participantRepository: ConversationParticipantRepository,
     private val userRepository: UserRepository
 ) {
-    fun getMessagesForTask(taskId: UUID): List<MessageEntity> {
-        return messageRepository.findByTaskUuidOrderByCreatedAtAsc(taskId)
+    fun getMessagesByConversation(conversationId: UUID, userUuid: UUID): List<MessageEntity> {
+        val conversation = conversationRepository.findById(conversationId).orElseThrow()
+        val user = userRepository.findById(userUuid).orElseThrow()
+
+        // Kiểm tra quyền: Chỉ thành viên trong phòng mới được xem tin nhắn
+        participantRepository.findByConversationAndUser(conversation, user)
+            .orElseThrow { IllegalAccessException("Bạn không có quyền xem cuộc hội thoại này") }
+
+        return messageRepository.findByConversationUuidOrderByCreatedAtAsc(conversationId)
     }
 
-    @Transactional
-    fun sendMessage(taskId: UUID, content: String, senderId: UUID): MessageEntity {
-        val task = taskRepository.findById(taskId)
-            .orElseThrow { IllegalArgumentException("Task not found with id: $taskId") }
+    private val messageSink = Sinks.many().multicast().onBackpressureBuffer<MessageEntity>()
 
-        val sender = userRepository.findById(senderId)
-            .orElseThrow { IllegalArgumentException("User not found with id: $senderId") }
+    @Transactional
+    fun sendMessage(conversationId: UUID, senderId: UUID, content: String): MessageEntity {
+        val conversation = conversationRepository.findById(conversationId).orElseThrow()
+        val sender = userRepository.findById(senderId).orElseThrow()
+        participantRepository.findByConversationAndUser(conversation, sender)
+            .orElseThrow { IllegalAccessException("Bạn không phải là thành viên của phòng chat này") }
 
         val message = MessageEntity(
             content = content,
-            task = task,
+            conversation = conversation,
             sender = sender,
             createdAt = LocalDateTime.now()
         )
 
-        return messageRepository.save(message)
+        val savedMessage = messageRepository.save(message)
+        messageSink.tryEmitNext(savedMessage)
+        return savedMessage
+    }
+
+    fun subscribeToMessages(conversationId: UUID): Flux<MessageEntity> {
+        return messageSink.asFlux()
+            .filter { it.conversation.uuid == conversationId } // Chỉ nghe tin của đúng phòng này
     }
 }

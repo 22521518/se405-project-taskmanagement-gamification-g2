@@ -7,5 +7,6 @@ import java.util.UUID
 
 @Repository
 interface MessageRepository : JpaRepository<MessageEntity, UUID> {
-    fun findByTaskUuidOrderByCreatedAtAsc(taskUuid: UUID): List<MessageEntity>
+    // Lấy tin nhắn theo ID của Conversation
+    fun findByConversationUuidOrderByCreatedAtAsc(conversationUuid: UUID): List<MessageEntity>
 }

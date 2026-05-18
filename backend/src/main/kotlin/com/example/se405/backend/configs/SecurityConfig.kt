@@ -21,7 +21,6 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/login-biometric", "/error").permitAll()
-                //auth.requestMatchers("/api/auth/**").permitAll()
                 auth.requestMatchers("/graphql", "/graphql/**", "/graphiql").permitAll()
                     .anyRequest().authenticated()
             }

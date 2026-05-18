@@ -31,7 +31,6 @@ import com.example.se405.android.core.presentation.theme.Android_Theme
 import com.example.se405.android.core.presentation.theme.AppText
 import com.example.se405.android.core.presentation.theme.BlueGrey80
 import com.example.se405.android.features.tasks_management.domain.entity.Project
-import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Task
 import com.example.se405.android.features.tasks_management.domain.entity.Workspace
 import kotlin.uuid.ExperimentalUuidApi
@@ -181,42 +180,3 @@ fun Workspace.toTree(): TreeNode<WorkspaceTreeData> = TreeNode(
     data = WorkspaceTreeData.WorkspaceData(this),
     children = projects.map { it.toTree()}
 )
-
-
-/**
- * Preview for TaskGroup.
- *
- * Usage guide:
- * - In production, build `roots` from ViewModel state (domain models -> tree).
- * - Keep navigation/popups outside this composable via `onTaskClick` callback.
- */
-@Preview(showBackground = true)
-@Composable
-fun TaskGroupPreview() {
-    val habits = Workspace(
-        id = Uuid.random(),
-        name = "Habits",
-        projects = listOf(
-            Project(
-                id = Uuid.random(),
-                name = "Personal Habits",
-                tasks = PreviewDomainEntityData.tasks
-            )
-        )
-    )
-
-    val tree = remember(PreviewDomainEntityData.workspaces, habits) {
-        (PreviewDomainEntityData.workspaces + habits).map { it.toTree() }
-    }
-
-    Android_Theme {
-        Column(modifier = Modifier.fillMaxSize()) {
-            TaskGroup(
-                roots = tree,
-                modifier = Modifier.weight(1f),
-                onTaskClick = { task -> println("Clicked: ${task.title}") },
-                onAddTaskClick = { println("Clicked: Add Task") }
-            )
-        }
-    }
-}
