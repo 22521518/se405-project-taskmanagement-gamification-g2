@@ -23,6 +23,6 @@ data class Task(
     val projectId: Uuid? = null,
 )
 
-enum class TaskType { PROJECT, HABIT }
+enum class TaskType { HABIT, PROJECT }
 enum class TaskStatus {  TODO, IN_PROGRESS, DONE, FAILED }
 enum class TaskPriority { LOW, MEDIUM, HIGH }

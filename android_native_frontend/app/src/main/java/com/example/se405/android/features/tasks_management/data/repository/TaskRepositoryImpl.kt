@@ -16,8 +16,8 @@ class TaskRepositoryImpl(
         return api.getTasks(userId).orElse(emptyList())
     }
 
-    override suspend fun createTask(task: Task): Optional<Task> {
-        return api.createTask(task)
+    override suspend fun createTask(task: Task, creatorId: Uuid?): Optional<Task> {
+        return api.createTask(task, creatorId)
     }
 
     override suspend fun updateTask(task: Task): Optional<Task> {

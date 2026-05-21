@@ -6,6 +6,7 @@ import com.example.se405.android.features.tasks_management.data.remote.*
 import com.example.se405.android.features.tasks_management.data.repository.*
 import com.example.se405.android.features.tasks_management.domain.repository.*
 import com.example.se405.android.features.tasks_management.domain.use_case.*
+import com.example.se405.android.features.tasks_management.domain.use_case.crud.*
 import com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskManagementViewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.module.dsl.bind
@@ -43,6 +44,9 @@ val taskDomainModule = module {
             getMembersByWorkspace = workspaceRepo::getMembersByWorkspace,
         )
     }
+
+    factory { MarkTaskDone(get()) }
+    factory { MarkTaskWontDo(get()) }
 }
 
 val taskDataModule = module {
@@ -53,6 +57,7 @@ val taskDataModule = module {
     singleOf(::TaskRepositoryImpl) { bind<TaskRepository>() }
     singleOf(::TagRepositoryImpl) { bind<TagRepository>() }
     singleOf(::WorkspaceRepositoryImpl) { bind<WorkspaceRepository>() }
+    singleOf(::TaskCompletionLogRepositoryImpl) { bind<TaskCompletionLogRepository>() }
 }
 
 val taskPresentationModule = module {

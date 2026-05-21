@@ -15,7 +15,7 @@ interface TaskCompletionLogRepository {
     suspend fun getCompletionLogs(taskId: Uuid): List<TaskCompletionLog>
     suspend fun createCompletionLog(
         task: Task,
-        user: User,
+        userId: Uuid,
         status: TaskStatus,
         date: LocalDate = LocalDate.now(),
     ): Optional<TaskCompletionLog>

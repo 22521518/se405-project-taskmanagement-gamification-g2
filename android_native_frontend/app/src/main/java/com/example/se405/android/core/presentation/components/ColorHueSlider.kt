@@ -29,6 +29,70 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.se405.android.core.presentation.theme.Android_Theme
 
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun ColorHueSlider(
+//    onColorSelected: (Color) -> Unit,
+//    initialColor: Color = Color.Blue,
+//    actionSection: @Composable () -> Unit = {},
+//    children: @Composable () -> Unit = {},
+//) {
+//    val initialHue = remember(initialColor) {
+//        val hsv = FloatArray(3)
+//        android.graphics.Color.colorToHSV(initialColor.toArgb(), hsv)
+//        hsv[0] / 360f
+//    }
+//
+//    var sliderVal by remember { mutableFloatStateOf(initialHue) }
+//
+//    val hue by remember { derivedStateOf { sliderVal * 360f } }
+//    val currentColor by remember { derivedStateOf { Color.hsv(hue, 1f, 1f) } }
+//    val hex by remember { derivedStateOf { String.format("#%08X", currentColor.toArgb()) } }
+//
+//    Column(
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.SpaceBetween
+//    ) {
+//        children()
+//        Text(text = "Color: $hex")
+//        Slider(
+//            value = sliderVal,
+//            onValueChange = { value ->
+//                sliderVal = value
+//                onColorSelected(Color.hsv(value * 360f, 1f, 1f))
+//            },
+//            valueRange = 0f..1f,
+//            colors = SliderDefaults.colors(
+//                thumbColor = currentColor,
+//                activeTrackColor = Color.Transparent,
+//                inactiveTrackColor = Color.Transparent
+//            ),
+//            track = {
+//                Box(
+//                    Modifier
+//                        .fillMaxWidth()
+//                        .height(8.dp)
+//                        .background(
+//                            brush = Brush.horizontalGradient(
+//                                listOf(
+//                                    Color.Red,
+//                                    Color.Yellow,
+//                                    Color.Green,
+//                                    Color.Cyan,
+//                                    Color.Blue,
+//                                    Color.Magenta,
+//                                    Color.Red
+//                                )
+//                            ),
+//                            shape = RoundedCornerShape(4.dp)
+//                        )
+//                )
+//            }
+//        )
+//        actionSection()
+//    }
+//}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ColorHueSlider(
@@ -37,7 +101,8 @@ fun ColorHueSlider(
     actionSection: @Composable () -> Unit = {},
     children: @Composable () -> Unit = {},
 ) {
-    val initialHue = remember(initialColor) {
+    // Chỉ lấy giá trị khởi tạo một lần duy nhất, không reset khi initialColor từ ngoài thay đổi
+    val initialHue = remember {
         val hsv = FloatArray(3)
         android.graphics.Color.colorToHSV(initialColor.toArgb(), hsv)
         hsv[0] / 360f
@@ -54,7 +119,7 @@ fun ColorHueSlider(
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         children()
-        Text(text = "Color: $hex")
+//        Text(text = "Color: $hex")
         Slider(
             value = sliderVal,
             onValueChange = { value ->
@@ -75,13 +140,8 @@ fun ColorHueSlider(
                         .background(
                             brush = Brush.horizontalGradient(
                                 listOf(
-                                    Color.Red,
-                                    Color.Yellow,
-                                    Color.Green,
-                                    Color.Cyan,
-                                    Color.Blue,
-                                    Color.Magenta,
-                                    Color.Red
+                                    Color.Red, Color.Yellow, Color.Green,
+                                    Color.Cyan, Color.Blue, Color.Magenta, Color.Red
                                 )
                             ),
                             shape = RoundedCornerShape(4.dp)
