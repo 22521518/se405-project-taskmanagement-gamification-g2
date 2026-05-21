@@ -147,6 +147,7 @@ type User {
 input CreateTaskInput {
     title: String!
     description: String
+    repetition: Int
     type: TaskType!
     status: TaskStatus!
     priority: TaskPriority!
@@ -162,6 +163,7 @@ input UpdateTaskInput {
     uuid: ID!
     title: String
     description: String
+    repetition: Int
     type: TaskType
     status: TaskStatus
     priority: TaskPriority

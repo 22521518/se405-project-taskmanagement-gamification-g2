@@ -28,7 +28,8 @@ import com.example.se405.android.features.tasks_management.domain.entity.TaskTyp
  */
 @Composable
 fun TaskStatus(
-    task: Task
+    task: Task,
+    selectedDate: java.time.LocalDate = java.time.LocalDate.now()
 ) {
     val iconStatusUI: StatusUI<Int> = when (task.status) {
         TaskStatus.DONE -> StatusUI(R.drawable.icon_done, Green40)
@@ -36,9 +37,10 @@ fun TaskStatus(
         else -> StatusUI(R.drawable.icon_time, MaterialTheme.colorScheme.surface)
     }
 
+    val completedCount = task.taskCompletionLog.count { it.date == selectedDate && it.status == TaskStatus.DONE }
     val taskDueDescription = when(task.type) {
-        TaskType.HABIT -> "${task.repetition} / ${task.repetition}"
-        TaskType.PROJECT -> task.dueDate.toString()
+        TaskType.HABIT -> "$completedCount / ${task.repetition}"
+        TaskType.PROJECT -> task.dueDate?.toString() ?: ""
     }
 
     Row (horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -20,7 +20,7 @@ class SecurityConfig(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/login-biometric", "/error").permitAll()
+                auth.requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/login-biometric", "/error", "/graphql").permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)

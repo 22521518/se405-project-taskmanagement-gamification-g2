@@ -1,10 +1,12 @@
 package com.example.se405.android.core.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
@@ -25,56 +27,60 @@ fun verifyTextInputLen(text: String, maxLen: Int): Boolean = text.length <= maxL
 
 @Composable
 fun TextFieldApp(
+    modifier: Modifier = Modifier,
     labelTitle: String,
     value: String,
     placeholder:  @Composable (() -> Unit)? = null,
     onValueChange: (String) -> Unit,
     maxTextLen: Int,
-    modifier: Modifier = Modifier,
     style: TextStyle = AppText.Body2Regular.copy(color = MaterialTheme.colorScheme.secondaryContainer),
     singleLine: Boolean = true,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    visibleMaxText: Boolean = true
 ) {
-    TextField(
-        value = value,
-        onValueChange = { newText: String ->
-            if (verifyTextInputLen(newText, maxTextLen)) {
-                onValueChange(newText)
-            }
-        },
-        placeholder = placeholder,
-        modifier = Modifier.fillMaxWidth().padding(0.dp).then(modifier),
-        singleLine = singleLine,
-        maxLines = maxLines,
-        textStyle = style,
-        visualTransformation = visualTransformation,
-        colors = TextFieldDefaults.colors(
-            focusedContainerColor = Color.Transparent,
-            unfocusedContainerColor = Color.Transparent,
-
-            focusedIndicatorColor = MaterialTheme.colorScheme.outline,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-
-            cursorColor = MaterialTheme.colorScheme.onPrimary,
-        ),
-        label = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_edit_pencil),
-                    contentDescription = "Edit",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-                LabelTextInput("$labelTitle (${value.length} / $maxTextLen)")
-            }
+    Column(modifier = Modifier.fillMaxWidth().then(modifier)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 0.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.icon_edit_pencil),
+                contentDescription = "Edit",
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(20.dp)
+            )
+            val showMax = if (visibleMaxText) "(${value.length} / $maxTextLen)" else ""
+            LabelTextInput("$labelTitle $showMax")
         }
-    )
+        TextField(
+            value = value,
+            onValueChange = { newText: String ->
+                if (verifyTextInputLen(newText, maxTextLen)) {
+                    onValueChange(newText)
+                }
+            },
+            placeholder = { placeholder?.invoke() },
+            modifier = Modifier.fillMaxWidth().padding(0.dp).then(modifier),
+            singleLine = singleLine,
+            maxLines = maxLines,
+            textStyle = style,
+            visualTransformation = visualTransformation,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+
+                focusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+
+                cursorColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+            keyboardOptions = keyboardOptions,
+        )
+    }
 }

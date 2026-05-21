@@ -80,3 +80,23 @@ mutation DeleteTask($uuid: ID!) {
     uuid
   }
 }
+
+mutation MarkTaskDone($input: MarkTaskDoneInput!) {
+  markTaskDone(input: $input) {
+    taskCompletionId
+    taskId
+    userId
+    date
+    completedAt
+  }
+}
+
+mutation MarkTaskWontDo($input: MarkTaskDoneInput!) {
+  markTaskWontDo(input: $input) {
+    taskCompletionId
+    taskId
+    userId
+    date
+    completedAt
+  }
+}

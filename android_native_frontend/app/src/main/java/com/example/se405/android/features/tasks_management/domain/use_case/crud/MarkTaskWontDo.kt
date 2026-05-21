@@ -6,7 +6,6 @@ import com.example.se405.android.features.tasks_management.domain.entity.Task
 import com.example.se405.android.features.tasks_management.domain.entity.TaskCompletionLog
 import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
 import com.example.se405.android.features.tasks_management.domain.repository.TaskCompletionLogRepository
-import com.example.se405.android.features.users_management.domain.entity.User
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -30,9 +29,9 @@ class MarkTaskWontDo(
 ) {
     suspend operator fun invoke(
         task: Task,
-        user: User,
+        userId: Uuid,
         date: LocalDate = LocalDate.now(),
     ): Optional<TaskCompletionLog> {
-        return repo.createCompletionLog(task, user, TaskStatus.FAILED)
+        return repo.createCompletionLog(task, userId, TaskStatus.FAILED)
     }
 }

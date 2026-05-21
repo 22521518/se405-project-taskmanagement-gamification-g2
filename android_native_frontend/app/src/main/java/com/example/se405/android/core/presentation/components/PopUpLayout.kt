@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PopUpLayout(
     modifier: Modifier = Modifier,
-    widthRatio: Float = 0.8f,
+    widthRatio: Float = 1.0f,
     heightRatio: Float? = null,
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(12.dp),
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,

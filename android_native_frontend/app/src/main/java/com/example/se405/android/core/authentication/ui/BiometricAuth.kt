@@ -112,9 +112,9 @@ fun AccountPasswordAuth(
     var showPassword by remember { mutableStateOf(false) }
     ColumnCenter(
         modifier = Modifier.padding(24.dp, 8.dp), vertical = Arrangement.spacedBy(12.dp)) {
-        TextFieldApp("Username", value = username, onValueChange = {username = it}, maxLines = 1, maxTextLen = 20, style = AppText.BodyRegular)
+        TextFieldApp(labelTitle = "Username", value = username, onValueChange = {username = it}, maxLines = 1, maxTextLen = 20, style = AppText.BodyRegular)
         TextFieldApp(
-            "Password",
+            labelTitle = "Password",
             value = password,
             onValueChange = {password = it},
             maxLines = 1,
@@ -154,11 +154,11 @@ fun AccountRegisterAuth(
         modifier = Modifier.padding(24.dp, 8.dp), vertical = Arrangement.spacedBy(12.dp)) {
         Text("Create New Account", style = AppText.HeadSemiBold)
         
-        TextFieldApp("Email", value = email, onValueChange = {email = it}, maxLines = 1, maxTextLen = 40, style = AppText.BodyRegular)
-        TextFieldApp("Username", value = username, onValueChange = {username = it}, maxLines = 1, maxTextLen = 20, style = AppText.BodyRegular)
-        TextFieldApp("Display Name", value = displayName, onValueChange = {displayName = it}, maxLines = 1, maxTextLen = 30, style = AppText.BodyRegular)
+        TextFieldApp(labelTitle = "Email", value = email, onValueChange = {email = it}, maxLines = 1, maxTextLen = 40, style = AppText.BodyRegular)
+        TextFieldApp(labelTitle = "Username", value = username, onValueChange = {username = it}, maxLines = 1, maxTextLen = 20, style = AppText.BodyRegular)
+        TextFieldApp(labelTitle = "Display Name", value = displayName, onValueChange = {displayName = it}, maxLines = 1, maxTextLen = 30, style = AppText.BodyRegular)
         TextFieldApp(
-            "Password",
+            labelTitle = "Password",
             value = password,
             onValueChange = {password = it},
             maxLines = 1,
