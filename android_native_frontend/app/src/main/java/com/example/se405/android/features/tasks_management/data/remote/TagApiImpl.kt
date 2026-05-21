@@ -30,104 +30,180 @@ import kotlin.uuid.Uuid
 
 class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
     override suspend fun getTagsByWorkspace(workspaceId: Uuid): Optional<List<Tag>> {
-        val response = apolloClient.query(GetTagsByWorkspaceQuery(workspaceId.toString())).execute()
-        if (!response.errors.isNullOrEmpty()) {
-            return Optional.empty()
+        android.util.Log.d("TagApiImpl", "getTagsByWorkspace: workspaceId=$workspaceId")
+        return try {
+            val response = apolloClient.query(GetTagsByWorkspaceQuery(workspaceId.toString())).execute()
+            if (response.exception != null) {
+                android.util.Log.e("TagApiImpl", "getTagsByWorkspace HTTP exception: ", response.exception)
+                return Optional.empty()
+            }
+            if (!response.errors.isNullOrEmpty()) {
+                android.util.Log.e("TagApiImpl", "getTagsByWorkspace response errors: ${response.errors}")
+                Optional.empty()
+            } else {
+                val tags = response.data?.getTagsByWorkspace ?: run {
+                    android.util.Log.w("TagApiImpl", "getTagsByWorkspace response data is empty")
+                    return Optional.empty()
+                }
+                android.util.Log.i("TagApiImpl", "getTagsByWorkspace success: returned ${tags.size} tags")
+                Optional.of(tags.map { graphTag ->
+                    graphTag.toDomainTag(
+                        fallbackWorkspaceId = workspaceId,
+                        fallbackCreatedBy = ZERO_UUID,
+                    )
+                })
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("TagApiImpl", "getTagsByWorkspace exception", e)
+            Optional.empty()
         }
-
-        val tags = response.data?.getTagsByWorkspace ?: return Optional.empty()
-        return Optional.of(tags.map { graphTag ->
-            graphTag.toDomainTag(
-                fallbackWorkspaceId = workspaceId,
-                fallbackCreatedBy = ZERO_UUID,
-            )
-        })
     }
 
     override suspend fun getTagsByUser(userId: Uuid): Optional<List<Tag>> {
-        val response = apolloClient.query(GetTagsByUserQuery(userId.toString())).execute()
-        if (!response.errors.isNullOrEmpty()) {
-            return Optional.empty()
+        android.util.Log.d("TagApiImpl", "getTagsByUser: userId=$userId")
+        return try {
+            val response = apolloClient.query(GetTagsByUserQuery(userId.toString())).execute()
+            if (!response.errors.isNullOrEmpty()) {
+                android.util.Log.e("TagApiImpl", "getTagsByUser response errors: ${response.errors}")
+                Optional.empty()
+            } else {
+                val tags = response.data?.getTagsByUser ?: run {
+                    android.util.Log.w("TagApiImpl", "getTagsByUser response data is empty")
+                    return Optional.empty()
+                }
+                android.util.Log.i("TagApiImpl", "getTagsByUser success: returned ${tags.size} tags")
+                Optional.of(tags.map { graphTag ->
+                    graphTag.toDomainTag(
+                        fallbackWorkspaceId = null,
+                        fallbackCreatedBy = userId,
+                    )
+                })
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("TagApiImpl", "getTagsByUser exception", e)
+            Optional.empty()
         }
-
-        val tags = response.data?.getTagsByUser ?: return Optional.empty()
-        return Optional.of(tags.map { graphTag ->
-            graphTag.toDomainTag(
-                fallbackWorkspaceId = null,
-                fallbackCreatedBy = userId,
-            )
-        })
     }
 
     override suspend fun getTagsForTaskOwnership(taskId: Uuid): Optional<List<Tag>> {
-        val response = apolloClient.query(GetTagsForTaskOwnershipQuery(taskId.toString())).execute()
-        if (!response.errors.isNullOrEmpty()) {
-            return Optional.empty()
+        android.util.Log.d("TagApiImpl", "getTagsForTaskOwnership: taskId=$taskId")
+        return try {
+            val response = apolloClient.query(GetTagsForTaskOwnershipQuery(taskId.toString())).execute()
+            if (!response.errors.isNullOrEmpty()) {
+                android.util.Log.e("TagApiImpl", "getTagsForTaskOwnership response errors: ${response.errors}")
+                Optional.empty()
+            } else {
+                val tags = response.data?.getTagsForTaskOwnership ?: run {
+                    android.util.Log.w("TagApiImpl", "getTagsForTaskOwnership response data is empty")
+                    return Optional.empty()
+                }
+                android.util.Log.i("TagApiImpl", "getTagsForTaskOwnership success: returned ${tags.size} tags")
+                Optional.of(tags.map { graphTag ->
+                    graphTag.toDomainTag(
+                        fallbackWorkspaceId = null,
+                        fallbackCreatedBy = ZERO_UUID,
+                    )
+                })
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("TagApiImpl", "getTagsForTaskOwnership exception", e)
+            Optional.empty()
         }
-
-        val tags = response.data?.getTagsForTaskOwnership ?: return Optional.empty()
-        return Optional.of(tags.map { graphTag ->
-            graphTag.toDomainTag(
-                fallbackWorkspaceId = null,
-                fallbackCreatedBy = ZERO_UUID,
-            )
-        })
     }
 
     override suspend fun createTag(tag: Tag): Optional<Tag> {
-        val input = CreateTagInput(
-            name = tag.name,
-            color = tag.color,
-            ownershipType = tag.ownershipType.toGqlTagOwnershipType(),
-            createdBy = tag.createdBy.toString(),
-            workspaceId = GqlOptional.present(tag.workspaceId?.toString()),
-            labelId = GqlOptional.present(tag.label.id.toString()),
-        )
-        val response = apolloClient.mutation(CreateTagMutation(input)).execute()
-        if (!response.errors.isNullOrEmpty()) {
-            return Optional.empty()
-        }
-
-        val created = response.data?.createTag ?: return Optional.empty()
-        return Optional.of(
-            created.toDomainTag(
-                fallbackWorkspaceId = tag.workspaceId,
-                fallbackCreatedBy = tag.createdBy,
+        android.util.Log.d("TagApiImpl", "createTag: name=${tag.name}, color=${tag.color}")
+        return try {
+            val input = CreateTagInput(
+                name = tag.name,
+                color = tag.color,
+                ownershipType = tag.ownershipType.toGqlTagOwnershipType(),
+                createdBy = tag.createdBy.toString(),
+                workspaceId = GqlOptional.present(tag.workspaceId?.toString()),
+                labelId = GqlOptional.present(tag.label.id.toString()),
             )
-        )
+            android.util.Log.d("TagApiImpl", "createTag inputs: $input")
+            val response = apolloClient.mutation(CreateTagMutation(input)).execute()
+            if (response.exception != null) {
+                android.util.Log.e("TagApiImpl", "createTag HTTP exception: ", response.exception)
+                return Optional.empty()
+            }
+            if (!response.errors.isNullOrEmpty()) {
+                android.util.Log.e("TagApiImpl", "createTag response errors: ${response.errors}")
+                return Optional.empty()
+            }
+
+            val created = response.data?.createTag ?: run {
+                android.util.Log.e("TagApiImpl", "createTag response data is empty")
+                return Optional.empty()
+            }
+            android.util.Log.i("TagApiImpl", "createTag success: uuid=${created.uuid}")
+            Optional.of(
+                created.toDomainTag(
+                    fallbackWorkspaceId = tag.workspaceId,
+                    fallbackCreatedBy = tag.createdBy,
+                )
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("TagApiImpl", "createTag exception", e)
+            Optional.empty()
+        }
     }
 
     override suspend fun updateTag(tag: Tag): Optional<Tag> {
-        val input = UpdateTagInput(
-            uuid = tag.uuid.toString(),
-            name = GqlOptional.present(tag.name),
-            color = GqlOptional.present(tag.color),
-            ownershipType = GqlOptional.present(tag.ownershipType.toGqlTagOwnershipType()),
-            workspaceId = GqlOptional.present(tag.workspaceId?.toString()),
-            labelId = GqlOptional.present(tag.label.id.toString()),
-        )
-        val response = apolloClient.mutation(UpdateTagMutation(input)).execute()
-        if (!response.errors.isNullOrEmpty()) {
-            return Optional.empty()
-        }
-
-        val updated = response.data?.updateTag ?: return Optional.empty()
-        return Optional.of(
-            updated.toDomainTag(
-                fallbackWorkspaceId = tag.workspaceId,
-                fallbackCreatedBy = tag.createdBy,
+        android.util.Log.d("TagApiImpl", "updateTag: uuid=${tag.uuid}, name=${tag.name}")
+        return try {
+            val input = UpdateTagInput(
+                uuid = tag.uuid.toString(),
+                name = GqlOptional.present(tag.name),
+                color = GqlOptional.present(tag.color),
+                ownershipType = GqlOptional.present(tag.ownershipType.toGqlTagOwnershipType()),
+                workspaceId = GqlOptional.present(tag.workspaceId?.toString()),
+                labelId = GqlOptional.present(tag.label.id.toString()),
             )
-        )
+            android.util.Log.d("TagApiImpl", "updateTag inputs: $input")
+            val response = apolloClient.mutation(UpdateTagMutation(input)).execute()
+            if (!response.errors.isNullOrEmpty()) {
+                android.util.Log.e("TagApiImpl", "updateTag response errors: ${response.errors}")
+                return Optional.empty()
+            }
+
+            val updated = response.data?.updateTag ?: run {
+                android.util.Log.e("TagApiImpl", "updateTag response data is empty")
+                return Optional.empty()
+            }
+            android.util.Log.i("TagApiImpl", "updateTag success: uuid=${updated.uuid}")
+            Optional.of(
+                updated.toDomainTag(
+                    fallbackWorkspaceId = tag.workspaceId,
+                    fallbackCreatedBy = tag.createdBy,
+                )
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("TagApiImpl", "updateTag exception", e)
+            Optional.empty()
+        }
     }
 
     override suspend fun deleteTag(tagId: Uuid): Optional<Uuid> {
-        val response = apolloClient.mutation(DeleteTagMutation(tagId.toString())).execute()
-        if (!response.errors.isNullOrEmpty()) {
-            return Optional.empty()
-        }
+        android.util.Log.d("TagApiImpl", "deleteTag: tagId=$tagId")
+        return try {
+            val response = apolloClient.mutation(DeleteTagMutation(tagId.toString())).execute()
+            if (!response.errors.isNullOrEmpty()) {
+                android.util.Log.e("TagApiImpl", "deleteTag response errors: ${response.errors}")
+                return Optional.empty()
+            }
 
-        val deletedUuid = response.data?.deleteTag?.uuid ?: return Optional.empty()
-        return Optional.of(Uuid.parse(deletedUuid))
+            val deletedUuid = response.data?.deleteTag?.uuid ?: run {
+                android.util.Log.e("TagApiImpl", "deleteTag response data is empty")
+                return Optional.empty()
+            }
+            android.util.Log.i("TagApiImpl", "deleteTag success: deletedUuid=$deletedUuid")
+            Optional.of(Uuid.parse(deletedUuid))
+        } catch (e: Exception) {
+            android.util.Log.e("TagApiImpl", "deleteTag exception", e)
+            Optional.empty()
+        }
     }
 
     private fun GetTagsByWorkspaceQuery.GetTagsByWorkspace.toDomainTag(

@@ -18,14 +18,26 @@ class SecurityConfig(
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf { it.disable() }
-            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .sessionManagement {
+                it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            }
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/login-biometric", "/error").permitAll()
-                auth.requestMatchers("/graphql", "/graphql/**", "/graphiql").permitAll()
+                auth.requestMatchers(
+                    "/api/auth/login",
+                    "/api/auth/register",
+                    "/api/auth/login-biometric",
+                    "/error",
+                    "/graphql",
+                    "/graphql/**",
+                    "/graphiql"
+                ).permitAll()
                     .anyRequest().authenticated()
             }
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
-        
+            .addFilterBefore(
+                jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter::class.java
+            )
+
         return http.build()
     }
 }

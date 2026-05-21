@@ -81,6 +81,7 @@ class TaskController(
             projectId = input.projectId,
             startDate = input.startDate?.let { LocalDate.parse(it) },
             dueDate = input.dueDate?.let { LocalDate.parse(it) },
+            repetition = input.repetition,
             tags = tags,
         )
         return taskRepository.save(task)
@@ -104,6 +105,7 @@ class TaskController(
             projectId = input.projectId ?: existing.projectId,
             startDate = input.startDate?.let { LocalDate.parse(it) } ?: existing.startDate,
             dueDate = input.dueDate?.let { LocalDate.parse(it) } ?: existing.dueDate,
+            repetition = input.repetition ?: existing.repetition,
             tags = updatedTags,
         )
         return taskRepository.save(updated)
@@ -147,6 +149,7 @@ data class CreateTaskInput(
     val type: String,
     val status: String,
     val priority: String,
+    val repetition: Int? = null,
     val creatorId: UUID? = null,
     val projectId: UUID? = null,
     /** ISO date string (yyyy-MM-dd). Only for PROJECT type (projectId != null). */
@@ -162,6 +165,7 @@ data class UpdateTaskInput(
     val type: String? = null,
     val status: String? = null,
     val priority: String? = null,
+    val repetition: Int? = null,
     val projectId: UUID? = null,
     val startDate: String? = null,
     val dueDate: String? = null,

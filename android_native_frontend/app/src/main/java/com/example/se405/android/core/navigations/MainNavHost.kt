@@ -1,20 +1,35 @@
 package com.example.se405.android.core.navigations
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+<<<<<<< HEAD
 import androidx.navigation.toRoute
+=======
+import com.example.se405.android.core.authentication.data.AuthPreferences
+>>>>>>> origin/dev
 import com.example.se405.android.core.authentication.ui.AuthSettingsScreen
 import com.example.se405.android.core.authentication.ui.BiometricAuthScreen
 import com.example.se405.android.core.authentication.ui.DeviceAuthSuccessScreen
 import com.example.se405.android.features.tasks_management.presentation.screen.TaskManagementScreen
+<<<<<<< HEAD
 import com.example.se405.android.core.navigations.TaskChatNav
 import com.example.se405.android.features.chat_management.presentation.screen.ConversationListScreen
 import com.example.se405.android.features.chat_management.presentation.screen.NewMessageScreen
 import com.example.se405.android.features.chat_management.presentation.screen.SearchScreen
 import com.example.se405.android.features.chat_management.presentation.screen.TaskChatScreen
+=======
+import com.example.se405.android.navigation.AuthSettingsNav
+import com.example.se405.android.navigation.BiometricAuthNav
+import com.example.se405.android.navigation.DeviceAuthSuccessNav
+import com.example.se405.android.navigation.TaskManagementNav
+import org.koin.compose.koinInject
+>>>>>>> origin/dev
 
 /**
  * Defines navigation route models for the application using
@@ -31,9 +46,18 @@ fun MainNavHost(
     modifier: Modifier = Modifier,
 
 ) {
+    val authPreferences: AuthPreferences = koinInject()
+    val authToken by authPreferences.authToken.collectAsState(initial = null)
+    val isAuthenticated = !authToken.isNullOrBlank()
+    val startDestination = if (isAuthenticated) TaskManagementNav else BiometricAuthNav
+
     NavHost(
         navController = navController,
+<<<<<<< HEAD
         startDestination = BiometricAuthNav,
+=======
+        startDestination = startDestination,
+>>>>>>> origin/dev
         modifier = modifier,
     ) {
         composable<BiometricAuthNav> {
@@ -62,6 +86,7 @@ fun MainNavHost(
                 }
             )
         }
+<<<<<<< HEAD
 
         composable<ConversationListNav> {
             ConversationListScreen(
@@ -132,11 +157,41 @@ fun MainNavHost(
                 taskName = args.taskName,
                 onBackClick = {
                     navController.popBackStack()
+=======
+        
+        composable<TaskManagementNav> {
+            if (!isAuthenticated) {
+                LaunchedEffect(Unit) {
+                    navController.navigate(BiometricAuthNav) {
+                        popUpTo(TaskManagementNav) { inclusive = true }
+                    }
+                }
+                return@composable
+            }
+
+            TaskManagementScreen(
+                onSettingsClick = {
+                    navController.navigate(AuthSettingsNav)
+>>>>>>> origin/dev
                 }
             )
         }
         composable<AuthSettingsNav> {
+            if (!isAuthenticated) {
+                LaunchedEffect(Unit) {
+                    navController.navigate(BiometricAuthNav) {
+                        popUpTo(AuthSettingsNav) { inclusive = true }
+                    }
+                }
+                return@composable
+            }
+
             AuthSettingsScreen(
+                onGoHome = {
+                    navController.navigate(TaskManagementNav) {
+                        popUpTo(AuthSettingsNav) { inclusive = true }
+                    }
+                },
                 onLogout = {
                     navController.navigate(BiometricAuthNav) {
                         popUpTo(TaskManagementNav) { inclusive = true }

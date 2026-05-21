@@ -8,8 +8,12 @@ constructor(
     val uuid: Uuid,
     val email: String,
     val username: String,
+<<<<<<< HEAD
+=======
+    val passwordHash: String?,
+>>>>>>> origin/dev
     val displayName: String,
-    val avatarUrl: String,
+    val avatarUrl: String?,
 
     val passwordHash: String = "",
     val createdAt: String = "",
@@ -25,6 +29,7 @@ constructor(
             "Username can contain only letters, numbers, underscore"
         }
 
+<<<<<<< HEAD
         require(displayName.isNotBlank()) { "Display name must not be blank" }
         require(displayName.length in 3..50) { "Display name must be 3..50 characters" }
 
@@ -32,6 +37,19 @@ constructor(
         require(avatarUrl.isBlank() || URL_REGEX.matches(avatarUrl)) {
             "Avatar URL must be valid"
         }
+=======
+//        require(passwordHash.isNotBlank()) { "Password hash must not be blank" }
+//        require(password_hash.length >= 60) { "Invalid password hash length" }
+//        // ví dụ bcrypt thường ~60 chars
+
+        require(displayName.isNotBlank()) { "Display name must not be blank" }
+        require(displayName.length in 3..50) { "Display name must be 3..50 characters" }
+
+        if (avatarUrl != null)
+           require(avatarUrl.isNotBlank() && URL_REGEX.matches(avatarUrl)) {
+                "Avatar URL must be valid"
+            }
+>>>>>>> origin/dev
 
         // Đã xóa check passwordHash.isNotBlank()
         // Đã xóa check updatedAt.isBefore() vì đây là String chứ không phải Date

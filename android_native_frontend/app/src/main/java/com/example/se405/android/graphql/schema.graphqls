@@ -7,19 +7,12 @@ enum TaskStatus     { TODO IN_PROGRESS DONE CANCELLED }
 enum TaskPriority   { LOW MEDIUM HIGH }
 enum TagOwnershipType { WORKSPACE PERSONAL }
 enum WorkspaceRole  { OWNER MEMBER }
-enum ConversationType {
-    DIRECT
-    GROUP
-    TASK
-}
 
 # ═══════════════════════════════════════════════════════════════
 # Root operations
 # ═══════════════════════════════════════════════════════════════
 
 type Query {
-    #User
-    getAllUsers: [User!]!
     # Task
     getTasks(userId: ID!): [Task!]!
     getTaskCompletionLogs(taskId: ID!): [TaskCompletionLog!]!
@@ -34,13 +27,6 @@ type Query {
     getWorkspace(uuid: ID!): Workspace
     getProjectsByWorkspace(workspaceId: ID!): [Project!]!
     getMembersByWorkspace(workspaceId: ID!): [WorkspaceMember!]!
-
-    # Chat / Message
-    # Lấy danh sách các cuộc trò chuyện của người dùng hiện tại (Để hiển thị màn hình Inbox)
-    getMyConversations: [Conversation!]!
-    # Lấy tin nhắn theo phòng chat thay vì theo Task
-    getMessagesByConversation(conversationId: ID!): [Message!]!
-    getMessagesByTask(taskId: ID!): [Message!]!
 }
 
 type Mutation {
@@ -63,12 +49,6 @@ type Mutation {
     deleteWorkspace(uuid: ID!): Workspace!
     createProject(input: CreateProjectInput!): Project!
     deleteProject(uuid: ID!): Project!
-
-    # Chat / Message
-    # Tạo phòng chat mới (Đơn hoặc Nhóm)
-    createConversation(type: ConversationType!, name: String, participantIds: [ID!]!): Conversation!
-    # Gửi tin nhắn vào phòng chat
-    sendMessage(conversationId: ID!, content: String!): Message!
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -160,25 +140,6 @@ type User {
     updatedAt: String!
 }
 
-type Message {
-    uuid: ID!
-    content: String!
-    createdAt: String!
-    sender: User!
-    conversationId: ID!
-}
-
-type Conversation {
-    uuid: ID!
-    type: ConversationType!
-    name: String
-    taskId: ID
-    participants: [User!]!
-}
-
-type Subscription {
-    messageAdded(conversationId: ID!): Message!
-}
 # ═══════════════════════════════════════════════════════════════
 # Input types
 # ═══════════════════════════════════════════════════════════════

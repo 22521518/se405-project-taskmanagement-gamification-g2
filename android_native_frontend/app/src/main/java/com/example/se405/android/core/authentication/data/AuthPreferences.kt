@@ -21,6 +21,7 @@ class AuthPreferences(private val context: Context) {
     }
 
     val authToken: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
+    val userId: Flow<String?> = context.dataStore.data.map { it[USER_ID_KEY] }
     val isBiometricEnabled: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_ENABLED_KEY] ?: false }
     val username: Flow<String?> = context.dataStore.data.map { it[USERNAME_KEY] }
     val displayName: Flow<String?> = context.dataStore.data.map { it[DISPLAY_NAME_KEY] }

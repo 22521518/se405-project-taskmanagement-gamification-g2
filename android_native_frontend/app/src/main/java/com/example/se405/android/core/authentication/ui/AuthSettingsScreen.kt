@@ -27,6 +27,7 @@ import org.koin.androidx.compose.koinViewModel
 fun AuthSettingsScreen(
     onBackClick: () -> Unit,
     onLogout: () -> Unit,
+    onGoHome: () -> Unit,
     viewModel: BiometricViewmodel = koinViewModel()
 ) {
     val context = LocalContext.current
@@ -173,5 +174,39 @@ fun AuthSettingsScreen(
                 )
             }
         }
+<<<<<<< HEAD
+=======
+
+        if (viewModel.error != null) {
+            Text(
+                text = viewModel.error ?: "",
+                color = MaterialTheme.colorScheme.error,
+                style = AppText.CaptionRegular,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+        ButtonApp(
+            onClick = onGoHome,
+            type = ButtonType.FILLED,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Home", style = AppText.BodyBold)
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        ButtonApp(
+            onClick = {
+                viewModel.logout()
+                onLogout()
+            },
+            type = ButtonType.OUTLINED,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Logout", style = AppText.BodyBold)
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+>>>>>>> origin/dev
     }
 }

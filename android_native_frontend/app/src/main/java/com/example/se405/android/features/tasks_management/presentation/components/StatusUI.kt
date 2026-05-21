@@ -49,9 +49,9 @@ fun extractTaskStatusDescription(task: Task): TaskStatusDescription<String> {
     }
 
     val taskPriorityUI: StatusUI<String> = when (task.priority) {
-        TaskPriority.HIGH -> StatusUI("Lv: High", Orange40)
-        TaskPriority.MEDIUM -> StatusUI("Lv: Medium", Gold40)
-        TaskPriority.LOW -> StatusUI("Lv: Low", Green40)
+        TaskPriority.HIGH -> StatusUI("High", Orange40)
+        TaskPriority.MEDIUM -> StatusUI("Medium", Gold40)
+        TaskPriority.LOW -> StatusUI("Low", Green40)
     }
     return TaskStatusDescription(statusScript = statusScriptUI, taskPriority = taskPriorityUI)
 }

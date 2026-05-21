@@ -57,8 +57,12 @@ fun TaskDetailPopUp(
 
     PopUpLayout(
         modifier = Modifier.padding(horizontal = 20.dp),
+<<<<<<< HEAD
         widthRatio = 0.85f, // Mở rộng nhẹ để không gian thoáng hơn
         verticalArrangement = Arrangement.spacedBy(16.dp), // Tăng khoảng cách giữa các phần
+=======
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+>>>>>>> origin/dev
     ) {
         // --- HEADER ---
         Row(
@@ -88,7 +92,41 @@ fun TaskDetailPopUp(
                 )
             }
 
+<<<<<<< HEAD
             // Cụm Nút bấm góc phải
+=======
+//            ButtonCTAText(
+//                onClick = onClose,
+//                contentPadding = PaddingValues(2.dp),
+//            ) {
+//                Icon(
+//                    painter = painterResource(R.drawable.icon_cross_thin),
+//                    contentDescription = "Close",
+//                    tint = Color.Black,
+//                    modifier = Modifier.size(16.dp),
+//                )
+//            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            BulletTaskText(taskStatusDescription.statusScript, AppText.BodySemiBold)
+            TaskStatus(task)
+        }
+        BulletTaskText(
+            taskStatusDescription.taskPriority,
+            AppText.BodySemiBold,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LabelTextInput(text = "Tags:")
+>>>>>>> origin/dev
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -256,4 +294,40 @@ private fun TaskDetailCTASection(
             }
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+
+
+/**
+ * Preview for TaskDetailPopUp.
+ *
+ * Usage guide:
+ * - In production, pass real callbacks from Screen container.
+ * - onEditClick should trigger Screen-level popup/navigation change.
+ * - onDone/onWontDo/onDelete should dispatch events to ViewModel.
+ */
+@Preview(showBackground = true, backgroundColor = 0x00ECF7FB)
+@Composable
+fun TaskDetailPopUpPreview() {
+    Android_Theme {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            TaskDetailPopUp(
+                task = PreviewDomainEntityData.tasks[0],
+                onEditClick = {},
+                onClose = {},
+                onDone = {},
+                onWontDo = {},
+                onDelete = {},
+            )
+        }
+    }
+}
+
+
+>>>>>>> origin/dev
