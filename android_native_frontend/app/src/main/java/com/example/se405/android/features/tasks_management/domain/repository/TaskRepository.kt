@@ -9,7 +9,7 @@ import kotlin.uuid.Uuid
 
 interface TaskRepository {
     suspend fun getTask(userId: Uuid): List<Task>
-    suspend fun createTask(task: Task): Optional<Task>
+    suspend fun createTask(task: Task, creatorId: Uuid? = null): Optional<Task>
     suspend fun updateTask(task: Task): Optional<Task>
     suspend fun deleteTask(task: Task): Optional<Uuid>
 }

@@ -8,7 +8,9 @@ import java.security.*
 class CryptoManager {
 
     companion object {
-        private const val KEY_ALIAS = "biometric_key"
+        private const val KEY_ALIAS = "biometric_key" // Unique alias for our key pair in the Android Keystore
+                                                    // This demo only store one key pair (one device, one user)
+                                                    // In a production app, consider using a more specific alias, possibly including user identifiers
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
     }
 
@@ -50,7 +52,7 @@ class CryptoManager {
             .build()
         
         keyPairGenerator.initialize(spec)
-        keyPairGenerator.generateKeyPair()
+        keyPairGenerator.generateKeyPair() // Create keys in TEE or Secure Element
     }
 
     fun getPublicKeyBase64(): String {

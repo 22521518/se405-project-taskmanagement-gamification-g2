@@ -52,7 +52,6 @@ fun TaskDetailPopUp(
 
     PopUpLayout(
         modifier = Modifier.padding(horizontal = 20.dp),
-        widthRatio = 0.8f,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
@@ -76,17 +75,17 @@ fun TaskDetailPopUp(
                 )
             }
 
-            ButtonCTAText(
-                onClick = onClose,
-                contentPadding = PaddingValues(2.dp),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.icon_cross_thin),
-                    contentDescription = "Close",
-                    tint = Color.Black,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
+//            ButtonCTAText(
+//                onClick = onClose,
+//                contentPadding = PaddingValues(2.dp),
+//            ) {
+//                Icon(
+//                    painter = painterResource(R.drawable.icon_cross_thin),
+//                    contentDescription = "Close",
+//                    tint = Color.Black,
+//                    modifier = Modifier.size(16.dp),
+//                )
+//            }
         }
 
         Row(
@@ -188,6 +187,7 @@ private fun TaskDetailCTASection(
     }
 }
 
+
 /**
  * Preview for TaskDetailPopUp.
  *
@@ -216,3 +216,5 @@ fun TaskDetailPopUpPreview() {
         }
     }
 }
+
+

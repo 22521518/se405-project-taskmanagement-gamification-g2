@@ -17,11 +17,45 @@ import io.ktor.serialization.kotlinx.json.*
  * - Shared Preferences or Local Storage managers.
  * - Repositories that act as a single source of truth.
  */
+import okhttp3.OkHttpClient
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.firstOrNull
+import com.example.se405.android.core.authentication.data.AuthPreferences
+
+import com.apollographql.apollo.network.okHttpClient
+
+object NetworkConfig {
+//    const val BASE_IP = "192.168.1.227"
+    const val BASE_IP = "192.168.1.42"
+    const val GRAPHQL_URL = "http://$BASE_IP:8080/graphql"
+    const val AUTH_URL = "http://$BASE_IP:8080/api/auth"
+}
+
 val appModule = module {
     single {
+        val authPreferences = get<AuthPreferences>()
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val token = runBlocking {
+                    authPreferences.authToken.firstOrNull()
+                }
+                val requestBuilder = chain.request().newBuilder()
+                if (!token.isNullOrBlank()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+                val response = chain.proceed(requestBuilder.build())
+                if (response.code == 401 || response.code == 403) {
+                    runBlocking {
+                        authPreferences.clearAuth()
+                    }
+                }
+                response
+            }
+            .build()
+
         com.apollographql.apollo.ApolloClient.Builder()
-            .serverUrl("http://localhost:8080/graphql")
-//            .serverUrl("http://10.0.2.2:8080/graphql") // if using android emulator, uncommenting this line
+            .serverUrl(NetworkConfig.GRAPHQL_URL)
+            .okHttpClient(okHttpClient)
             .build()
     }
 }
