@@ -16,6 +16,7 @@ import com.example.se405.android.core.authentication.managers.AccountBiometricMa
 import com.example.se405.android.core.authentication.managers.CryptoManager
 import com.example.se405.android.core.authentication.managers.DeviceAuthManager
 import android.util.Log
+import com.example.se405.android.core.authentication.data.RegisterRequest
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -27,7 +28,7 @@ class BiometricViewmodel(
     private val cryptoManager: CryptoManager,
     private val deviceAuthManager: DeviceAuthManager,
     private val accountBiometricManager: AccountBiometricManager,
-    private val application: android.app.Application
+    application: android.app.Application
 ): ViewModel() {
 
     companion object {
@@ -153,7 +154,14 @@ class BiometricViewmodel(
 
         viewModelScope.launch {
             Log.d(TAG, "[register] Attempting registration for user: $username, email: $email, deviceId: $deviceId")
-            val result = repository.register(com.example.se405.android.core.authentication.data.RegisterRequest(email, username, password, displayName))
+            val result = repository.register(
+                RegisterRequest(
+                    email,
+                    username,
+                    password,
+                    displayName
+                )
+            )
             result.onSuccess { response ->
                 Log.i(TAG, "[register] Registration successful. userId=${response.userId}")
                 prefs.saveAuth(response.token, response.userId, response.username, response.displayName, response.biometricEnabled)
@@ -242,7 +250,7 @@ class BiometricViewmodel(
             title = "Enable Biometric",
             subTitle = "Confirm your identity",
             description = "Register this device for biometric login",
-            onSuccess = { signatureBase64 ->
+            onSuccess = { _ ->
                 viewModelScope.launch {
                     Log.d(TAG, "[enableBiometric] Biometric confirmed. Regenerating key pair and sending public key to backend. deviceId=$deviceId")
                     // Delete old keys first to ensure a fresh key pair

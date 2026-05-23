@@ -21,7 +21,7 @@ constructor(
         require(email.length <= 254) { "Email too long" }
         require(EMAIL_REGEX.matches(email)) { "Invalid email format" }
 
-        require(username.length in 3..20) { "Username must be 3..20 characters" }
+        require(username.length in 3..50) { "Username must be 3..50 characters" }
         require(USERNAME_REGEX.matches(username)) {
             "Username can contain only letters, numbers, underscore"
         }

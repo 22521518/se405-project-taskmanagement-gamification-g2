@@ -5,6 +5,7 @@ package com.example.se405.android.features.tasks_management.data.remote
 import com.example.se405.android.features.tasks_management.domain.entity.Task
 import com.example.se405.android.features.tasks_management.domain.entity.Tag
 import com.example.se405.android.features.tasks_management.domain.entity.TagOwnershipType
+import com.example.se405.android.features.users_management.domain.entity.User
 import com.example.se405.android.features.tasks_management.domain.entity.TaskCompletionLog
 import com.example.se405.android.features.tasks_management.domain.entity.TaskPriority
 import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
@@ -90,7 +91,17 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
                     type = created.type.toDomainTaskType(),
                     status = created.status.toDomainTaskStatus(),
                     priority = created.priority.toDomainTaskPriority(),
-                    creator = null,
+                    creator = created.creator?.let {
+                        toDomainUser(
+                            uuid = it.uuid,
+                            email = it.email,
+                            username = it.username,
+                            displayName = it.displayName,
+                            avatarUrl = it.avatarUrl,
+                            createdAt = it.createdAt,
+                            updatedAt = it.updatedAt
+                        )
+                    },
                     tags = task.tags,
                     taskCompletionLog = emptyList(),
                     startDate = created.startDate.toLocalDateOrNull(),
@@ -252,7 +263,17 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
             type = task.type.toDomainTaskType(),
             status = task.status.toDomainTaskStatus(),
             priority = task.priority.toDomainTaskPriority(),
-            creator = null,
+            creator = task.creator?.let {
+                toDomainUser(
+                    uuid = it.uuid,
+                    email = it.email,
+                    username = it.username,
+                    displayName = it.displayName,
+                    avatarUrl = it.avatarUrl,
+                    createdAt = it.createdAt,
+                    updatedAt = it.updatedAt
+                )
+            },
             tags = task.tags.map { it.toDomainTag(parentTaskUuid = task.uuid) },
             taskCompletionLog = task.taskCompletionLogs.map { it.toDomainTaskCompletionLog() },
             startDate = task.startDate.toLocalDateOrNull(),
@@ -352,6 +373,32 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
     private fun String?.toUuidOrNull(): Uuid? {
         if (this.isNullOrBlank()) return null
         return runCatching { Uuid.parse(this) }.getOrNull()
+    }
+
+    private fun String?.toLocalDateTimeOrNow(): LocalDateTime {
+        if (this.isNullOrBlank()) return LocalDateTime.now()
+        return runCatching { LocalDateTime.parse(this) }.getOrDefault(LocalDateTime.now())
+    }
+
+    private fun toDomainUser(
+        uuid: String,
+        email: String,
+        username: String,
+        displayName: String,
+        avatarUrl: String?,
+        createdAt: String,
+        updatedAt: String
+    ): User {
+        return User(
+            uuid = Uuid.parse(uuid),
+            email = email,
+            username = username,
+            passwordHash = null,
+            displayName = displayName,
+            avatarUrl = avatarUrl,
+            createdAt = createdAt.toLocalDateTimeOrNow(),
+            updatedAt = updatedAt.toLocalDateTimeOrNow()
+        )
     }
 
     private companion object {

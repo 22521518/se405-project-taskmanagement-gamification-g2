@@ -10,7 +10,18 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "auth_prefs")
 
-class AuthPreferences(private val context: Context) {
+interface AuthPreferences {
+    val authToken: Flow<String?>
+    val isBiometricEnabled: Flow<Boolean>
+    val userId: Flow<String?>
+    val username: Flow<String?>
+    val displayName: Flow<String?>
+    suspend fun clearAuth()
+    suspend fun saveAuth(token: String, userId: String, username: String, displayName: String, biometricEnabled: Boolean)
+    suspend fun setBiometricEnabled(enabled: Boolean)
+}
+
+class AuthPreferencesImpl(private val context: Context) : AuthPreferences{
 
     companion object {
         val TOKEN_KEY = stringPreferencesKey("auth_token")
@@ -20,13 +31,13 @@ class AuthPreferences(private val context: Context) {
         val USER_ID_KEY = stringPreferencesKey("user_id")
     }
 
-    val authToken: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
-    val userId: Flow<String?> = context.dataStore.data.map { it[USER_ID_KEY] }
-    val isBiometricEnabled: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_ENABLED_KEY] ?: false }
-    val username: Flow<String?> = context.dataStore.data.map { it[USERNAME_KEY] }
-    val displayName: Flow<String?> = context.dataStore.data.map { it[DISPLAY_NAME_KEY] }
+    override val authToken: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
+    override val isBiometricEnabled: Flow<Boolean> = context.dataStore.data.map { it[BIOMETRIC_ENABLED_KEY] ?: false }
+    override val userId: Flow<String?> = context.dataStore.data.map { it[USER_ID_KEY] }
+    override val username: Flow<String?> = context.dataStore.data.map { it[USERNAME_KEY] }
+    override val displayName: Flow<String?> = context.dataStore.data.map { it[DISPLAY_NAME_KEY] }
 
-    suspend fun saveAuth(token: String, userId: String, username: String, displayName: String, biometricEnabled: Boolean) {
+    override suspend fun saveAuth(token: String, userId: String, username: String, displayName: String, biometricEnabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[TOKEN_KEY] = token
             prefs[USER_ID_KEY] = userId
@@ -36,13 +47,13 @@ class AuthPreferences(private val context: Context) {
         }
     }
 
-    suspend fun setBiometricEnabled(enabled: Boolean) {
+    override suspend fun setBiometricEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[BIOMETRIC_ENABLED_KEY] = enabled
         }
     }
 
-    suspend fun clearAuth() {
+    override suspend fun clearAuth() {
         context.dataStore.edit { prefs ->
             prefs.remove(TOKEN_KEY)
             prefs.remove(USER_ID_KEY)
