@@ -8,6 +8,15 @@ query GetTagsByWorkspace($workspaceId: ID!) {
     createdBy
     createdAt
     updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
     tasks {
       uuid
       title
@@ -30,6 +39,15 @@ query GetTagsByUser($userId: ID!) {
     createdBy
     createdAt
     updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
     tasks {
       uuid
       title
@@ -52,6 +70,15 @@ query GetTagsForTaskOwnership($taskId: ID!) {
     createdBy
     createdAt
     updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
     tasks {
       uuid
       title
@@ -74,6 +101,15 @@ mutation CreateTag($input: CreateTagInput!) {
     createdBy
     createdAt
     updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
   }
 }
 
@@ -87,6 +123,15 @@ mutation UpdateTag($input: UpdateTagInput!) {
     createdBy
     createdAt
     updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
   }
 }
 

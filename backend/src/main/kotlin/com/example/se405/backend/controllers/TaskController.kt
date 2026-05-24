@@ -67,6 +67,10 @@ class TaskController(
 
     @MutationMapping
     fun createTask(@Argument input: CreateTaskInput): com.example.se405.backend.database.model.TaskEntity {
+        val username = org.springframework.security.core.context.SecurityContextHolder.getContext().authentication?.principal as? String
+        val creatorUser = username?.let { userRepository.findByUsername(it) }
+        val finalCreatorId = creatorUser?.uuid ?: input.creatorId
+
         val tags = input.tagIds
             ?.mapNotNull { tagRepository.findById(it).orElse(null) }
             ?.toMutableList() ?: mutableListOf()
@@ -77,7 +81,7 @@ class TaskController(
             type = input.type,
             status = input.status,
             priority = input.priority,
-            creatorId = input.creatorId,
+            creatorId = finalCreatorId,
             projectId = input.projectId,
             startDate = input.startDate?.let { LocalDate.parse(it) },
             dueDate = input.dueDate?.let { LocalDate.parse(it) },

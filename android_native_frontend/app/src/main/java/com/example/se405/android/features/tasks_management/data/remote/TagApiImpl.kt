@@ -11,6 +11,7 @@ import com.example.se405.android.features.tasks_management.domain.entity.TaskSta
 import com.example.se405.android.features.tasks_management.domain.entity.TaskType
 import com.example.se405.android.features.tasks_management.domain.entity.TagOwnershipType
 import com.example.se405.android.features.tasks_management.domain.entity.Tag
+import com.example.se405.android.features.users_management.domain.entity.User
 import com.example.se405.android.graphql.CreateTagMutation
 import com.example.se405.android.graphql.DeleteTagMutation
 import com.example.se405.android.graphql.GetTagsByUserQuery
@@ -125,7 +126,7 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
             android.util.Log.d("TagApiImpl", "createTag inputs: $input")
             val response = apolloClient.mutation(CreateTagMutation(input)).execute()
             if (response.exception != null) {
-                android.util.Log.e("TagApiImpl", "createTag HTTP exception: ", response.exception)
+                android.util.Log.e("TagApiImpl", "createTag HTTP exception", response.exception)
                 return Optional.empty()
             }
             if (!response.errors.isNullOrEmpty()) {
@@ -218,6 +219,9 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         ownershipType = ownershipType,
         workspaceId = workspaceId,
         createdBy = null,
+        creator = creator?.let {
+            toDomainUser(it.uuid, it.email, it.username, it.displayName, it.avatarUrl, it.createdAt, it.updatedAt)
+        },
         createdAt = null,
         updatedAt = null,
         taskIds = mappedTasks.map { it.uuid },
@@ -239,6 +243,9 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         ownershipType = ownershipType,
         workspaceId = workspaceId,
         createdBy = createdBy,
+        creator = creator?.let {
+            toDomainUser(it.uuid, it.email, it.username, it.displayName, it.avatarUrl, it.createdAt, it.updatedAt)
+        },
         createdAt = createdAt,
         updatedAt = updatedAt,
         taskIds = mappedTasks.map { it.uuid },
@@ -260,6 +267,9 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         ownershipType = ownershipType,
         workspaceId = workspaceId,
         createdBy = createdBy,
+        creator = creator?.let {
+            toDomainUser(it.uuid, it.email, it.username, it.displayName, it.avatarUrl, it.createdAt, it.updatedAt)
+        },
         createdAt = createdAt,
         updatedAt = updatedAt,
         taskIds = mappedTasks.map { it.uuid },
@@ -279,6 +289,9 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         ownershipType = ownershipType,
         workspaceId = null,
         createdBy = null,
+        creator = creator?.let {
+            toDomainUser(it.uuid, it.email, it.username, it.displayName, it.avatarUrl, it.createdAt, it.updatedAt)
+        },
         createdAt = null,
         updatedAt = null,
         fallbackWorkspaceId = fallbackWorkspaceId,
@@ -295,6 +308,9 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         ownershipType = ownershipType,
         workspaceId = null,
         createdBy = null,
+        creator = creator?.let {
+            toDomainUser(it.uuid, it.email, it.username, it.displayName, it.avatarUrl, it.createdAt, it.updatedAt)
+        },
         createdAt = null,
         updatedAt = null,
         fallbackWorkspaceId = fallbackWorkspaceId,
@@ -308,6 +324,7 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         ownershipType: GqlTagOwnershipType,
         workspaceId: String?,
         createdBy: String?,
+        creator: User?,
         createdAt: String?,
         updatedAt: String?,
         taskIds: List<Uuid> = emptyList(),
@@ -331,7 +348,7 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
             label = BuiltinLabels.first(),
             createdAt = createdAt.toLocalDateTimeOrNow(),
             updatedAt = updatedAt.toLocalDateTimeOrNow(),
-            creator = null,
+            creator = creator,
             tasks = tasks,
         )
     }
@@ -436,6 +453,27 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
     private fun String?.safeUuidOrNull(): Uuid? {
         if (this.isNullOrBlank()) return null
         return runCatching { Uuid.parse(this) }.getOrNull()
+    }
+
+    private fun toDomainUser(
+        uuid: String,
+        email: String,
+        username: String,
+        displayName: String,
+        avatarUrl: String?,
+        createdAt: String,
+        updatedAt: String
+    ): User {
+        return User(
+            uuid = Uuid.parse(uuid),
+            email = email,
+            username = username,
+            passwordHash = null,
+            displayName = displayName,
+            avatarUrl = avatarUrl,
+            createdAt = createdAt.toLocalDateTimeOrNow(),
+            updatedAt = updatedAt.toLocalDateTimeOrNow()
+        )
     }
 
     private companion object {

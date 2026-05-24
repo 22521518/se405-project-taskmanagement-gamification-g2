@@ -4,7 +4,6 @@ import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.accept
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import org.koin.dsl.module
 import io.ktor.serialization.kotlinx.json.*
@@ -26,7 +25,7 @@ import com.apollographql.apollo.network.okHttpClient
 
 object NetworkConfig {
 //    const val BASE_IP = "192.168.1.227"
-    const val BASE_IP = "192.168.1.42"
+    const val BASE_IP = "192.168.1.85"
     const val GRAPHQL_URL = "http://$BASE_IP:8080/graphql"
     const val AUTH_URL = "http://$BASE_IP:8080/api/auth"
 }
@@ -84,5 +83,4 @@ val networkModule = module {
  * (Activities/Fragments) receive a fresh instance or the correctly scoped instance
  * according to the ViewModelStoreOwner's lifecycle.
  */
-val viewModelModule = module {
-}
+val viewModelModule = module {}
