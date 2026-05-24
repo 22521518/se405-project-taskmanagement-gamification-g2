@@ -1,8 +1,10 @@
 package com.example.se405.android.di
 
 import android.content.Context
+import com.apollographql.apollo.network.okHttpClient
 import com.apollographql.apollo.network.ws.WebSocketNetworkTransport
 import com.example.se405.android.core.authentication.data.AuthPreferences
+import com.example.se405.android.core.authentication.data.AuthPreferencesImpl
 import com.example.se405.android.features.chat_management.presentation.viewmodel.NewMessageViewModel
 import com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskManagementViewModel
 import com.example.se405.android.features.users_management.data.repositoryImpl.UserRepositoryImpl
@@ -21,35 +23,45 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 object NetworkConfig {
-    // const val BASE_IP = "192.168.1.227"
-    const val BASE_IP = "192.168.1.42"
 
-    const val GRAPHQL_URL = "http://$BASE_IP:8080/graphql"
-    const val AUTH_URL = "http://$BASE_IP:8080/api/auth"
+    // const val BASE_IP = "192.168.1.227"
+
+    // Chọn IP đúng theo backend đang chạy
+    const val BASE_IP = "192.168.1.85"
+
+    const val GRAPHQL_URL =
+        "http://$BASE_IP:8080/graphql"
+
+    const val AUTH_URL =
+        "http://$BASE_IP:8080/api/auth"
 }
 
 val appModule = module {
-    single {
-        AuthPreferences(get<Context>())
+
+    single<AuthPreferences> {
+        AuthPreferencesImpl(get<Context>())
     }
 }
 
 /**
- * Defines network clients (Ktor, Apollo) and their configurations.
+ * Network module
  */
 val networkModule = module {
 
-    // 1. OkHttpClient
+    // OkHttpClient
     single {
+
         val authPreferences: AuthPreferences = get()
 
         OkHttpClient.Builder()
             .addInterceptor { chain ->
+
                 val token = runBlocking {
                     authPreferences.authToken.firstOrNull()
                 }
 
-                val requestBuilder = chain.request().newBuilder()
+                val requestBuilder =
+                    chain.request().newBuilder()
 
                 if (!token.isNullOrBlank()) {
                     requestBuilder.addHeader(
@@ -58,9 +70,13 @@ val networkModule = module {
                     )
                 }
 
-                val response = chain.proceed(requestBuilder.build())
+                val response =
+                    chain.proceed(requestBuilder.build())
 
-                if (response.code == 401 || response.code == 403) {
+                if (
+                    response.code == 401 ||
+                    response.code == 403
+                ) {
                     runBlocking {
                         authPreferences.clearAuth()
                     }
@@ -71,9 +87,11 @@ val networkModule = module {
             .build()
     }
 
-    // 2. Ktor Client
+    // Ktor Client
     single {
+
         io.ktor.client.HttpClient(OkHttp) {
+
             engine {
                 preconfigured = get<OkHttpClient>()
             }
@@ -100,8 +118,9 @@ val networkModule = module {
         UserRepositoryImpl(get())
     }
 
-    // 3. Apollo Client
+    // Apollo Client
     single {
+
         val authPreferences: AuthPreferences = get()
 
         val token = runBlocking {
@@ -110,10 +129,16 @@ val networkModule = module {
 
         val okHttpClient = get<OkHttpClient>()
 
-        val webSocketTransport = WebSocketNetworkTransport.Builder()
-            .serverUrl("ws://${NetworkConfig.BASE_IP}:8080/graphql")
-            .addHeader("Authorization", "Bearer $token")
-            .build()
+        val webSocketTransport =
+            WebSocketNetworkTransport.Builder()
+                .serverUrl(
+                    "ws://${NetworkConfig.BASE_IP}:8080/graphql"
+                )
+                .addHeader(
+                    "Authorization",
+                    "Bearer $token"
+                )
+                .build()
 
         val httpTransport =
             com.apollographql.apollo.network.http.HttpNetworkTransport.Builder()
@@ -132,6 +157,8 @@ val networkModule = module {
  * ViewModels
  */
 val viewModelModule = module {
+
     viewModelOf(::NewMessageViewModel)
+
     viewModelOf(::TaskManagementViewModel)
 }

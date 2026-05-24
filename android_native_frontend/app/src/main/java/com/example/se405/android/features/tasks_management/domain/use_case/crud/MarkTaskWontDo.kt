@@ -7,7 +7,6 @@ import com.example.se405.android.features.tasks_management.domain.entity.TaskCom
 import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
 import com.example.se405.android.features.tasks_management.domain.repository.TaskCompletionLogRepository
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.Optional
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -24,7 +23,7 @@ import kotlin.uuid.Uuid
  * @param user  The user performing the action.
  * @param date  The calendar date to record (defaults to today).
  */
-class MarkTaskWontDo(
+class   MarkTaskWontDo(
     private val repo: TaskCompletionLogRepository,
 ) {
     suspend operator fun invoke(

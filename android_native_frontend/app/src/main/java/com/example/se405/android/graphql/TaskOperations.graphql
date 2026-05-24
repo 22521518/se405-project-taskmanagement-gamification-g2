@@ -13,6 +13,11 @@ query GetTasks($userId: ID!) {
     creator {
       uuid
       username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
     }
     tags {
       uuid
@@ -56,6 +61,11 @@ mutation CreateTask($input: CreateTaskInput!) {
     creator {
       uuid
       username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
     }
   }
 }

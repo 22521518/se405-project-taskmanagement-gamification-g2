@@ -15,11 +15,11 @@ import kotlin.uuid.Uuid
 class TaskCompletionLogRepositoryImpl(
     private val api: TaskApi
 ) : TaskCompletionLogRepository {
-    override suspend fun getCompletionLogs(taskId: Uuid): List<TaskCompletionLog> {
-        // Since getTasks query already fetches all completion logs mapped to domain, 
-        // we usually don't need a separate fetch here, but we return emptyList as fallback.
-        return emptyList()
-    }
+//    override suspend fun getCompletionLogs(taskId: Uuid): List<TaskCompletionLog> {
+//        // Since getTasks query already fetches all completion logs mapped to domain,
+//        // we usually don't need a separate fetch here, but we return emptyList as fallback.
+//        return emptyList()
+//    }
 
     override suspend fun createCompletionLog(
         task: Task,

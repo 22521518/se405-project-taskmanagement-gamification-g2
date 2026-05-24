@@ -60,12 +60,16 @@ class TagController(
 
     @MutationMapping
     fun createTag(@Argument input: CreateTagInput): TagEntity {
+        val username = org.springframework.security.core.context.SecurityContextHolder.getContext().authentication?.principal as? String
+        val creatorUser = username?.let { userRepository.findByUsername(it) }
+        val finalCreatedBy = creatorUser?.uuid ?: input.createdBy
+
         val tag = TagEntity(
             name = input.name,
             color = input.color,
             ownershipType = input.ownershipType,
             workspaceId = input.workspaceId,
-            createdBy = input.createdBy,
+            createdBy = finalCreatedBy,
             labelId = input.labelId,
         )
         return tagRepository.save(tag)

@@ -18,12 +18,12 @@ import com.example.se405.android.features.tasks_management.domain.entity.TaskSta
 import com.example.se405.android.features.tasks_management.domain.entity.TaskType
 import com.example.se405.android.features.tasks_management.domain.entity.Workspace
 import com.example.se405.android.features.tasks_management.domain.entity.WorkspaceMember
+import com.example.se405.android.features.tasks_management.domain.entity.getTaskStatus
 import com.example.se405.android.features.tasks_management.domain.use_case.TagUseCases
 import com.example.se405.android.features.tasks_management.domain.use_case.TaskUseCases
 import com.example.se405.android.features.tasks_management.domain.use_case.WorkspaceUseCases
 import com.example.se405.android.features.tasks_management.domain.use_case.crud.MarkTaskDone
 import com.example.se405.android.features.tasks_management.domain.use_case.crud.MarkTaskWontDo
-import com.example.se405.android.features.users_management.domain.entity.User
 import com.example.se405.android.features.tasks_management.presentation.components.CreateTagUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -196,6 +196,15 @@ class TaskManagementViewModel(
         rebuildWorkspaces()
     }
 
+    private suspend fun refreshSilently() {
+        val userId = _currentUserId.value ?: return
+        try {
+            refreshAll(userId)
+        } catch (e: Exception) {
+            android.util.Log.w("TaskManagementVM", "Silent refresh failed", e)
+        }
+    }
+
     fun getTaskByDate(calendar: Calendar): List<Workspace> {
         _selectedDate.value = calendar.clone() as Calendar
         _isDateFilterActive.value = true
@@ -204,7 +213,7 @@ class TaskManagementViewModel(
         return _workspaces.value
     }
 
-    fun createTaskDraft(taskType: TaskType = TaskType.PROJECT): Task {
+    fun createTaskDraft(taskType: TaskType = TaskType.HABIT): Task {
         return Task(
             uuid = Uuid.random(),
             title = "",
@@ -230,10 +239,10 @@ class TaskManagementViewModel(
                 val currentId = _currentUserId.value
                 val created = taskUseCases.createTask(task, currentId)
                 if (created.isPresent) {
+                    refreshSilently()
                     val createdTask = created.get()
                     android.util.Log.i("TaskManagementVM", "createTask succeeded: uuid=${createdTask.uuid}")
-                    _tasks.value += createdTask
-                    rebuildWorkspaces()
+
                     _uiEvent.send(TaskUiEvent.TaskCreated)
                     _uiEvent.send(TaskUiEvent.ShowToast("Task \"${task.title}\" created successfully"))
                     onCompleted(true)
@@ -259,9 +268,11 @@ class TaskManagementViewModel(
             try {
                 val updated = taskUseCases.updateTask(task)
                 if (updated.isPresent) {
+
+                    refreshSilently()
                     val updatedTask = updated.get()
                     android.util.Log.i("TaskManagementVM", "updateTask succeeded: uuid=${updatedTask.uuid}")
-                    replaceTask(updatedTask)
+//                    replaceTask(updatedTask)
                     _uiEvent.send(TaskUiEvent.TaskUpdated)
                     _uiEvent.send(TaskUiEvent.ShowToast("Task updated successfully"))
                     onCompleted(true)
@@ -280,10 +291,6 @@ class TaskManagementViewModel(
         }
     }
 
-    fun updateTaskStatus(task: Task, status: TaskStatus) {
-        updateTask(task.copy(status = status))
-    }
-
     fun markTaskDone(task: Task, onCompleted: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -297,9 +304,10 @@ class TaskManagementViewModel(
                 val targetDate = _selectedDate.value.toLocalDate()
                 val log = markTaskDoneUseCase(task, userId, targetDate)
                 if (log.isPresent) {
-                    val completedLog = log.get()
-                    val updatedTask = task.copy(taskCompletionLog = task.taskCompletionLog + completedLog)
-                    replaceTask(updatedTask)
+//                    val completedLog = log.get()
+//                    val updatedTask = task.copy(taskCompletionLog = task.taskCompletionLog + completedLog)
+//                    replaceTask(updatedTask)
+                    refreshSilently()
                     _uiEvent.send(TaskUiEvent.ShowToast("Task marked as Done"))
                     onCompleted(true)
                 } else {
@@ -328,9 +336,10 @@ class TaskManagementViewModel(
                 val targetDate = _selectedDate.value.toLocalDate()
                 val log = markTaskWontDoUseCase(task, userId, targetDate)
                 if (log.isPresent) {
-                    val completedLog = log.get()
-                    val updatedTask = task.copy(taskCompletionLog = task.taskCompletionLog + completedLog)
-                    replaceTask(updatedTask)
+                    refreshSilently()
+//                    val completedLog = log.get()
+//                    val updatedTask = task.copy(taskCompletionLog = task.taskCompletionLog + completedLog)
+//                    replaceTask(updatedTask)
                     _uiEvent.send(TaskUiEvent.ShowToast("Task marked as Won't Do"))
                     onCompleted(true)
                 } else {
@@ -355,8 +364,9 @@ class TaskManagementViewModel(
                 if (deleted.isPresent) {
                     val deletedUuid = deleted.get()
                     android.util.Log.i("TaskManagementVM", "deleteTask succeeded: deletedUuid=$deletedUuid")
-                    _tasks.value = _tasks.value.filterNot { it.uuid == deletedUuid }
-                    rebuildWorkspaces()
+//                    _tasks.value = _tasks.value.filterNot { it.uuid == deletedUuid }
+//                    rebuildWorkspaces()
+                    refreshSilently()
                     _uiEvent.send(TaskUiEvent.TaskDeleted)
                     _uiEvent.send(TaskUiEvent.ShowToast("Task deleted successfully"))
                     onCompleted(true)
@@ -410,10 +420,11 @@ class TaskManagementViewModel(
             try {
                 val created = tagUseCases.createTag(tag)
                 if (created.isPresent) {
+                    refreshSilently()
                     val createdTag = created.get()
                     android.util.Log.i("TaskManagementVM", "createTag succeeded: uuid=${createdTag.uuid}")
-                    _availableTags.value = mergeTags(_availableTags.value, listOf(createdTag))
-                    rebuildWorkspaces()
+//                    _availableTags.value = mergeTags(_availableTags.value, listOf(createdTag))
+//                    rebuildWorkspaces()
                     _uiEvent.send(TaskUiEvent.TagCreated)
                     _uiEvent.send(TaskUiEvent.ShowToast("Tag \"${tag.name}\" created successfully"))
                     onCreated(createdTag)
@@ -452,19 +463,20 @@ class TaskManagementViewModel(
             try {
                 val updated = tagUseCases.updateTag(updatedTag)
                 if (updated.isPresent) {
+                    refreshSilently()
                     val resolved = updated.get()
                     android.util.Log.i("TaskManagementVM", "updateTag succeeded: uuid=${resolved.uuid}")
-                    _availableTags.value = _availableTags.value.map { existing ->
-                        if (existing.uuid == resolved.uuid) resolved else existing
-                    }
-                    _tasks.value = _tasks.value.map { task ->
-                        if (task.tags.any { it.uuid == resolved.uuid }) {
-                            task.copy(tags = task.tags.map { if (it.uuid == resolved.uuid) resolved else it })
-                        } else {
-                            task
-                        }
-                    }
-                    rebuildWorkspaces()
+//                    _availableTags.value = _availableTags.value.map { existing ->
+//                        if (existing.uuid == resolved.uuid) resolved else existing
+//                    }
+//                    _tasks.value = _tasks.value.map { task ->
+//                        if (task.tags.any { it.uuid == resolved.uuid }) {
+//                            task.copy(tags = task.tags.map { if (it.uuid == resolved.uuid) resolved else it })
+//                        } else {
+//                            task
+//                        }
+//                    }
+//                    rebuildWorkspaces()
                     _uiEvent.send(TaskUiEvent.TagUpdated)
                     _uiEvent.send(TaskUiEvent.ShowToast("Tag updated successfully"))
                     onUpdated(resolved)
@@ -490,12 +502,13 @@ class TaskManagementViewModel(
             try {
                 val deleted = tagUseCases.deleteTag(tagId)
                 if (deleted.isPresent) {
+                    refreshSilently()
                     android.util.Log.i("TaskManagementVM", "deleteTag succeeded: tagId=$tagId")
-                    _availableTags.value = _availableTags.value.filterNot { it.uuid == tagId }
-                    _tasks.value = _tasks.value.map { task ->
-                        task.copy(tags = task.tags.filterNot { tag -> tag.uuid == tagId })
-                    }
-                    rebuildWorkspaces()
+//                    _availableTags.value = _availableTags.value.filterNot { it.uuid == tagId }
+//                    _tasks.value = _tasks.value.map { task ->
+//                        task.copy(tags = task.tags.filterNot { tag -> tag.uuid == tagId })
+//                    }
+//                    rebuildWorkspaces()
                     _uiEvent.send(TaskUiEvent.TagDeleted)
                     _uiEvent.send(TaskUiEvent.ShowToast("Tag deleted successfully"))
                     onCompleted(true)
@@ -514,12 +527,12 @@ class TaskManagementViewModel(
         }
     }
 
-    private fun replaceTask(updatedTask: Task) {
-        _tasks.value = _tasks.value.map { existing ->
-            if (existing.uuid == updatedTask.uuid) updatedTask else existing
-        }
-        rebuildWorkspaces()
-    }
+//    private fun replaceTask(updatedTask: Task) {
+//        _tasks.value = _tasks.value.map { existing ->
+//            if (existing.uuid == updatedTask.uuid) updatedTask else existing
+//        }
+//        rebuildWorkspaces()
+//    }
 
     private fun resolveWorkspaceId(tagsByUser: List<Tag>): Uuid? {
         return tagsByUser.firstOrNull { it.workspaceId != null }?.workspaceId
@@ -568,37 +581,18 @@ class TaskManagementViewModel(
     private fun filterWorkspacesByDate(
         workspaces: List<Workspace>,
         targetDate: LocalDate,
+        test: Boolean = false
     ): List<Workspace> {
+        if (test) return workspaces
         return workspaces.mapNotNull { workspace ->
             val filteredProjects = workspace.projects.mapNotNull { project ->
-                val filteredTasks = project.tasks.filter { task -> task.matchesDate(targetDate) }.map { task ->
-                    if (task.type == TaskType.HABIT) {
-                        val logs = task.taskCompletionLog.filter { it.date == targetDate }
-                        val completedCount = logs.count { it.status == TaskStatus.DONE }
-                        val isDone = completedCount >= task.repetition && task.repetition > 0
-                        val isFailed = logs.any { it.status == TaskStatus.FAILED }
-                        val statusForDate = when {
-                            isDone -> TaskStatus.DONE
-                            isFailed -> TaskStatus.FAILED
-                            else -> TaskStatus.TODO
-                        }
-                        task.copy(status = statusForDate)
-                    } else {
-                        task
-                    }
-                }
-                if (filteredTasks.isEmpty()) {
-                    null
-                } else {
-                    project.copy(tasks = filteredTasks)
-                }
+                val filteredTasks = project.tasks
+                    .filter { task -> task.matchesDate(targetDate) }
+                    .map { task -> getTaskStatus(task, targetDate) }
+                if (filteredTasks.isNotEmpty()) project.copy(tasks = filteredTasks) else null
             }
 
-            if (filteredProjects.isEmpty()) {
-                null
-            } else {
-                workspace.copy(projects = filteredProjects)
-            }
+            if (filteredProjects.isNotEmpty()) workspace.copy(projects = filteredProjects) else null
         }
     }
 

@@ -1,0 +1,142 @@
+query GetTagsByWorkspace($workspaceId: ID!) {
+  getTagsByWorkspace(workspaceId: $workspaceId) {
+    uuid
+    name
+    color
+    ownershipType
+    workspaceId
+    createdBy
+    createdAt
+    updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
+    tasks {
+      uuid
+      title
+      status
+      priority
+      projectId
+      startDate
+      dueDate
+    }
+  }
+}
+
+query GetTagsByUser($userId: ID!) {
+  getTagsByUser(userId: $userId) {
+    uuid
+    name
+    color
+    ownershipType
+    workspaceId
+    createdBy
+    createdAt
+    updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
+    tasks {
+      uuid
+      title
+      status
+      priority
+      projectId
+      startDate
+      dueDate
+    }
+  }
+}
+
+query GetTagsForTaskOwnership($taskId: ID!) {
+  getTagsForTaskOwnership(taskId: $taskId) {
+    uuid
+    name
+    color
+    ownershipType
+    workspaceId
+    createdBy
+    createdAt
+    updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
+    tasks {
+      uuid
+      title
+      status
+      priority
+      projectId
+      startDate
+      dueDate
+    }
+  }
+}
+
+mutation CreateTag($input: CreateTagInput!) {
+  createTag(input: $input) {
+    uuid
+    name
+    color
+    ownershipType
+    workspaceId
+    createdBy
+    createdAt
+    updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+mutation UpdateTag($input: UpdateTagInput!) {
+  updateTag(input: $input) {
+    uuid
+    name
+    color
+    ownershipType
+    workspaceId
+    createdBy
+    createdAt
+    updatedAt
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+mutation DeleteTag($uuid: ID!) {
+  deleteTag(uuid: $uuid) {
+    uuid
+  }
+}
