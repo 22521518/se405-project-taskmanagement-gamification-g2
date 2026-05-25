@@ -9,6 +9,7 @@ import com.example.se405.android.features.chat_management.presentation.viewmodel
 import com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskManagementViewModel
 import com.example.se405.android.features.users_management.data.repositoryImpl.UserRepositoryImpl
 import com.example.se405.android.features.users_management.domain.repository.UserRepository
+import com.example.se405.android.features.users_management.presentation.viewmodel.PersonalViewModel
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
@@ -27,7 +28,7 @@ object NetworkConfig {
     // const val BASE_IP = "192.168.1.227"
 
     // Chọn IP đúng theo backend đang chạy
-    const val BASE_IP = "192.168.1.85"
+    const val BASE_IP = "192.168.1.5"
 
     const val GRAPHQL_URL =
         "http://$BASE_IP:8080/graphql"
@@ -157,8 +158,7 @@ val networkModule = module {
  * ViewModels
  */
 val viewModelModule = module {
-
     viewModelOf(::NewMessageViewModel)
-
     viewModelOf(::TaskManagementViewModel)
+    viewModelOf(::PersonalViewModel)
 }

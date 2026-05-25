@@ -43,3 +43,12 @@ data class AuthResponse(
 data class SimpleMessageResponse(
     val message: String
 )
+
+@Serializable
+data class UserProfileResponse(
+    val uuid: String,
+    val email: String,
+    val username: String,
+    val displayName: String,
+    val avatarUrl: String? = null
+)

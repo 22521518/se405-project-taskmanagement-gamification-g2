@@ -7,7 +7,6 @@ import com.example.se405.backend.database.model.UserEntity
 import com.example.se405.backend.database.repository.UserRepository
 import com.example.se405.backend.services.ConversationService
 import com.example.se405.backend.services.MessageService
-import jakarta.transaction.Transactional
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Controller
 import java.util.UUID
 import org.springframework.graphql.data.method.annotation.SubscriptionMapping
 import reactor.core.publisher.Flux
-import java.time.LocalDateTime
 
 @Controller
 class ChatController(
@@ -26,48 +24,40 @@ class ChatController(
 ) {
     private fun getCurrentUserUuid(): UUID {
         val auth = SecurityContextHolder.getContext().authentication
-
         if (auth == null || auth.name == "anonymousUser") {
             throw Exception("Unauthorized: Yêu cầu bị từ chối do thiếu JWT Token hợp lệ!")
         }
-
-        val username = auth.name
-        val user = userRepository.findByUsername(username)
-            ?: throw Exception("Unauthorized: Không tìm thấy user '$username' trong Database")
-
+        val user = userRepository.findByUsername(auth.name)
+            ?: throw Exception("Unauthorized: Không tìm thấy user trong Database")
         return user.uuid!!
     }
 
-    // ==================== QUERIES ====================
-
     @QueryMapping
     fun getMyConversations(): List<ConversationEntity> {
-        val userUuid = getCurrentUserUuid()
-        return conversationService.getUserConversations(userUuid)
+        return conversationService.getUserConversations(getCurrentUserUuid())
     }
 
     @QueryMapping
     fun getMessagesByConversation(@Argument conversationId: String): List<MessageEntity> {
-        val userUuid = getCurrentUserUuid()
-        return messageService.getMessagesByConversation(UUID.fromString(conversationId), userUuid)
+        return messageService.getMessagesByConversation(UUID.fromString(conversationId), getCurrentUserUuid())
     }
 
     @QueryMapping
-    fun getMessagesByTask(@Argument taskId: String): List<MessageEntity> {
+    fun getConversationByTask(@Argument taskId: String): ConversationEntity {
         val userUuid = getCurrentUserUuid()
-        val inputUuid = UUID.fromString(taskId)
-        val conversation = conversationService.getConversationById(inputUuid)
-            ?: conversationService.getOrCreateTaskConversation(inputUuid)
+        val taskUuid = UUID.fromString(taskId)
+
+        val conversation = conversationService.getConversationByTaskId(taskUuid)
+            ?: conversationService.getOrCreateTaskConversation(taskUuid)
+
         conversationService.addParticipantIfNotExists(conversation.uuid!!, userUuid)
-        return messageService.getMessagesByConversation(conversation.uuid!!, userUuid)
+        return conversation
     }
 
     @QueryMapping
     fun getAllUsers(): List<UserEntity> {
         return userRepository.findAll()
     }
-
-    // ==================== MUTATIONS ====================
 
     @MutationMapping
     fun createConversation(
@@ -78,11 +68,17 @@ class ChatController(
         val uuids = participantIds.map { UUID.fromString(it) }
         return conversationService.createConversation(type, name, uuids)
     }
-    // ==================== SUBSCRIPTIONS ====================
+
+    @MutationMapping
+    fun sendMessage(
+        @Argument conversationId: String,
+        @Argument content: String
+    ): MessageEntity {
+        return messageService.sendMessage(UUID.fromString(conversationId), getCurrentUserUuid(), content)
+    }
 
     @SubscriptionMapping
     fun messageAdded(@Argument conversationId: String): Flux<MessageEntity> {
-        // Trả về một luồng (Stream) dữ liệu liên tục thay vì 1 List cố định
         return messageService.subscribeToMessages(UUID.fromString(conversationId))
     }
 }

@@ -1,0 +1,13 @@
+query GetMessagesByConversation($conversationId: ID!) {
+    getMessagesByConversation(conversationId: $conversationId) {
+        uuid
+        content
+        createdAt
+        conversationId
+        sender {
+            uuid
+            displayName
+            avatarUrl
+        }
+    }
+}

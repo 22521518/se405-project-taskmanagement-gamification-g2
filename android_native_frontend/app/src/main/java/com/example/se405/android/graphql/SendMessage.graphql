@@ -1,0 +1,12 @@
+mutation SendMessage($conversationId: ID!, $content: String!) {
+    sendMessage(conversationId: $conversationId, content: $content) {
+        uuid
+        content
+        createdAt
+        sender {
+            uuid
+            displayName
+            avatarUrl
+        }
+    }
+}

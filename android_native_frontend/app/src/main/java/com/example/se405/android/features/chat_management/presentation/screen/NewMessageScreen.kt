@@ -21,27 +21,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.koin.androidx.compose.koinViewModel
+import com.example.se405.android.features.chat_management.presentation.viewmodel.NewMessageViewModel
+import kotlin.uuid.ExperimentalUuidApi
 
-// Dummy data cho User (Chờ API lấy danh sách User từ Backend)
-data class UserContact(val id: String, val name: String, val role: String)
-val dummyUsers = listOf(
-    UserContact("u1", "Nguyễn Văn An", "Project Manager"),
-    UserContact("u2", "Trần Thị Bình", "UI/UX Designer"),
-    UserContact("u3", "Lê Hoàng Minh", "Backend Developer"),
-    UserContact("u4", "Phạm Trà My", "Marketing")
-)
-
+@OptIn(ExperimentalUuidApi::class)
 @Composable
 fun NewMessageScreen(
     onClose: () -> Unit,
-    onNext: (selectedUserIds: List<String>) -> Unit
+    onNext: (selectedUserIds: List<String>) -> Unit,
+    viewModel: NewMessageViewModel = koinViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedUsers by remember { mutableStateOf(setOf<String>()) }
 
-    // Sử dụng màu xanh dương đậm (giống nút Add Task của bạn)
-    // để tránh bị chìm vào nền do lỗi Theme
     val activeColor = Color(0xFF2563EB)
+
+    // Lấy dữ liệu thật từ ViewModel
+    val usersList by viewModel.users.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -61,7 +60,6 @@ fun NewMessageScreen(
                         Text(
                             text = "Next",
                             fontWeight = FontWeight.Bold,
-                            // Chữ Next sáng màu xanh khi có người được chọn
                             color = if (selectedUsers.isNotEmpty()) activeColor else Color.Gray
                         )
                     }
@@ -77,14 +75,13 @@ fun NewMessageScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Thanh tìm kiếm "To: "
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Search name or group", color = Color.Gray) },
+                placeholder = { Text("Search name or email", color = Color.Gray) },
                 leadingIcon = { Text("To: ", fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 16.dp)) },
                 shape = MaterialTheme.shapes.extraLarge,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -98,63 +95,79 @@ fun NewMessageScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Danh sách người dùng
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                val filteredUsers = dummyUsers.filter { it.name.contains(searchQuery, ignoreCase = true) }
+            when {
+                isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = activeColor)
+                    }
+                }
+                error != null -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = "Lỗi: $error", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+                else -> {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        // Lọc theo Tên hiển thị hoặc Email
+                        val filteredUsers = usersList.filter {
+                            it.displayName.contains(searchQuery, ignoreCase = true) ||
+                                    it.email.contains(searchQuery, ignoreCase = true)
+                        }
 
-                items(filteredUsers) { user ->
-                    val isSelected = selectedUsers.contains(user.id)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                selectedUsers = if (isSelected) {
-                                    selectedUsers - user.id
+                        items(filteredUsers) { user ->
+                            val userIdStr = user.uuid.toString()
+                            val isSelected = selectedUsers.contains(userIdStr)
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedUsers = if (isSelected) {
+                                            selectedUsers - userIdStr
+                                        } else {
+                                            selectedUsers + userIdStr
+                                        }
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = user.displayName.take(1).uppercase(),
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = user.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text(text = user.email, color = Color.Gray, fontSize = 13.sp) // Hiển thị email thay vì role
+                                }
+
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.CheckCircle,
+                                        contentDescription = "Đã chọn",
+                                        tint = activeColor,
+                                        modifier = Modifier.size(28.dp)
+                                    )
                                 } else {
-                                    selectedUsers + user.id
+                                    Icon(
+                                        imageVector = Icons.Rounded.RadioButtonUnchecked,
+                                        contentDescription = "Chưa chọn",
+                                        tint = Color.LightGray,
+                                        modifier = Modifier.size(28.dp)
+                                    )
                                 }
                             }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Avatar
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = user.name.take(1).uppercase(),
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        // Tên & Role
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = user.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(text = user.role, color = Color.Gray, fontSize = 13.sp)
-                        }
-
-                        // Icon Checkmark (Thay cho RadioButton bị lỗi màu)
-                        if (isSelected) {
-                            Icon(
-                                imageVector = Icons.Rounded.CheckCircle,
-                                contentDescription = "Đã chọn",
-                                tint = activeColor, // Màu xanh nổi bật
-                                modifier = Modifier.size(28.dp)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Rounded.RadioButtonUnchecked,
-                                contentDescription = "Chưa chọn",
-                                tint = Color.LightGray,
-                                modifier = Modifier.size(28.dp)
-                            )
                         }
                     }
                 }

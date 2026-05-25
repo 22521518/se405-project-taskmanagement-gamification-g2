@@ -23,12 +23,16 @@ class UserRepositoryImpl(
 
         // Map dữ liệu từ GraphQL DTO sang Domain Model của bạn
         return response.data?.getAllUsers?.map { dto ->
+            val now = java.time.LocalDateTime.now()
             User(
-                uuid = Uuid.parse(dto.uuid.toString()),
+                uuid = Uuid.parse(dto.uuid),
                 username = dto.username,
                 email = dto.email,
                 displayName = dto.displayName,
-                avatarUrl = dto.avatarUrl ?: ""
+                avatarUrl = dto.avatarUrl ?: "",
+                passwordHash = null,
+                createdAt = now,
+                updatedAt = now
             )
         } ?: emptyList()
     }

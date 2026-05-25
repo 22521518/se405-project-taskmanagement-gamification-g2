@@ -26,6 +26,12 @@ data class BiometricLoginRequest(
     val signature: String
 )
 
+data class UpdateProfileRequest(
+    val displayName: String?,
+    val email: String?,
+    val avatarUrl: String?
+)
+
 data class AuthResponse(
     val token: String,
     val userId: UUID,
@@ -36,4 +42,12 @@ data class AuthResponse(
 
 data class SimpleMessageResponse(
     val message: String
+)
+
+data class UserProfileResponse(
+    val uuid: UUID,
+    val email: String,
+    val username: String,
+    val displayName: String,
+    val avatarUrl: String?
 )

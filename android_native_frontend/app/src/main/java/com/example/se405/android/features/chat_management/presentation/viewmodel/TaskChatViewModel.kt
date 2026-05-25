@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
-
 package com.example.se405.android.features.chat_management.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -10,7 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlin.uuid.ExperimentalUuidApi
 
 data class ChatUiState(
     val messages: List<MessageEntity> = emptyList(),
@@ -19,45 +16,73 @@ data class ChatUiState(
 )
 
 class TaskChatViewModel(
-    // 1. Tiêm ChatRepository (đã nối Apollo GraphQL) vào đây
     private val chatRepository: ChatRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
-    // 2. Hàm lấy tin nhắn thật từ Database (Gọi ở LaunchedEffect bên UI)
-    fun loadMessagesForTask(taskId: String) {
+    // Biến lưu trữ ID thật của phòng chat (Tất cả mọi thao tác đều dùng ID này)
+    private var realConversationId: String? = null
+
+    // Hàm khởi tạo phòng chat (Gọi ở LaunchedEffect bên UI)
+    fun initChat(idPassedFromNavigation: String, isFromTask: Boolean) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            try {
-                // Vì Repo trả về Flow, chúng ta dùng collect để hứng dữ liệu
-                chatRepository.getMessagesByTask(taskId).collect { messages ->
+            if (isFromTask) {
+                // ĐI TỪ MÀN HÌNH TASK SANG: Gọi API đổi taskId lấy conversationId
+                val result = chatRepository.getConversationByTask(idPassedFromNavigation)
+                result.onSuccess { convId ->
+                    realConversationId = convId
+                }.onFailure { exception ->
                     _uiState.value = _uiState.value.copy(
-                        messages = messages,
+                        error = "Lỗi tải phòng chat: ${exception.message}",
                         isLoading = false
                     )
+                    return@launch
                 }
-            } catch (e: Exception) {
+            } else {
+                // ĐI TỪ INBOX / NEW CHAT SANG: ID truyền vào chính là ID phòng chat
+                realConversationId = idPassedFromNavigation
+            }
+
+            // Có ID phòng thật rồi thì tiến hành tải tin nhắn
+            realConversationId?.let { convId ->
+                loadMessages(convId)
+            }
+        }
+    }
+
+    private fun loadMessages(conversationId: String) {
+        viewModelScope.launch {
+            val result = chatRepository.getMessagesByConversation(conversationId)
+            result.onSuccess { messages ->
                 _uiState.value = _uiState.value.copy(
-                    error = e.message ?: "Lỗi không xác định",
+                    messages = messages,
+                    isLoading = false
+                )
+            }.onFailure { exception ->
+                _uiState.value = _uiState.value.copy(
+                    error = exception.message ?: "Lỗi tải tin nhắn",
                     isLoading = false
                 )
             }
         }
     }
 
-    // 3. Hàm gửi tin nhắn thật lên Backend (Đã thêm tham số taskId)
-    fun sendMessage(taskId: String, content: String) {
+    fun sendMessage(content: String) {
         if (content.isBlank()) return
 
+        // Lấy ID phòng chat hiện tại để gửi
+        val convId = realConversationId ?: return
+
         viewModelScope.launch {
-            val result = chatRepository.sendMessage(taskId = taskId, content = content)
+            val result = chatRepository.sendMessage(conversationId = convId, content = content)
 
             result.onSuccess {
-                // Khi gửi thành công lên Backend, gọi lại hàm load để lấy danh sách mới nhất về UI
-                loadMessagesForTask(taskId)
+                // Gửi thành công thì load lại danh sách tin nhắn
+                loadMessages(convId)
             }.onFailure { exception ->
                 _uiState.value = _uiState.value.copy(
                     error = "Lỗi gửi tin nhắn: ${exception.message}"

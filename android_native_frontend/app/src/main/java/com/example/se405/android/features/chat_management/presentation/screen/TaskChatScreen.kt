@@ -31,16 +31,18 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @Composable
 fun TaskChatScreen(
-    taskId: String,
+    taskId: String, // Bây giờ nó có thể chứa Task ID hoặc Conversation ID
     taskName: String,
+    isFromTask: Boolean = true, // Cờ báo hiệu cho ViewModel biết ID truyền vào là loại gì
     onBackClick: () -> Unit,
     viewModel: TaskChatViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
 
+    // 1. SỬA CHỮA: Gọi hàm initChat thay vì getConversationByTask
     LaunchedEffect(taskId) {
-        viewModel.loadMessagesForTask(taskId)
+        viewModel.initChat(idPassedFromNavigation = taskId, isFromTask = isFromTask)
     }
 
     LaunchedEffect(uiState.messages.size) {
@@ -63,7 +65,8 @@ fun TaskChatScreen(
         bottomBar = {
             ChatInputBar(
                 onSendMessage = { content ->
-                    viewModel.sendMessage(taskId = taskId, content = content)
+                    // 2. SỬA CHỮA: Chỉ truyền content, ViewModel tự biết ID phòng
+                    viewModel.sendMessage(content = content)
                 }
             )
         }

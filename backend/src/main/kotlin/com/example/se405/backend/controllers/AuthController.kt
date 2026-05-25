@@ -37,7 +37,8 @@ class AuthController(
         @RequestHeader("Authorization") authHeader: String,
         @RequestBody req: BiometricEnableRequest
     ): ResponseEntity<SimpleMessageResponse> {
-        val token = authHeader.substring(7)
+        val cleanHeader = authHeader.substringBefore(",").trim()
+        val token = cleanHeader.substring(7)
         val userId = jwtUtils.getUserIdFromToken(token)
         authService.enableBiometric(userId, req)
         return ResponseEntity.ok(SimpleMessageResponse("Biometric enabled successfully"))
@@ -48,7 +49,8 @@ class AuthController(
         @RequestHeader("Authorization") authHeader: String,
         @RequestParam deviceId: String
     ): ResponseEntity<SimpleMessageResponse> {
-        val token = authHeader.substring(7)
+        val cleanHeader = authHeader.substringBefore(",").trim()
+        val token = cleanHeader.substring(7)
         val userId = jwtUtils.getUserIdFromToken(token)
         authService.disableBiometric(userId, deviceId)
         return ResponseEntity.ok(SimpleMessageResponse("Biometric disabled successfully"))
@@ -57,5 +59,22 @@ class AuthController(
     @PostMapping("/login-biometric")
     fun loginBiometric(@RequestBody req: BiometricLoginRequest): ResponseEntity<AuthResponse> {
         return ResponseEntity.ok(authService.loginBiometric(req))
+    }
+
+    @GetMapping("/me")
+    fun getMe(@RequestHeader("Authorization") authHeader: String): ResponseEntity<UserProfileResponse> {
+        val cleanHeader = authHeader.substringBefore(",").trim()
+        val token = cleanHeader.substring(7)
+        val userId = jwtUtils.getUserIdFromToken(token)
+        return ResponseEntity.ok(authService.getUserProfile(userId))
+    }
+
+    @PutMapping("/profile")
+    fun updateProfile(
+        @RequestHeader("Authorization") authHeader: String,
+        @RequestBody req: UpdateProfileRequest
+    ): ResponseEntity<UserProfileResponse> {
+        val userId = jwtUtils.getUserIdFromToken(authHeader.substring(7))
+        return ResponseEntity.ok(authService.updateProfile(userId, req))
     }
 }

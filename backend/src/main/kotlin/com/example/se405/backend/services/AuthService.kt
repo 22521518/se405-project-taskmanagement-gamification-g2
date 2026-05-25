@@ -5,6 +5,7 @@ import com.example.se405.backend.database.model.UserDeviceEntity
 import com.example.se405.backend.database.model.UserEntity
 import com.example.se405.backend.database.repository.UserDeviceRepository
 import com.example.se405.backend.database.repository.UserRepository
+import jakarta.transaction.Transactional
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -109,5 +110,34 @@ class AuthService(
 
         val token = jwtUtils.generateToken(user.uuid, user.username)
         return AuthResponse(token, user.uuid, user.username, user.displayName, true)
+    }
+
+    fun getUserProfile(userId: UUID): UserProfileResponse {
+        val user = userRepository.findById(userId)
+            .orElseThrow { RuntimeException("User not found") }
+
+        return UserProfileResponse(
+            uuid = user.uuid,
+            email = user.email,
+            username = user.username,
+            displayName = user.displayName,
+            avatarUrl = user.avatarUrl
+        )
+    }
+
+    @Transactional
+    fun updateProfile(userId: UUID, req: UpdateProfileRequest): UserProfileResponse {
+        val user = userRepository.findById(userId).orElseThrow()
+
+        // Chỉ cập nhật nếu giá trị truyền lên không null
+        val updatedUser = user.copy(
+            displayName = req.displayName ?: user.displayName,
+            email = req.email ?: user.email,
+            avatarUrl = req.avatarUrl ?: user.avatarUrl,
+            updatedAt = LocalDateTime.now()
+        )
+
+        val saved = userRepository.save(updatedUser)
+        return UserProfileResponse(saved.uuid, saved.email, saved.username, saved.displayName, saved.avatarUrl)
     }
 }

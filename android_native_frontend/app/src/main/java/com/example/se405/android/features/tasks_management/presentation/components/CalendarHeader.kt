@@ -138,7 +138,7 @@ fun CalendarHeader(
                     val containerColor = if (isSelected) /**  Color(0xFF1A80E6) */
                         if(isToday) MaterialTheme.colorScheme.onPrimary
                         else MaterialTheme.colorScheme.secondaryContainer
-                        else Color.White
+                    else Color.White
                     val contentColor = if (isSelected) Color.White else Color(0xFF111111)
                     val subTextColor = if (isSelected) Color.White.copy(alpha = 0.8f) else Color(0xFF555555)
                     val borderModifier = if (isSelected) { Modifier } else if (isToday) {

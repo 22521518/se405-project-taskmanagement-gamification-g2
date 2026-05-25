@@ -5,10 +5,7 @@ package com.example.se405.android.features.tasks_management.presentation.viewmod
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-<<<<<<< HEAD
-=======
 import com.example.se405.android.core.authentication.data.AuthPreferences
->>>>>>> origin/dev
 import com.example.se405.android.features.tasks_management.domain.entity.Project
 import com.example.se405.android.features.tasks_management.domain.entity.Tag
 import com.example.se405.android.features.tasks_management.domain.entity.TagOwnershipType
@@ -95,31 +92,6 @@ class TaskManagementViewModel(
     val uiEvent: Flow<TaskUiEvent> = _uiEvent.receiveAsFlow()
 
     init {
-<<<<<<< HEAD
-        loadData()
-    }
-
-    private fun loadData() {
-        viewModelScope.launch {
-            try {
-
-                // Ví dụ (Hãy sửa tên hàm cho đúng với UseCase thực tế của bạn):
-
-                // val fetchedWorkspaces = workspaceUseCases.getWorkspaces()
-                // _workspaces.value = fetchedWorkspaces
-
-                // val fetchedTags = tagUseCases.getAllTags()
-                // _availableTags.value = fetchedTags
-
-                // val fetchedProjects = workspaceUseCases.getProjects()
-                // _projects.value = fetchedProjects
-
-                // val fetchedMembers = workspaceUseCases.getMembers()
-                // _members.value = fetchedMembers
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-=======
         loadInitialData()
     }
 
@@ -141,7 +113,6 @@ class TaskManagementViewModel(
                 _uiEvent.send(TaskUiEvent.ShowToast("Network error: failed to load tasks"))
             } finally {
                 _isLoading.value = false
->>>>>>> origin/dev
             }
         }
     }

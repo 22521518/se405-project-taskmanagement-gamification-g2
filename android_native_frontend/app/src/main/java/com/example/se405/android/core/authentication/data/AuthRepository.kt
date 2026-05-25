@@ -1,5 +1,6 @@
 package com.example.se405.android.core.authentication.data
 
+import com.example.se405.android.core.authentication.data.UserProfileResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
@@ -11,11 +12,7 @@ class AuthRepository(
     private val client: HttpClient,
     private val prefs: AuthPreferences
 ) {
-<<<<<<< HEAD
-    private val baseUrl = "http://10.0.2.2:8080/api/auth" // Adjust based on environment
-=======
     private val baseUrl = com.example.se405.android.di.NetworkConfig.AUTH_URL
->>>>>>> origin/dev
 
     suspend fun login(req: LoginRequest): Result<AuthResponse> = runCatching {
         val response = client.post("$baseUrl/login") {
@@ -78,5 +75,30 @@ class AuthRepository(
             }
             throw Exception("HTTP ${status.value}: $errorBody")
         }
+    }
+
+    suspend fun getMe(): Result<UserProfileResponse> = runCatching {
+        val token = prefs.authToken.first() ?: throw Exception("Not authenticated")
+        val response = client.get("$baseUrl/me") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+        response.ensureSuccess()
+        response.body()
+    }
+
+    // Xử lý Đăng xuất (Xóa Local DataStore)
+    suspend fun logout() {
+        prefs.clearAuth()
+    }
+
+    suspend fun updateProfile(displayName: String, email: String): Result<UserProfileResponse> = runCatching {
+        val token = prefs.authToken.first() ?: throw Exception("Not authenticated")
+        val response = client.put("$baseUrl/profile") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("displayName" to displayName, "email" to email))
+        }
+        response.ensureSuccess()
+        response.body()
     }
 }

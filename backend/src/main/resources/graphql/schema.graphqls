@@ -40,7 +40,7 @@ type Query {
     getMyConversations: [Conversation!]!
     # Lấy tin nhắn theo phòng chat thay vì theo Task
     getMessagesByConversation(conversationId: ID!): [Message!]!
-    getMessagesByTask(taskId: ID!): [Message!]!
+    getConversationByTask(taskId: ID!): Conversation!
 }
 
 type Mutation {

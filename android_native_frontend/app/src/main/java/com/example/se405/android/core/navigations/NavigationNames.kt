@@ -1,11 +1,38 @@
 package com.example.se405.android.core.navigations
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.PersonOutline
+import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.Serializable
 
 /**
  * Main dashboard screen route for the Tasks Management epic.
  * This screen doesn't require any arguments.
  */
+@Serializable
+object PersonalNav
+
+@Serializable
+data class EditProfileNav(
+    val displayName: String,
+    val email: String
+)
+
+// Cấu trúc dữ liệu cho từng Tab
+data class BottomNavItem(
+    val title: String,
+    val icon: ImageVector,
+    val route: Any
+)
+
+val bottomNavItems = listOf(
+    BottomNavItem("Home", Icons.Rounded.Home, TaskManagementNav),
+    BottomNavItem("Chat", Icons.Rounded.ChatBubbleOutline, ConversationListNav),
+    BottomNavItem("Personal", Icons.Rounded.PersonOutline, PersonalNav)
+)
+
 @Serializable
 object TaskManagementNav
 
@@ -19,6 +46,6 @@ object AuthSettingsNav
 object DeviceAuthSuccessNav
 
 @Serializable data object ConversationListNav
-@Serializable data class TaskChatNav(val taskId: String, val taskName: String)
+@Serializable data class TaskChatNav(val taskId: String, val taskName: String, val isFromTask : Boolean = true)
 @Serializable data object NewMessageNav
 @Serializable data object SearchNav

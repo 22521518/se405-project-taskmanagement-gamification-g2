@@ -9,7 +9,10 @@ import kotlin.uuid.Uuid
 data class MessageEntity(
     val uuid: Uuid,
     val content: String,
-    val taskUuid: Uuid,
+
+    // Đã sửa từ taskUuid -> conversationId để dùng chung cho mọi loại Chat
+    val conversationId: Uuid,
+
     val sender: User, // Liên kết trực tiếp với Entity User của team
     val createdAt: LocalDateTime,
     val isOwnMessage: Boolean // Thuộc tính FE tự tính toán để hiển thị UI (Trái/Phải)

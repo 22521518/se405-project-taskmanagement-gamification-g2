@@ -16,40 +16,41 @@ class MessageService(
     private val participantRepository: ConversationParticipantRepository,
     private val userRepository: UserRepository
 ) {
+    private val messageSink = Sinks.many().multicast().onBackpressureBuffer<MessageEntity>()
+
     fun getMessagesByConversation(conversationId: UUID, userUuid: UUID): List<MessageEntity> {
         val conversation = conversationRepository.findById(conversationId).orElseThrow()
         val user = userRepository.findById(userUuid).orElseThrow()
 
-        // Kiểm tra quyền: Chỉ thành viên trong phòng mới được xem tin nhắn
         participantRepository.findByConversationAndUser(conversation, user)
             .orElseThrow { IllegalAccessException("Bạn không có quyền xem cuộc hội thoại này") }
 
         return messageRepository.findByConversationUuidOrderByCreatedAtAsc(conversationId)
     }
 
-    private val messageSink = Sinks.many().multicast().onBackpressureBuffer<MessageEntity>()
-
     @Transactional
     fun sendMessage(conversationId: UUID, senderId: UUID, content: String): MessageEntity {
         val conversation = conversationRepository.findById(conversationId).orElseThrow()
         val sender = userRepository.findById(senderId).orElseThrow()
+
         participantRepository.findByConversationAndUser(conversation, sender)
             .orElseThrow { IllegalAccessException("Bạn không phải là thành viên của phòng chat này") }
 
-        val message = MessageEntity(
-            content = content,
-            conversation = conversation,
-            sender = sender,
-            createdAt = LocalDateTime.now()
+        val savedMessage = messageRepository.save(
+            MessageEntity(
+                content = content,
+                conversation = conversation,
+                sender = sender,
+                createdAt = LocalDateTime.now()
+            )
         )
 
-        val savedMessage = messageRepository.save(message)
         messageSink.tryEmitNext(savedMessage)
         return savedMessage
     }
 
     fun subscribeToMessages(conversationId: UUID): Flux<MessageEntity> {
         return messageSink.asFlux()
-            .filter { it.conversation.uuid == conversationId } // Chỉ nghe tin của đúng phòng này
+            .filter { it.conversation.uuid == conversationId }
     }
 }

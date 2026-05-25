@@ -1,0 +1,8 @@
+query GetMyConversations {
+    getMyConversations {
+        uuid
+        type
+        name
+        taskId
+    }
+}

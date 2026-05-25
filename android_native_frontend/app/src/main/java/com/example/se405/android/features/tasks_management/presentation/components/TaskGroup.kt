@@ -37,6 +37,7 @@ import com.example.se405.android.core.presentation.theme.Android_Theme
 import com.example.se405.android.core.presentation.theme.AppText
 import com.example.se405.android.core.presentation.theme.BlueGrey80
 import com.example.se405.android.features.tasks_management.domain.entity.Project
+import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Task
 import com.example.se405.android.features.tasks_management.domain.entity.Workspace
 import java.util.Calendar
@@ -181,9 +182,6 @@ fun Workspace.toTree(): TreeNode<WorkspaceTreeData> = TreeNode(
     name = name,
     data = WorkspaceTreeData.WorkspaceData(this),
     children = projects.map { it.toTree()}
-<<<<<<< HEAD
-)
-=======
 )
 
 
@@ -280,4 +278,3 @@ fun TaskGroupPreview() {
         }
     }
 }
->>>>>>> origin/dev
