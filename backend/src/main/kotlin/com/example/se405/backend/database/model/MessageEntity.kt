@@ -25,7 +25,6 @@ data class MessageEntity(
     @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
-    // THAY ĐỔI Ở ĐÂY: Trỏ về Conversation thay vì Task
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_uuid", nullable = false)
     val conversation: ConversationEntity,
@@ -33,4 +32,10 @@ data class MessageEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_uuid", nullable = false)
     val sender: UserEntity
-)
+){
+    val conversationId: String
+        get() = conversation.uuid.toString()
+
+    val senderId: String
+        get() = sender.uuid.toString()
+}

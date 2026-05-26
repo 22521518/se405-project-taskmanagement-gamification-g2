@@ -3,7 +3,7 @@ query GetConversationByTask($taskId: ID!) {
         uuid
         type
         name
-        taskId
+        taskUuid
         participants {
             uuid
             displayName

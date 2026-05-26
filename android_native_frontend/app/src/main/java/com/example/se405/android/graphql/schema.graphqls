@@ -172,7 +172,7 @@ type Conversation {
     uuid: ID!
     type: ConversationType!
     name: String
-    taskId: ID
+    taskUuid: ID
     participants: [User!]!
 }
 

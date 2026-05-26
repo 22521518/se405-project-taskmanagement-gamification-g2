@@ -19,19 +19,29 @@ class TaskChatViewModel(
     private val chatRepository: ChatRepository
 ) : ViewModel() {
 
+    // STATES
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
-    // Biến lưu trữ ID thật của phòng chat (Tất cả mọi thao tác đều dùng ID này)
     private var realConversationId: String? = null
+    private var pendingParticipantIds: List<String>? = null
+    private var pendingChatName: String = ""
 
-    // Hàm khởi tạo phòng chat (Gọi ở LaunchedEffect bên UI)
-    fun initChat(idPassedFromNavigation: String, isFromTask: Boolean) {
+    // INIT
+    fun initChat(idPassedFromNavigation: String, isFromTask: Boolean, pendingIds: String?, chatName: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
+            if (!pendingIds.isNullOrBlank()) {
+                pendingParticipantIds = pendingIds.split(",")
+                pendingChatName = chatName
+                realConversationId = null
+
+                _uiState.value = _uiState.value.copy(messages = emptyList(), isLoading = false)
+                return@launch
+            }
+
             if (isFromTask) {
-                // ĐI TỪ MÀN HÌNH TASK SANG: Gọi API đổi taskId lấy conversationId
                 val result = chatRepository.getConversationByTask(idPassedFromNavigation)
                 result.onSuccess { convId ->
                     realConversationId = convId
@@ -43,17 +53,16 @@ class TaskChatViewModel(
                     return@launch
                 }
             } else {
-                // ĐI TỪ INBOX / NEW CHAT SANG: ID truyền vào chính là ID phòng chat
                 realConversationId = idPassedFromNavigation
             }
 
-            // Có ID phòng thật rồi thì tiến hành tải tin nhắn
             realConversationId?.let { convId ->
                 loadMessages(convId)
             }
         }
     }
 
+    // LOAD MESSAGES
     private fun loadMessages(conversationId: String) {
         viewModelScope.launch {
             val result = chatRepository.getMessagesByConversation(conversationId)
@@ -71,17 +80,50 @@ class TaskChatViewModel(
         }
     }
 
-    fun sendMessage(content: String) {
-        if (content.isBlank()) return
-
-        // Lấy ID phòng chat hiện tại để gửi
-        val convId = realConversationId ?: return
-
+    // SEND MESSAGE & UPLOAD MEDIA
+    fun sendMessage(content: String, mediaBytes: ByteArray?, mediaType: String?) {
         viewModelScope.launch {
-            val result = chatRepository.sendMessage(conversationId = convId, content = content)
+            _uiState.value = _uiState.value.copy(error = null)
+            var finalContent = content
+
+            if (realConversationId == null && pendingParticipantIds != null) {
+                val isGroupChat = pendingParticipantIds!!.size > 1
+
+                val newConvResult = chatRepository.createConversation(
+                    participantIds = pendingParticipantIds!!,
+                    isGroup = isGroupChat,
+                    name = pendingChatName
+                )
+
+                newConvResult.onSuccess { newConvId ->
+                    realConversationId = newConvId
+                    pendingParticipantIds = null
+                }.onFailure { exception ->
+                    _uiState.value = _uiState.value.copy(error = "Lỗi tạo phòng: ${exception.message}")
+                    return@launch
+                }
+            }
+
+            val convId = realConversationId ?: return@launch
+
+            if (mediaType == "IMAGE" && mediaBytes != null) {
+                val uploadResult = chatRepository.uploadImageToCloudinary(mediaBytes)
+
+                uploadResult.onSuccess { secureUrl ->
+                    finalContent = if (finalContent.isNotBlank()) {
+                        "$finalContent\n[IMAGE:$secureUrl]"
+                    } else {
+                        "[IMAGE:$secureUrl]"
+                    }
+                }.onFailure {
+                    _uiState.value = _uiState.value.copy(error = "Không thể tải ảnh lên máy chủ!")
+                    return@launch
+                }
+            }
+
+            val result = chatRepository.sendMessage(conversationId = convId, content = finalContent)
 
             result.onSuccess {
-                // Gửi thành công thì load lại danh sách tin nhắn
                 loadMessages(convId)
             }.onFailure { exception ->
                 _uiState.value = _uiState.value.copy(

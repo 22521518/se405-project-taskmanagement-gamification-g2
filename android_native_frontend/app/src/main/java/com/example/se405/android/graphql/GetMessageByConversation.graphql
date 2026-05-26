@@ -8,6 +8,7 @@ query GetMessagesByConversation($conversationId: ID!) {
             uuid
             displayName
             avatarUrl
+            email
         }
     }
 }

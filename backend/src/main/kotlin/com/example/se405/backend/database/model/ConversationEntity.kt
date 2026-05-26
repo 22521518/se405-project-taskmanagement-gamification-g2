@@ -18,11 +18,16 @@ data class ConversationEntity(
     @Column(nullable = false)
     val type: ConversationType,
 
-    // Tên nhóm (Chỉ dùng cho GROUP, còn DIRECT thì FE tự lấy tên người kia)
     @Column(name = "name", nullable = true)
     val name: String? = null,
 
     // Trỏ về Task nếu type = TASK (Nullable)
     @Column(name = "task_uuid", nullable = true)
-    val taskUuid: UUID? = null
-)
+    val taskUuid: UUID? = null,
+
+    @OneToMany(mappedBy = "conversation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    val participantLinks: List<ConversationParticipantEntity> = emptyList()
+){
+    val participants: List<UserEntity>
+        get() = participantLinks.map { it.user }
+}

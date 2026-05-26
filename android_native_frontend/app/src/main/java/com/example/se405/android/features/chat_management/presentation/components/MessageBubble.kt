@@ -2,85 +2,187 @@ package com.example.se405.android.features.chat_management.presentation.componen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import androidx.compose.foundation.clickable
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun MessageBubble(
     message: String,
     senderName: String,
+    senderAvatarUrl: String?,
     isOwnMessage: Boolean,
-    time: String
+    time: String,
+    onImageClick: (String) -> Unit = {}
 ) {
-    val backgroundColor = if (isOwnMessage) Color(0xFFE3F2FD) else Color.White
-    val alignment = if (isOwnMessage) Alignment.End else Alignment.Start
-    val shape = if (isOwnMessage) {
-        RoundedCornerShape(16.dp, 16.dp, 0.dp, 16.dp)
-    } else {
-        RoundedCornerShape(16.dp, 16.dp, 16.dp, 0.dp)
+    // --- 1. LOGIC BÓC TÁCH LINK ẢNH ---
+    // Tìm kiếm chuỗi [IMAGE:...] trong tin nhắn
+    val imageUrlPrefix = "[IMAGE:"
+    var textContent = message
+    var imageUrl: String? = null
+
+    if (message.contains(imageUrlPrefix) && message.endsWith("]")) {
+        val startIndex = message.indexOf(imageUrlPrefix)
+        val endIndex = message.lastIndexOf("]")
+        if (startIndex != -1 && endIndex > startIndex) {
+            // Lấy URL ảnh
+            imageUrl = message.substring(startIndex + imageUrlPrefix.length, endIndex)
+            // Lấy phần text (nếu có gõ chữ kèm ảnh)
+            textContent = message.substring(0, startIndex).trim()
+        }
     }
 
-    Column(
+    // --- 2. CẤU HÌNH GIAO DIỆN (ZALO / MESSENGER STYLE) ---
+    val bubbleColor = if (isOwnMessage) Color(0xFF0084FF) else Color(0xFFF1F0F0) // Xanh dương cho mình, Xám nhạt cho người khác
+    val textColor = if (isOwnMessage) Color.White else Color.Black
+
+    // Bo góc thông minh: Tin nhắn của ai thì nhọn ở góc dưới cùng bên đó
+    val bubbleShape = if (isOwnMessage) {
+        RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)
+    } else {
+        RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp)
+    }
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalAlignment = alignment
+            .padding(vertical = 4.dp),
+        horizontalArrangement = if (isOwnMessage) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Bottom // Ảnh đại diện canh đáy ngang với bong bóng
     ) {
+        // --- ẢNH ĐẠI DIỆN ĐỐI PHƯƠNG (Chỉ hiện khi không phải mình) ---
         if (!isOwnMessage) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!senderAvatarUrl.isNullOrBlank()) {
+                    GlideImage(
+                        model = senderAvatarUrl,
+                        contentDescription = "Avatar",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = senderName.take(1).uppercase(),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
+        // --- KHỐI BONG BÓNG + TÊN + THỜI GIAN ---
+        Column(
+            horizontalAlignment = if (isOwnMessage) Alignment.End else Alignment.Start
+        ) {
+            // Tên người gửi (Hiện trên đầu bong bóng của người khác)
+            if (!isOwnMessage) {
+                Text(
+                    text = senderName,
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
+                )
+            }
+
+            // Khối bong bóng chứa Nội dung
+            Box(
+                modifier = Modifier
+                    .clip(bubbleShape)
+                    .background(bubbleColor)
+                    .padding(if (imageUrl != null && textContent.isEmpty()) 2.dp else 12.dp)
+            ) {
+                Column {
+                    // Nếu có ảnh, hiển thị ảnh trước
+                    if (imageUrl != null) {
+                        GlideImage(
+                            model = imageUrl,
+                            contentDescription = "Hình ảnh đính kèm",
+                            modifier = Modifier
+                                .widthIn(max = 220.dp) // Giới hạn chiều rộng ảnh
+                                .heightIn(max = 300.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onImageClick(imageUrl) },
+                            contentScale = ContentScale.Crop
+                        )
+                        if (textContent.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                    }
+
+                    // Hiển thị Text (Nếu có)
+                    if (textContent.isNotEmpty()) {
+                        Text(
+                            text = textContent,
+                            color = textColor,
+                            fontSize = 15.sp,
+                            lineHeight = 22.sp
+                        )
+                    }
+                }
+            }
+
+            // Thời gian gửi
             Text(
-                text = senderName,
-                fontSize = 12.sp,
+                text = time,
+                fontSize = 10.sp,
                 color = Color.Gray,
-                modifier = Modifier.padding(bottom = 2.dp, start = 4.dp)
+                modifier = Modifier.padding(top = 4.dp, end = 4.dp, start = 4.dp)
             )
         }
-
-        Box(
-            modifier = Modifier
-                .clip(shape)
-                .background(backgroundColor)
-                .padding(12.dp)
-        ) {
-            // Note: Để làm Highlight @mention màu vàng, ta sẽ dùng AnnotatedString ở bước sau.
-            // Tạm thời hiển thị text cơ bản.
-            Text(text = message, color = Color.Black)
-        }
-
-        Text(
-            text = time,
-            fontSize = 10.sp,
-            color = Color.Gray,
-            modifier = Modifier.padding(top = 2.dp, end = 4.dp)
-        )
     }
 }
 
-// Đặt ở cuối file MessageBubble.kt
+// Preview để bạn xem thử UI ngay trên Android Studio
 @Preview(showBackground = true)
 @Composable
 fun MessageBubblePreview() {
-    Column {
-        // Preview tin nhắn của người khác
+    Column(modifier = Modifier.padding(16.dp)) {
+        // Preview: Người khác nhắn
         MessageBubble(
             message = "Chào bạn, bug này sửa xong chưa?",
             senderName = "Nguyễn Văn A",
+            senderAvatarUrl = null,
             isOwnMessage = false,
             time = "14:00"
         )
-        // Preview tin nhắn của mình
+        // Preview: Mình nhắn
         MessageBubble(
             message = "Mình đang kiểm tra lại lần cuối nhé!",
             senderName = "Tôi",
+            senderAvatarUrl = null,
             isOwnMessage = true,
             time = "14:05"
+        )
+        // Preview: Gửi ảnh thành công
+        MessageBubble(
+            message = "Ảnh lỗi đây bạn [IMAGE:https://res.cloudinary.com/demo/image/upload/sample.jpg]",
+            senderName = "Tôi",
+            senderAvatarUrl = null,
+            isOwnMessage = true,
+            time = "14:06"
         )
     }
 }

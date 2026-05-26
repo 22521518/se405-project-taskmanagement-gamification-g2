@@ -22,5 +22,7 @@ interface ChatRepository {
     suspend fun createConversation(participantIds: List<String>, isGroup: Boolean, name: String? = null): Result<String>
 
     // (Tùy chọn) 6. Lắng nghe tin nhắn mới qua WebSocket theo thời gian thực
-    fun subscribeToMessages(conversationId: String): Flow<MessageEntity>
+    suspend fun subscribeToMessages(conversationId: String): Flow<MessageEntity>
+
+    suspend fun uploadImageToCloudinary(imageBytes: ByteArray, isAvatar: Boolean = false): Result<String>
 }

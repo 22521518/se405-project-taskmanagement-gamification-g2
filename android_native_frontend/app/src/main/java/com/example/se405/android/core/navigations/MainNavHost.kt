@@ -125,12 +125,13 @@ fun MainNavHost(
 
             composable<ConversationListNav> {
                 ConversationListScreen(
-                    onNavigateToChat = { conversationId, conversationName ->
+                    onNavigateToChat = { conversationId, conversationName, avatarUrl ->
                         navController.navigate(
                             TaskChatNav(
                                 taskId = conversationId, // Truyền ID phòng chat thật
                                 taskName = conversationName,
-                                isFromTask = false // Đánh dấu không phải đi từ Task
+                                avatarUrl = avatarUrl,
+                                isFromTask = false,
                             )
                         )
                     },
@@ -155,45 +156,42 @@ fun MainNavHost(
             }
 
             composable<NewMessageNav> {
-                // Lấy ViewModel của NewMessage để gọi API
                 val viewModel: com.example.se405.android.features.chat_management.presentation.viewmodel.NewMessageViewModel =
                     koinViewModel()
 
                 NewMessageScreen(
-                    viewModel = viewModel, // Chuyền ViewModel vào Screen
+                    viewModel = viewModel,
                     onClose = {
                         navController.popBackStack()
                     },
-                    onNext = { selectedUserIds ->
-                        // Kích hoạt hàm gọi API tạo phòng chat
-                        viewModel.createChatAndNavigate(
-                            selectedUserIds = selectedUserIds,
-                            onSuccess = { realConversationId ->
-                                navController.navigate(
-                                    TaskChatNav(
-                                        taskId = realConversationId,
-                                        taskName = if (selectedUserIds.size > 1) "Nhóm chat mới" else "Chat 1:1",
-                                        isFromTask = false
-                                    )
-                                ) {
-                                    popUpTo(NewMessageNav) {
-                                        inclusive = true
-                                    }
-                                }
+                    onNext = { selectedUserIds, chatName ->
+                        val idsString = selectedUserIds.joinToString(",")
+                        navController.navigate(
+                            TaskChatNav(
+                                taskId = "",
+                                taskName = chatName,
+                                avatarUrl = null,
+                                pendingParticipantIds = idsString,
+                                isFromTask = false
+                            )
+                        ) {
+                            popUpTo(NewMessageNav) {
+                                inclusive = true
                             }
-                        )
+                        }
                     }
                 )
             }
 
             composable<TaskChatNav> { navBackStackEntry ->
-
                 val args = navBackStackEntry.toRoute<TaskChatNav>()
 
                 TaskChatScreen(
                     taskId = args.taskId,
                     taskName = args.taskName,
-                    isFromTask = args.isFromTask, // Bắt buộc truyền cờ này vào Screen
+                    isFromTask = args.isFromTask,
+                    avatarUrl = args.avatarUrl,
+                    pendingParticipantIds = args.pendingParticipantIds,
                     onBackClick = {
                         navController.popBackStack()
                     }

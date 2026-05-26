@@ -9,13 +9,10 @@ import kotlin.uuid.Uuid
 data class MessageEntity(
     val uuid: Uuid,
     val content: String,
-
-    // Đã sửa từ taskUuid -> conversationId để dùng chung cho mọi loại Chat
     val conversationId: Uuid,
-
-    val sender: User, // Liên kết trực tiếp với Entity User của team
+    val sender: User,
     val createdAt: LocalDateTime,
-    val isOwnMessage: Boolean // Thuộc tính FE tự tính toán để hiển thị UI (Trái/Phải)
+    val isOwnMessage: Boolean
 ) {
     init {
         require(content.isNotBlank()) { "Message content must not be blank" }

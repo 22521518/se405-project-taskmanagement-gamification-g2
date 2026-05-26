@@ -29,7 +29,7 @@ object NetworkConfig {
     // const val BASE_IP = "192.168.1.227"
 
     // Chọn IP đúng theo backend đang chạy
-    const val BASE_IP = "192.168.1.5"
+    const val BASE_IP = "192.168.1.12"
 
     const val GRAPHQL_URL =
         "http://$BASE_IP:8080/graphql"

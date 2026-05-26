@@ -3,6 +3,13 @@ query GetMyConversations {
         uuid
         type
         name
-        taskId
+        taskUuid
+        participants {
+            uuid
+            displayName
+            avatarUrl
+            email
+            username
+        }
     }
 }

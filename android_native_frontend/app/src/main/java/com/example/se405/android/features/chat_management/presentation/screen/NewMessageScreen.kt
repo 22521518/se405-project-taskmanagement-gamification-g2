@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
 
 package com.example.se405.android.features.chat_management.presentation.screen
 
@@ -18,9 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import org.koin.androidx.compose.koinViewModel
 import com.example.se405.android.features.chat_management.presentation.viewmodel.NewMessageViewModel
 import kotlin.uuid.ExperimentalUuidApi
@@ -29,7 +32,7 @@ import kotlin.uuid.ExperimentalUuidApi
 @Composable
 fun NewMessageScreen(
     onClose: () -> Unit,
-    onNext: (selectedUserIds: List<String>) -> Unit,
+    onNext: (selectedUserIds: List<String>, chatName: String) -> Unit,
     viewModel: NewMessageViewModel = koinViewModel()
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -37,7 +40,6 @@ fun NewMessageScreen(
 
     val activeColor = Color(0xFF2563EB)
 
-    // Lấy dữ liệu thật từ ViewModel
     val usersList by viewModel.users.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -54,7 +56,16 @@ fun NewMessageScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { onNext(selectedUsers.toList()) },
+                        onClick = {
+                            val idsList = selectedUsers.toList()
+                            val chatName = if (idsList.size > 1) {
+                                "Nhóm chat mới"
+                            } else {
+                                val selectedUser = usersList.find { it.uuid.toString() == idsList.first() }
+                                selectedUser?.displayName ?: "Chat 1:1"
+                            }
+                            onNext(idsList, chatName)
+                        },
                         enabled = selectedUsers.isNotEmpty()
                     ) {
                         Text(
@@ -64,8 +75,12 @@ fun NewMessageScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = Color.Unspecified,
+                    navigationIconContentColor = Color.Unspecified,
+                    titleContentColor = Color.Unspecified,
+                    actionIconContentColor = Color.Unspecified
                 )
             )
         }
@@ -108,7 +123,6 @@ fun NewMessageScreen(
                 }
                 else -> {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        // Lọc theo Tên hiển thị hoặc Email
                         val filteredUsers = usersList.filter {
                             it.displayName.contains(searchQuery, ignoreCase = true) ||
                                     it.email.contains(searchQuery, ignoreCase = true)
@@ -131,6 +145,7 @@ fun NewMessageScreen(
                                     .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // --- KHỐI HIỂN THỊ AVATAR ---
                                 Box(
                                     modifier = Modifier
                                         .size(48.dp)
@@ -138,18 +153,28 @@ fun NewMessageScreen(
                                         .background(MaterialTheme.colorScheme.primaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = user.displayName.take(1).uppercase(),
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
+                                    // 💡 ĐÃ SỬA: Logic kiểm tra và load Avatar thật
+                                    if (!user.avatarUrl.isNullOrBlank() && user.avatarUrl != "null") {
+                                        GlideImage(
+                                            model = user.avatarUrl,
+                                            contentDescription = "Avatar",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Text(
+                                            text = user.displayName.take(1).uppercase(),
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
                                 }
 
                                 Spacer(modifier = Modifier.width(16.dp))
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(text = user.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                    Text(text = user.email, color = Color.Gray, fontSize = 13.sp) // Hiển thị email thay vì role
+                                    Text(text = user.email, color = Color.Gray, fontSize = 13.sp)
                                 }
 
                                 if (isSelected) {

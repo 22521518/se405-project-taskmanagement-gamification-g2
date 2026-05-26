@@ -15,12 +15,13 @@ import org.springframework.stereotype.Controller
 import java.util.UUID
 import org.springframework.graphql.data.method.annotation.SubscriptionMapping
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 
 @Controller
 class ChatController(
     private val messageService: MessageService,
     private val conversationService: ConversationService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
 ) {
     private fun getCurrentUserUuid(): UUID {
         val auth = SecurityContextHolder.getContext().authentication
@@ -65,8 +66,10 @@ class ChatController(
         @Argument name: String?,
         @Argument participantIds: List<String>
     ): ConversationEntity {
-        val uuids = participantIds.map { UUID.fromString(it) }
-        return conversationService.createConversation(type, name, uuids)
+        val myUuid = getCurrentUserUuid()
+        val uuids = participantIds.map { UUID.fromString(it) }.toMutableSet()
+        uuids.add(myUuid)
+        return conversationService.createConversation(type, name, uuids.toList())
     }
 
     @MutationMapping

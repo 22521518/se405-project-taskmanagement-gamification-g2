@@ -47,6 +47,6 @@ object AuthSettingsNav
 object DeviceAuthSuccessNav
 
 @Serializable data object ConversationListNav
-@Serializable data class TaskChatNav(val taskId: String, val taskName: String, val isFromTask : Boolean = true)
+@Serializable data class TaskChatNav(val taskId: String, val taskName: String, val avatarUrl: String? = null, val isFromTask : Boolean = true, val pendingParticipantIds: String? = null)
 @Serializable data object NewMessageNav
 @Serializable data object SearchNav
