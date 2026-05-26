@@ -74,7 +74,10 @@ class AuthController(
         @RequestHeader("Authorization") authHeader: String,
         @RequestBody req: UpdateProfileRequest
     ): ResponseEntity<UserProfileResponse> {
-        val userId = jwtUtils.getUserIdFromToken(authHeader.substring(7))
-        return ResponseEntity.ok(authService.updateProfile(userId, req))
+        val cleanHeader = authHeader.substringBefore(",").trim()
+        val token = cleanHeader.substring(7)
+        val userId = jwtUtils.getUserIdFromToken(token)
+        val updatedUser = authService.updateProfile(userId, req)
+        return ResponseEntity.ok(updatedUser)
     }
 }

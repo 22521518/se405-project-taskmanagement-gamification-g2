@@ -267,11 +267,12 @@ fun MainNavHost(
                             popUpTo(TaskManagementNav) { inclusive = true }
                         }
                     },
-                    onEditClick = { displayName, email ->
+                    onEditClick = { displayName, email, avatarUrl ->
                         navController.navigate(
                             EditProfileNav(
                                 displayName = displayName,
-                                email = email
+                                email = email,
+                                avatarUrl = avatarUrl
                             )
                         )
                     }
@@ -283,6 +284,7 @@ fun MainNavHost(
                 EditProfileScreen(
                     currentName = args.displayName,
                     currentEmail = args.email,
+                    currentAvatarUrl = args.avatarUrl,
                     onBack = { navController.popBackStack() }
                 )
             }

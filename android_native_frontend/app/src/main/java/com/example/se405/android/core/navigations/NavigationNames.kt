@@ -17,7 +17,8 @@ object PersonalNav
 @Serializable
 data class EditProfileNav(
     val displayName: String,
-    val email: String
+    val email: String,
+    val avatarUrl: String? = null
 )
 
 // Cấu trúc dữ liệu cho từng Tab
