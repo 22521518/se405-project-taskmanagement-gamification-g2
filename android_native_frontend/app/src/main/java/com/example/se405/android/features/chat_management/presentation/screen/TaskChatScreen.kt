@@ -48,12 +48,15 @@ fun TaskChatScreen(
     viewModel: TaskChatViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentChatName by viewModel.chatNameState.collectAsState()
     val listState = rememberLazyListState()
     val context = LocalContext.current
 
     var selectedImageToView by remember { mutableStateOf<String?>(null) }
     var showChatOptions by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var newChatNameInput by remember { mutableStateOf("") }
 
     val primaryBlue = Color(0xFF2563EB)
 
@@ -90,6 +93,35 @@ fun TaskChatScreen(
         }
     }
 
+    if (showRenameDialog) {
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text("Đổi tên nhóm chat", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = newChatNameInput,
+                    onValueChange = { newChatNameInput = it },
+                    placeholder = { Text("Nhập tên mới...") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (newChatNameInput.isNotBlank()) {
+                            viewModel.renameChat(newChatNameInput.trim())
+                        }
+                        showRenameDialog = false
+                    }
+                ) { Text("Lưu", fontWeight = FontWeight.Bold, color = Color(0xFF2563EB)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) { Text("Hủy", color = Color.Gray) }
+            }
+        )
+    }
+
     // UI: Menu tùy chọn chat
     if (showChatOptions) {
         ModalBottomSheet(
@@ -105,6 +137,16 @@ fun TaskChatScreen(
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
                 )
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+
+                ChatOptionItem(
+                    icon = Icons.Rounded.Edit,
+                    title = "Đổi tên nhóm",
+                    baseColor = Color(0xFF8B5CF6)
+                ) {
+                    showChatOptions = false
+                    newChatNameInput = currentChatName.ifBlank { taskName }
+                    showRenameDialog = true
+                }
 
                 ChatOptionItem(icon = Icons.Rounded.Search, title = "Tìm kiếm trong đoạn chat", baseColor = primaryBlue) {}
                 ChatOptionItem(icon = Icons.Rounded.PhotoLibrary, title = "Ảnh, file và liên kết", baseColor = Color(0xFF10B981)) {}
@@ -142,7 +184,7 @@ fun TaskChatScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = taskName,
+                            text = currentChatName.ifBlank { taskName },
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             color = primaryBlue,

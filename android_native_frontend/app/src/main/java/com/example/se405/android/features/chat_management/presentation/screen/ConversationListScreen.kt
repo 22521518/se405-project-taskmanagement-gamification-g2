@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.se405.android.core.utils.formatTimeAgo
 import com.example.se405.android.features.chat_management.presentation.viewmodel.ConversationListViewModel
 import org.koin.androidx.compose.koinViewModel
 import kotlin.uuid.ExperimentalUuidApi
@@ -47,10 +48,6 @@ fun ConversationListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val myUserId = uiState.myUserId ?: ""
-
-    LaunchedEffect(Unit) {
-        viewModel.loadConversations()
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -158,29 +155,42 @@ fun ConversationListScreen(
                             }
                         } else {
                             items(uiState.conversations) { conversation ->
-                                // --- LOGIC TÍNH TOÁN DỮ LIỆU HIỂN THỊ CHUẨN ZALO/MESSENGER ---
-
                                 // 1. Tìm thông tin người đối diện (Dựa vào myUserId)
                                 val partner = conversation.participants.firstOrNull { it.uuid.toString() != myUserId }
                                     ?: conversation.participants.firstOrNull()
 
                                 // 2. Tên hiển thị
-                                val finalDisplayName = if (conversation.type == "DIRECT") {
-                                    partner?.displayName ?: "Trò chuyện Cá nhân"
-                                } else {
-                                    conversation.name ?: "Nhóm chat"
+                                val finalDisplayName = when (conversation.type) {
+                                    "DIRECT" -> partner?.displayName ?: "Trò chuyện Cá nhân"
+                                    "TASK" -> conversation.name ?: "Thảo luận công việc"
+                                    else -> conversation.name ?: "Nhóm chat mới"
                                 }
 
                                 // 3. Avatar hiển thị
                                 val finalAvatarUrl = if (conversation.type == "DIRECT") {
                                     partner?.avatarUrl
                                 } else {
-                                    null // Chat nhóm tạm thời để null để hiện Icon Group
+                                    null
                                 }
 
-                                val lastMessagePrefix = if (Math.random() > 0.5) "Bạn" else partner?.displayName?.take(10)
-                                val lastMsgContent = "đã gửi một tin nhắn."
-                                val timeAgo = " · 12p"
+                                val lastMsg = conversation.lastMessage
+
+                                val lastMessagePrefix = when {
+                                    lastMsg == null -> ""
+                                    lastMsg.senderId == myUserId -> "Bạn: "
+                                    conversation.type == "GROUP" -> "${lastMsg.senderName}: "
+                                    else -> ""
+                                }
+
+                                val rawContent = lastMsg?.content ?: "Chưa có tin nhắn"
+                                val lastMsgContent = if (rawContent.contains("[IMAGE:") && rawContent.endsWith("]")) {
+                                    "[Hình ảnh]"
+                                } else {
+                                    rawContent
+                                }
+
+                                val timeAgo = lastMsg?.createdAt?.let { " · ${formatTimeAgo(it)}" } ?: ""
+                                val isMessageUnread = lastMsg != null && lastMsg.senderId.lowercase() != myUserId.lowercase()
 
                                 ConversationListItem(
                                     displayName = finalDisplayName,
@@ -188,6 +198,7 @@ fun ConversationListScreen(
                                     conversationType = conversation.type,
                                     lastMessagePrefix = lastMessagePrefix,
                                     lastMessageContent = lastMsgContent,
+                                    isUnread = isMessageUnread,
                                     timeAgo = timeAgo,
                                     onClick = {
                                         onNavigateToChat(conversation.uuid, finalDisplayName, finalAvatarUrl)
@@ -212,10 +223,9 @@ fun ConversationListItem(
     lastMessagePrefix: String?,
     lastMessageContent: String,
     timeAgo: String,
+    isUnread: Boolean,
     onClick: () -> Unit
 ) {
-    val unreadCount = 0
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -275,7 +285,7 @@ fun ConversationListItem(
                 Text(
                     text = displayName,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (unreadCount > 0) FontWeight.ExtraBold else FontWeight.Bold,
+                    fontWeight = if (isUnread) FontWeight.ExtraBold else FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -307,23 +317,23 @@ fun ConversationListItem(
                     Text(
                         text = "$lastMessagePrefix: ",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (unreadCount > 0) FontWeight.Bold else FontWeight.Normal,
-                        color = if (unreadCount > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                        fontWeight = if (isUnread) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isUnread) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else if (!lastMessagePrefix.isNullOrBlank() && lastMessagePrefix == "Bạn") {
                     Text(
                         text = "Bạn: ",
                         style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (unreadCount > 0) FontWeight.Bold else FontWeight.Normal,
-                        color = if (unreadCount > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                        fontWeight = if (isUnread) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isUnread) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 Text(
                     text = lastMessageContent + timeAgo,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (unreadCount > 0) FontWeight.Bold else FontWeight.Normal,
-                    color = if (unreadCount > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = if (isUnread) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isUnread) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

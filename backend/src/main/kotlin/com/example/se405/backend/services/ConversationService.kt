@@ -21,13 +21,28 @@ class ConversationService(
 
     // Tạo hoặc lấy phòng chat cho Task (để tương thích với tính năng cũ)
     @Transactional
-    fun getOrCreateTaskConversation(taskUuid: UUID): ConversationEntity {
+    fun getOrCreateTaskConversation(taskUuid: UUID, taskName: String): ConversationEntity {
         return conversationRepository.findByTaskUuid(taskUuid).orElseGet {
             val newConversation = conversationRepository.save(
-                ConversationEntity(type = ConversationType.TASK, taskUuid = taskUuid)
+                ConversationEntity(
+                    type = ConversationType.TASK,
+                    taskUuid = taskUuid,
+                    name = taskName
+                )
             )
             newConversation
         }
+    }
+
+    //đổi tên phòng chat
+    @Transactional
+    fun renameConversation(conversationId: UUID, newName: String): ConversationEntity {
+        val conversation = conversationRepository.findById(conversationId).orElseThrow {
+            Exception("Không tìm thấy đoạn chat")
+        }
+        // Cập nhật tên và lưu lại
+        val updatedConversation = conversation.copy(name = newName)
+        return conversationRepository.save(updatedConversation)
     }
 
     // Tạo phòng chat mới (Direct hoặc Group)

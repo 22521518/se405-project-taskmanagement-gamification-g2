@@ -2,12 +2,18 @@ package com.example.se405.android.features.chat_management.presentation.viewmode
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.se405.android.core.authentication.data.AuthPreferences
 import com.example.se405.android.features.chat_management.domain.entity.MessageEntity
 import com.example.se405.android.features.chat_management.domain.repository.ChatRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.firstOrNull
+import kotlin.uuid.ExperimentalUuidApi
+import android.util.Log
 
 data class ChatUiState(
     val messages: List<MessageEntity> = emptyList(),
@@ -16,7 +22,8 @@ data class ChatUiState(
 )
 
 class TaskChatViewModel(
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val authPreferences: AuthPreferences
 ) : ViewModel() {
 
     // STATES
@@ -25,16 +32,20 @@ class TaskChatViewModel(
 
     private var realConversationId: String? = null
     private var pendingParticipantIds: List<String>? = null
-    private var pendingChatName: String = ""
+
+    private var messageSubscriptionJob: Job? = null
+
+    private val _chatNameState = MutableStateFlow("")
+    val chatNameState: StateFlow<String> = _chatNameState.asStateFlow()
 
     // INIT
     fun initChat(idPassedFromNavigation: String, isFromTask: Boolean, pendingIds: String?, chatName: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _chatNameState.value = chatName
 
             if (!pendingIds.isNullOrBlank()) {
                 pendingParticipantIds = pendingIds.split(",")
-                pendingChatName = chatName
                 realConversationId = null
 
                 _uiState.value = _uiState.value.copy(messages = emptyList(), isLoading = false)
@@ -42,7 +53,7 @@ class TaskChatViewModel(
             }
 
             if (isFromTask) {
-                val result = chatRepository.getConversationByTask(idPassedFromNavigation)
+                val result = chatRepository.getConversationByTask(idPassedFromNavigation, chatName)
                 result.onSuccess { convId ->
                     realConversationId = convId
                 }.onFailure { exception ->
@@ -62,6 +73,55 @@ class TaskChatViewModel(
         }
     }
 
+    fun renameChat(newName: String) {
+        val convId = realConversationId ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            val result = chatRepository.renameConversation(convId, newName)
+
+            result.onSuccess {
+                _chatNameState.value = newName
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }.onFailure { exception ->
+                _uiState.value = _uiState.value.copy(
+                    error = "Lỗi đổi tên: ${exception.message}",
+                    isLoading = false
+                )
+            }
+        }
+    }
+
+    @OptIn(ExperimentalUuidApi::class)
+    private fun startListeningForMessages(conversationId: String) {
+        messageSubscriptionJob?.cancel()
+        Log.d("WebSocketChat", "🔄 Bắt đầu thiết lập lắng nghe cho phòng: $conversationId")
+
+        messageSubscriptionJob = viewModelScope.launch {
+            val myUserId = authPreferences.userId.firstOrNull() ?: return@launch
+            Log.d("WebSocketChat", "👤 My User ID: $myUserId")
+
+            Log.d("WebSocketChat", "📡 Đang kết nối GraphQL Subscription...")
+            chatRepository.subscribeToMessages(conversationId, myUserId)
+                .catch { e ->
+                    Log.e("WebSocketChat", "❌ Lỗi luồng WebSocket: ${e.message}", e)
+                }
+                .collect { newMessage ->
+                    Log.d("WebSocketChat", "📥 NHẬN ĐƯỢC TIN NHẮN TỪ WEBSOCKET: ${newMessage.content}")
+                    val currentList = _uiState.value.messages
+                    val isDuplicate = currentList.any { it.uuid == newMessage.uuid }
+
+                    if (!isDuplicate) {
+                        Log.d("WebSocketChat", "✅ Tin nhắn hợp lệ, đang cập nhật lên UI...")
+                        _uiState.value = _uiState.value.copy(
+                            messages = currentList + newMessage
+                        )
+                    }else {
+                        Log.w("WebSocketChat", "⚠️ Tin nhắn bị trùng lặp (có thể do tự gửi), bỏ qua update.")
+                    }
+                }
+        }
+    }
+
     // LOAD MESSAGES
     private fun loadMessages(conversationId: String) {
         viewModelScope.launch {
@@ -71,6 +131,9 @@ class TaskChatViewModel(
                     messages = messages,
                     isLoading = false
                 )
+
+                startListeningForMessages(conversationId)
+
             }.onFailure { exception ->
                 _uiState.value = _uiState.value.copy(
                     error = exception.message ?: "Lỗi tải tin nhắn",
@@ -81,6 +144,7 @@ class TaskChatViewModel(
     }
 
     // SEND MESSAGE & UPLOAD MEDIA
+    @OptIn(ExperimentalUuidApi::class)
     fun sendMessage(content: String, mediaBytes: ByteArray?, mediaType: String?) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(error = null)
@@ -92,7 +156,7 @@ class TaskChatViewModel(
                 val newConvResult = chatRepository.createConversation(
                     participantIds = pendingParticipantIds!!,
                     isGroup = isGroupChat,
-                    name = pendingChatName
+                    name = _chatNameState.value
                 )
 
                 newConvResult.onSuccess { newConvId ->
@@ -124,12 +188,26 @@ class TaskChatViewModel(
             val result = chatRepository.sendMessage(conversationId = convId, content = finalContent)
 
             result.onSuccess {
-                loadMessages(convId)
+                sentMessage ->
+
+                val currentList = _uiState.value.messages
+                val isDuplicate = currentList.any { it.uuid == sentMessage.uuid }
+
+                if (!isDuplicate) {
+                    _uiState.value = _uiState.value.copy(
+                        messages = currentList + sentMessage
+                    )
+                }
             }.onFailure { exception ->
                 _uiState.value = _uiState.value.copy(
                     error = "Lỗi gửi tin nhắn: ${exception.message}"
                 )
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        messageSubscriptionJob?.cancel() // Ngắt kết nối khi thoát màn hình Chat
     }
 }

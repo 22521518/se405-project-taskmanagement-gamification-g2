@@ -40,7 +40,7 @@ type Query {
     getMyConversations: [Conversation!]!
     # Lấy tin nhắn theo phòng chat thay vì theo Task
     getMessagesByConversation(conversationId: ID!): [Message!]!
-    getConversationByTask(taskId: ID!): Conversation!
+    getConversationByTask(taskId: ID!, taskName: String!): Conversation!
 }
 
 type Mutation {
@@ -69,6 +69,8 @@ type Mutation {
     createConversation(type: ConversationType!, name: String, participantIds: [ID!]!): Conversation!
     # Gửi tin nhắn vào phòng chat
     sendMessage(conversationId: ID!, content: String!): Message!
+
+    renameConversation(conversationId: ID!, newName: String!): Conversation!
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -174,10 +176,19 @@ type Conversation {
     name: String
     taskUuid: ID
     participants: [User!]!
+    lastMessage: Message
 }
 
 type Subscription {
-    messageAdded(conversationId: ID!): Message!
+    messageAdded(conversationId: ID!): MessagePayload!
+}
+
+type MessagePayload {
+    uuid: ID!
+    content: String!
+    createdAt: String!
+    sender: User!
+    conversationId: ID!
 }
 # ═══════════════════════════════════════════════════════════════
 # Input types

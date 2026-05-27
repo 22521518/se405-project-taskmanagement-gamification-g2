@@ -50,8 +50,6 @@ fun MessageBubble(
     // --- 2. CẤU HÌNH GIAO DIỆN (ZALO / MESSENGER STYLE) ---
     val bubbleColor = if (isOwnMessage) Color(0xFF0084FF) else Color(0xFFF1F0F0) // Xanh dương cho mình, Xám nhạt cho người khác
     val textColor = if (isOwnMessage) Color.White else Color.Black
-
-    // Bo góc thông minh: Tin nhắn của ai thì nhọn ở góc dưới cùng bên đó
     val bubbleShape = if (isOwnMessage) {
         RoundedCornerShape(18.dp, 18.dp, 4.dp, 18.dp)
     } else {
@@ -63,12 +61,13 @@ fun MessageBubble(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         horizontalArrangement = if (isOwnMessage) Arrangement.End else Arrangement.Start,
-        verticalAlignment = Alignment.Bottom // Ảnh đại diện canh đáy ngang với bong bóng
+        verticalAlignment = Alignment.Top
     ) {
-        // --- ẢNH ĐẠI DIỆN ĐỐI PHƯƠNG (Chỉ hiện khi không phải mình) ---
+        // --- ẢNH ĐẠI DIỆN ĐỐI PHƯƠNG ---
         if (!isOwnMessage) {
             Box(
                 modifier = Modifier
+                    .padding(top = 16.dp)
                     .size(28.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
@@ -152,37 +151,5 @@ fun MessageBubble(
                 modifier = Modifier.padding(top = 4.dp, end = 4.dp, start = 4.dp)
             )
         }
-    }
-}
-
-// Preview để bạn xem thử UI ngay trên Android Studio
-@Preview(showBackground = true)
-@Composable
-fun MessageBubblePreview() {
-    Column(modifier = Modifier.padding(16.dp)) {
-        // Preview: Người khác nhắn
-        MessageBubble(
-            message = "Chào bạn, bug này sửa xong chưa?",
-            senderName = "Nguyễn Văn A",
-            senderAvatarUrl = null,
-            isOwnMessage = false,
-            time = "14:00"
-        )
-        // Preview: Mình nhắn
-        MessageBubble(
-            message = "Mình đang kiểm tra lại lần cuối nhé!",
-            senderName = "Tôi",
-            senderAvatarUrl = null,
-            isOwnMessage = true,
-            time = "14:05"
-        )
-        // Preview: Gửi ảnh thành công
-        MessageBubble(
-            message = "Ảnh lỗi đây bạn [IMAGE:https://res.cloudinary.com/demo/image/upload/sample.jpg]",
-            senderName = "Tôi",
-            senderAvatarUrl = null,
-            isOwnMessage = true,
-            time = "14:06"
-        )
     }
 }

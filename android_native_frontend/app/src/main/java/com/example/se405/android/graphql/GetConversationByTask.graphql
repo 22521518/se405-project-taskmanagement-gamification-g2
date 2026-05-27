@@ -1,5 +1,5 @@
-query GetConversationByTask($taskId: ID!) {
-    getConversationByTask(taskId: $taskId) {
+query GetConversationByTask($taskId: ID!, $taskName: String!) {
+    getConversationByTask(taskId: $taskId, taskName: $taskName) {
         uuid
         type
         name

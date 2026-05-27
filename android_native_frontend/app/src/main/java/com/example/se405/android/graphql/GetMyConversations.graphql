@@ -11,5 +11,14 @@ query GetMyConversations {
             email
             username
         }
+        lastMessage {
+            uuid
+            content
+            createdAt
+            sender {
+                uuid
+                displayName
+            }
+        }
     }
 }

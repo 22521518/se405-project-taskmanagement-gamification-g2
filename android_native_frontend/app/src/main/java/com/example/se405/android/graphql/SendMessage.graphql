@@ -3,10 +3,12 @@ mutation SendMessage($conversationId: ID!, $content: String!) {
         uuid
         content
         createdAt
+        conversationId
         sender {
             uuid
             displayName
             avatarUrl
+            email
         }
     }
 }

@@ -2,9 +2,10 @@ package com.example.se405.android.di
 
 import android.content.Context
 import com.apollographql.apollo.network.okHttpClient
-import com.apollographql.apollo.network.ws.WebSocketNetworkTransport
 import com.example.se405.android.core.authentication.data.AuthPreferences
 import com.example.se405.android.core.authentication.data.AuthPreferencesImpl
+import com.example.se405.android.features.chat_management.data.repositoryImpl.ChatRepositoryImpl
+import com.example.se405.android.features.chat_management.domain.repository.ChatRepository
 import com.example.se405.android.features.chat_management.presentation.viewmodel.NewMessageViewModel
 import com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskManagementViewModel
 import com.example.se405.android.features.users_management.data.repositoryImpl.UserRepositoryImpl
@@ -23,13 +24,15 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
+import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.annotations.ApolloExperimental
+import com.apollographql.apollo.network.websocket.WebSocketNetworkTransport
+import com.apollographql.apollo.network.ws.SubscriptionWsProtocol
+import com.apollographql.apollo.network.ws.GraphQLWsProtocol
 
 object NetworkConfig {
-
-    // const val BASE_IP = "192.168.1.227"
-
     // Chọn IP đúng theo backend đang chạy
-    const val BASE_IP = "192.168.1.12"
+    const val BASE_IP = "192.168.1.33"
 
     const val GRAPHQL_URL =
         "http://$BASE_IP:8080/graphql"
@@ -48,6 +51,7 @@ val appModule = module {
 /**
  * Network module
  */
+@OptIn(ApolloExperimental::class)
 val networkModule = module {
 
     // OkHttpClient
@@ -122,35 +126,12 @@ val networkModule = module {
 
     // Apollo Client
     single {
-
-        val authPreferences: AuthPreferences = get()
-
-        val token = runBlocking {
-            authPreferences.authToken.first()
-        } ?: ""
-
         val okHttpClient = get<OkHttpClient>()
-
-        val webSocketTransport =
-            WebSocketNetworkTransport.Builder()
-                .serverUrl(
-                    "ws://${NetworkConfig.BASE_IP}:8080/graphql"
-                )
-                .addHeader(
-                    "Authorization",
-                    "Bearer $token"
-                )
-                .build()
-
-        val httpTransport =
-            com.apollographql.apollo.network.http.HttpNetworkTransport.Builder()
-                .serverUrl(NetworkConfig.GRAPHQL_URL)
-                .okHttpClient(okHttpClient)
-                .build()
-
-        com.apollographql.apollo.ApolloClient.Builder()
-            .networkTransport(httpTransport)
-            .subscriptionNetworkTransport(webSocketTransport)
+        ApolloClient.Builder()
+            .serverUrl(NetworkConfig.GRAPHQL_URL) // URL cho API thường
+            .webSocketServerUrl("ws://${NetworkConfig.BASE_IP}:8080/graphql")
+            .wsProtocol(GraphQLWsProtocol.Factory())
+            .okHttpClient(okHttpClient)
             .build()
     }
 }

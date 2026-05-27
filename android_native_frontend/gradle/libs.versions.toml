@@ -27,7 +27,6 @@ apollo = "4.4.3"
 ktor = "3.4.2"
 datastore = "1.2.1"
 transportRuntime = "4.1.1"
-firebaseDataconnect = "17.2.2"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }

@@ -38,4 +38,26 @@ data class MessageEntity(
 
     val senderId: String
         get() = sender.uuid.toString()
+
+    override fun toString(): String {
+        return "MessageEntity(uuid=$uuid, content='$content', createdAt=$createdAt)"
+    }
+
+    override fun hashCode(): Int = uuid?.hashCode() ?: 0
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as MessageEntity
+
+        if (uuid != other.uuid) return false
+        if (content != other.content) return false
+        if (createdAt != other.createdAt) return false
+        if (conversation != other.conversation) return false
+        if (sender != other.sender) return false
+        if (conversationId != other.conversationId) return false
+        if (senderId != other.senderId) return false
+
+        return true
+    }
 }

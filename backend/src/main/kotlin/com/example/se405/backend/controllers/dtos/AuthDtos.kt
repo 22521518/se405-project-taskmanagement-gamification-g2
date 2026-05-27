@@ -44,6 +44,21 @@ data class SimpleMessageResponse(
     val message: String
 )
 
+data class MessagePayload(
+    val uuid: String,
+    val content: String,
+    val createdAt: String,
+    val conversationId: String,
+    val sender: UserPayload
+)
+
+data class UserPayload(
+    val uuid: String,
+    val displayName: String?,
+    val avatarUrl: String?,
+    val email: String?
+)
+
 data class UserProfileResponse(
     val uuid: UUID,
     val email: String,
