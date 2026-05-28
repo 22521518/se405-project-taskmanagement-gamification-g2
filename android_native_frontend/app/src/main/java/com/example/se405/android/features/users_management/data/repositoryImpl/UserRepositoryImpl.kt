@@ -4,6 +4,7 @@ import com.apollographql.apollo.ApolloClient
 import com.example.se405.android.features.users_management.domain.repository.UserRepository
 import com.example.se405.android.features.users_management.domain.entity.User
 import com.example.se405.android.graphql.GetAllUsersQuery
+import com.example.se405.android.graphql.UpdateFcmTokenMutation
 import java.time.LocalDate
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -35,5 +36,22 @@ class UserRepositoryImpl(
                 updatedAt = now
             )
         } ?: emptyList()
+    }
+
+    override suspend fun updateFcmToken(token: String): Result<Boolean> {
+        return try {
+            val response = apolloClient.mutation(UpdateFcmTokenMutation(token)).execute()
+
+            if (response.hasErrors()) {
+                val errorMsg = response.errors?.firstOrNull()?.message ?: "Lỗi từ Backend khi cập nhật Token"
+                Result.failure(Exception(errorMsg))
+            } else {
+                // Trả về true hoặc false dựa vào kết quả từ GraphQL
+                val success = response.data?.updateFcmToken ?: false
+                Result.success(success)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

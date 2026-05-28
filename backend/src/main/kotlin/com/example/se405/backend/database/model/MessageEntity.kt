@@ -31,7 +31,11 @@ data class MessageEntity(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_uuid", nullable = false)
-    val sender: UserEntity
+    val sender: UserEntity,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_uuid", nullable = true)
+    val replyTo: MessageEntity? = null
 ){
     val conversationId: String
         get() = conversation.uuid.toString()

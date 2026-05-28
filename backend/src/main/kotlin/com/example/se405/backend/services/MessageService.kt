@@ -11,7 +11,9 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
-
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.Message
+import com.google.firebase.messaging.Notification
 @Service
 class MessageService(
     private val messageRepository: MessageRepository,
@@ -40,37 +42,76 @@ class MessageService(
     }
 
     @Transactional
-    fun sendMessage(conversationId: UUID, senderId: UUID, content: String): MessageEntity {
+    fun sendMessage(conversationId: UUID, senderId: UUID, content: String, replyToId: UUID? = null): MessageEntity {
         val conversation = conversationRepository.findById(conversationId).orElseThrow()
         val sender = userRepository.findById(senderId).orElseThrow()
 
         participantRepository.findByConversationAndUser(conversation, sender)
             .orElseThrow { IllegalAccessException("Bạn không phải là thành viên của phòng chat này") }
 
+        val replyToMessage = replyToId?.let {
+            messageRepository.findById(it).orElse(null)
+        }
+
         val savedMessage = messageRepository.save(
             MessageEntity(
                 content = content,
                 conversation = conversation,
                 sender = sender,
+                replyTo = replyToMessage,
                 createdAt = LocalDateTime.now()
             )
         )
 
-        val payload = MessagePayload(
-            uuid = savedMessage.uuid.toString(),
-            content = savedMessage.content,
-            createdAt = savedMessage.createdAt.toString(),
-            conversationId = conversationId.toString(),
-            sender =
-                UserPayload(
-                uuid = sender.uuid.toString(),
-                displayName = sender.displayName,
-                avatarUrl = sender.avatarUrl,
-                email = sender.email
+        fun mapToPayload(entity: MessageEntity): MessagePayload {
+            return MessagePayload(
+                uuid = entity.uuid.toString(),
+                content = entity.content,
+                createdAt = entity.createdAt.toString(),
+                conversationId = entity.conversation.uuid.toString(),
+                sender = UserPayload(
+                    uuid = entity.sender.uuid.toString(),
+                    displayName = entity.sender.displayName,
+                    avatarUrl = entity.sender.avatarUrl,
+                    email = entity.sender.email
+                ),
+                replyTo = entity.replyTo?.let { mapToPayload(it) } // Đệ quy map tin nhắn gốc
             )
-        )
+        }
 
+        val payload = mapToPayload(savedMessage)
+
+        // 1. Đẩy tin nhắn qua luồng WebSocket (Real-time)
         getOrCreateSink(conversationId).tryEmitNext(payload)
+
+        // 2. Bắn Push Notification qua Firebase cho các thành viên khác
+        val otherParticipants = participantRepository.findByConversation(conversation)
+            .filter { it.user.uuid != senderId }
+
+        for (participant in otherParticipants) {
+            val token = participant.user.fcmToken
+            if (!token.isNullOrBlank()) {
+                try {
+                    val fcmMessage = Message.builder()
+                        .setToken(token)
+                        .putData("conversationId", conversationId.toString())
+                        .putData("senderId", senderId.toString())
+                        .putData("type", "CHAT_MESSAGE")
+                        .setNotification(
+                            Notification.builder()
+                                .setTitle(sender.displayName ?: "Tin nhắn mới")
+                                .setBody(content)
+                                .build()
+                        )
+                        .build()
+
+                    FirebaseMessaging.getInstance().send(fcmMessage)
+                } catch (e: Exception) {
+                    println("🚨 Lỗi khi gửi FCM cho user ${participant.user.username}: ${e.message}")
+                }
+            }
+        }
+
         return savedMessage
     }
 

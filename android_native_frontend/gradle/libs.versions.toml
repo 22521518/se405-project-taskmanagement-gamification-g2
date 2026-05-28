@@ -4,6 +4,7 @@ agp = "9.2.1"
 biometric = "1.1.0"
 compose = "1.0.0-beta09"
 composeVersion = "1.0.0-beta01"
+firebaseBom = "34.13.0"
 koinCore = "4.2.1"
 kotlin = "2.3.10"
 coreKtx = "1.18.0"
@@ -27,12 +28,16 @@ apollo = "4.4.3"
 ktor = "3.4.2"
 datastore = "1.2.1"
 transportRuntime = "4.1.1"
+animation = "1.11.2"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "compose-icons" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 compose-v100beta01 = { module = "com.github.bumptech.glide:compose", version.ref = "composeVersion" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -63,6 +68,7 @@ ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 transport-runtime = { group = "com.google.android.datatransport", name = "transport-runtime", version.ref = "transportRuntime" }
+androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

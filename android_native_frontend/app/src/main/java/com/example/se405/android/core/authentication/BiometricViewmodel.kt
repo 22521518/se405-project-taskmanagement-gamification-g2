@@ -16,7 +16,10 @@ import com.example.se405.android.core.authentication.managers.AccountBiometricMa
 import com.example.se405.android.core.authentication.managers.CryptoManager
 import com.example.se405.android.core.authentication.managers.DeviceAuthManager
 import android.util.Log
+import com.apollographql.apollo.ApolloClient
 import com.example.se405.android.core.authentication.data.RegisterRequest
+import com.example.se405.android.graphql.UpdateFcmTokenMutation
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -28,6 +31,7 @@ class BiometricViewmodel(
     private val cryptoManager: CryptoManager,
     private val deviceAuthManager: DeviceAuthManager,
     private val accountBiometricManager: AccountBiometricManager,
+    private val apolloClient: ApolloClient,
     application: android.app.Application
 ): ViewModel() {
 
@@ -80,6 +84,30 @@ class BiometricViewmodel(
         }
     }
 
+    private fun fetchAndSendFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+                return@addOnCompleteListener
+            }
+
+            val token = task.result
+            viewModelScope.launch {
+                try {
+                    val response = apolloClient.mutation(
+                        UpdateFcmTokenMutation(token)).execute()
+                    if (response.hasErrors()) {
+                        Log.e(TAG, "GraphQL Error: ${response.errors?.first()?.message}")
+                    } else {
+                        Log.d(TAG, "FCM Token updated to backend: $token")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to send FCM token", e)
+                }
+            }
+        }
+    }
+
     // MODE 1 EVENT
     fun authAsGuest(fragmentActivity: FragmentActivity) {
         isAuthenticating = true
@@ -125,6 +153,7 @@ class BiometricViewmodel(
                 this@BiometricViewmodel.displayName = response.displayName
                 isAuthenticated = true
                 isAuthenticating = false
+                fetchAndSendFcmToken()
             }.onFailure { e ->
                 Log.e(TAG, "[loginWithAccount] Login failed", e)
                 showError(e.message ?: "Login failed")
@@ -169,6 +198,7 @@ class BiometricViewmodel(
                 this@BiometricViewmodel.displayName = response.displayName
                 isAuthenticated = true
                 isAuthenticating = false
+                fetchAndSendFcmToken()
             }.onFailure { e ->
                 Log.e(TAG, "[register] Registration failed", e)
                 showError(e.message ?: "Registration failed")
@@ -199,6 +229,7 @@ class BiometricViewmodel(
                         displayName = response.displayName
                         isAuthenticated = true
                         isAuthenticating = false
+                        fetchAndSendFcmToken()
                     }.onFailure { e ->
                         Log.e(TAG, "[loginWithBiometric] Backend verification failed", e)
                         showError("Server verification failed: ${e.message}")

@@ -17,4 +17,22 @@ data class ConversationParticipantEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_uuid", nullable = false)
     val user: UserEntity
-)
+){
+    override fun toString(): String {
+        return "ConversationParticipantEntity(uuid=$uuid)"
+    }
+
+    override fun hashCode(): Int = uuid?.hashCode() ?: 0
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ConversationParticipantEntity
+
+        if (uuid != other.uuid) return false
+        if (conversation != other.conversation) return false
+        if (user != other.user) return false
+
+        return true
+    }
+}

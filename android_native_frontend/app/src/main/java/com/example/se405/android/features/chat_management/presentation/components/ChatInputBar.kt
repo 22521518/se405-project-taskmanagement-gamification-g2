@@ -27,15 +27,19 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.se405.android.features.chat_management.domain.entity.MessageEntity
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ChatInputBar(
-    onSendMessage: (content: String, mediaUri: Uri?, mediaType: String?) -> Unit
+    onSendMessage: (content: String, mediaUri: Uri?, mediaType: String?) -> Unit,
+    replyingTo: MessageEntity? = null,
+    onCancelReply: () -> Unit = {}
 ) {
     var text by remember { mutableStateOf("") }
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -108,6 +112,56 @@ fun ChatInputBar(
             .background(surfaceColor)
             .navigationBarsPadding()
     ) {
+
+        // --- KHỐI HIỂN THỊ "ĐANG TRẢ LỜI..." ---
+        AnimatedVisibility(
+            visible = replyingTo != null,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            replyingTo?.let { message ->
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFF7F8FA)) // Xám rất nhạt để phân biệt với nền
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Đang trả lời ${message.sender.displayName}",
+                                fontWeight = FontWeight.Bold,
+                                color = activeColor, // Đồng bộ màu với Messenger theme
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = message.content.replace("\n", " "),
+                                color = Color.Gray,
+                                fontSize = 13.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        IconButton(
+                            onClick = onCancelReply,
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Hủy trả lời",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
+                }
+            }
+        }
+        // ----------------------------------------
+
         // Vùng Preview Ảnh cực mượt
         AnimatedVisibility(
             visible = selectedMediaUri != null,

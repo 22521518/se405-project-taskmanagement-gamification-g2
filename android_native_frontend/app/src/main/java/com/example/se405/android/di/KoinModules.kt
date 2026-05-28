@@ -29,6 +29,9 @@ import com.apollographql.apollo.annotations.ApolloExperimental
 import com.apollographql.apollo.network.websocket.WebSocketNetworkTransport
 import com.apollographql.apollo.network.ws.SubscriptionWsProtocol
 import com.apollographql.apollo.network.ws.GraphQLWsProtocol
+import com.example.se405.android.core.authentication.BiometricViewmodel
+import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.android.ext.koin.androidApplication
 
 object NetworkConfig {
     // Chọn IP đúng theo backend đang chạy
@@ -144,4 +147,15 @@ val viewModelModule = module {
     viewModelOf(::TaskManagementViewModel)
     viewModelOf(::PersonalViewModel)
     viewModelOf(::EditProfileViewModel)
+    viewModel {
+        BiometricViewmodel(
+            repository = get(),
+            prefs = get(),
+            cryptoManager = get(),
+            deviceAuthManager = get(),
+            accountBiometricManager = get(),
+            apolloClient = get(),
+            application = androidApplication()
+        )
+    }
 }

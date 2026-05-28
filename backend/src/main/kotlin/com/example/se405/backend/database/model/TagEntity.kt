@@ -47,7 +47,32 @@ data class TagEntity(
      */
     @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
     val tasks: MutableList<TaskEntity> = mutableListOf(),
-)
+){
+    override fun toString(): String {
+        return "TagEntity(uuid=$uuid, name='$name', color=$color)"
+    }
+
+    override fun hashCode(): Int = uuid?.hashCode() ?: 0
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as TagEntity
+
+        if (color != other.color) return false
+        if (uuid != other.uuid) return false
+        if (name != other.name) return false
+        if (ownershipType != other.ownershipType) return false
+        if (workspaceId != other.workspaceId) return false
+        if (createdBy != other.createdBy) return false
+        if (labelId != other.labelId) return false
+        if (createdAt != other.createdAt) return false
+        if (updatedAt != other.updatedAt) return false
+        if (tasks != other.tasks) return false
+
+        return true
+    }
+}
 
 enum class TagOwnershipType {
     WORKSPACE,

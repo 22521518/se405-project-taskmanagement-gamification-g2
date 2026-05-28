@@ -2,43 +2,32 @@
 
 package com.example.se405.android.features.tasks_management.presentation.screen
 
+import android.Manifest
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.Column
-import com.example.se405.android.core.presentation.popup.LocalPopupController
-import com.example.se405.android.features.tasks_management.presentation.components.CalendarHeader
-import com.example.se405.android.features.tasks_management.presentation.components.CreateTagPopUp
-import com.example.se405.android.features.tasks_management.presentation.components.TaskDetailActionUiState
-import com.example.se405.android.features.tasks_management.presentation.components.TaskDetailCreatePopUp
-import com.example.se405.android.features.tasks_management.presentation.components.TaskDetailPopUp
-import com.example.se405.android.features.tasks_management.presentation.components.TaskDetailEditPopUp
-import com.example.se405.android.features.tasks_management.presentation.components.TaskGroup
-import com.example.se405.android.features.tasks_management.presentation.components.toDomainTask
-import com.example.se405.android.features.tasks_management.presentation.components.toEpochMillisAtStartOfDay
-import com.example.se405.android.features.tasks_management.presentation.components.toTree
-import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
-import com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskManagementViewModel
-import org.koin.androidx.compose.koinViewModel
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
-import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -46,8 +35,23 @@ import androidx.compose.ui.unit.dp
 import com.example.se405.android.R
 import com.example.se405.android.core.presentation.components.ButtonApp
 import com.example.se405.android.core.presentation.components.ButtonType
+import com.example.se405.android.core.presentation.popup.LocalPopupController
 import com.example.se405.android.core.presentation.theme.AppText
-import com.example.se405.android.features.tasks_management.domain.entity.Tag
+import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
+import com.example.se405.android.features.tasks_management.presentation.components.CalendarHeader
+import com.example.se405.android.features.tasks_management.presentation.components.CreateTagPopUp
+import com.example.se405.android.features.tasks_management.presentation.components.TaskDetailActionUiState
+import com.example.se405.android.features.tasks_management.presentation.components.TaskDetailCreatePopUp
+import com.example.se405.android.features.tasks_management.presentation.components.TaskDetailEditPopUp
+import com.example.se405.android.features.tasks_management.presentation.components.TaskDetailPopUp
+import com.example.se405.android.features.tasks_management.presentation.components.TaskGroup
+import com.example.se405.android.features.tasks_management.presentation.components.toDomainTask
+import com.example.se405.android.features.tasks_management.presentation.components.toEpochMillisAtStartOfDay
+import com.example.se405.android.features.tasks_management.presentation.components.toTree
+import com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskManagementViewModel
+import org.koin.androidx.compose.koinViewModel
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @Composable
 fun TaskManagementScreen(
@@ -67,13 +71,24 @@ fun TaskManagementScreen(
     val context = LocalContext.current
     val popupController = LocalPopupController.current
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { _ -> }
+    )
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     LaunchedEffect(viewModel.uiEvent) {
         viewModel.uiEvent.collect { event ->
             when (event) {
                 is com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskUiEvent.ShowToast -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 }
-                else -> { /* Other events can be handled if needed */ }
+                else -> { }
             }
         }
     }
@@ -90,7 +105,7 @@ fun TaskManagementScreen(
         )
     }
 
-    Column (modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize()) {
         CalendarHeader(
             focusDate = selectedDate,
             onAddTask = {
@@ -225,7 +240,7 @@ fun TaskManagementScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    androidx.compose.material3.CircularProgressIndicator(
+                    CircularProgressIndicator(
                         color = MaterialTheme.colorScheme.secondaryContainer
                     )
                 }

@@ -9,5 +9,12 @@ subscription OnMessageAdded($conversationId: ID!) {
             avatarUrl
             email
         }
+        replyTo {
+            uuid
+            content
+            sender {
+                displayName
+            }
+        }
     }
 }

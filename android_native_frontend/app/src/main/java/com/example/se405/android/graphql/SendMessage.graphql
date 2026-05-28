@@ -1,5 +1,5 @@
-mutation SendMessage($conversationId: ID!, $content: String!) {
-    sendMessage(conversationId: $conversationId, content: $content) {
+mutation SendMessage($conversationId: ID!, $content: String!, $replyToId: ID) {
+    sendMessage(conversationId: $conversationId, content: $content, replyToId: $replyToId) {
         uuid
         content
         createdAt
@@ -9,6 +9,13 @@ mutation SendMessage($conversationId: ID!, $content: String!) {
             displayName
             avatarUrl
             email
+        }
+        replyTo {
+            uuid
+            content
+            sender {
+                displayName
+            }
         }
     }
 }

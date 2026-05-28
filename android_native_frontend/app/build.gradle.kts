@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.apollo.plugin)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -55,7 +56,10 @@ apollo {
 
 dependencies {
     implementation(libs.androidx.biometric)
-
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.androidx.compose.animation)
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.messaging)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

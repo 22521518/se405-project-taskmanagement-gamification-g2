@@ -38,6 +38,13 @@ class TaskChatViewModel(
     private val _chatNameState = MutableStateFlow("")
     val chatNameState: StateFlow<String> = _chatNameState.asStateFlow()
 
+    private val _replyingToMessage = MutableStateFlow<MessageEntity?>(null)
+    val replyingToMessage: StateFlow<MessageEntity?> = _replyingToMessage.asStateFlow()
+
+    fun setReplyMessage(message: MessageEntity?) {
+        _replyingToMessage.value = message
+    }
+
     // INIT
     fun initChat(idPassedFromNavigation: String, isFromTask: Boolean, pendingIds: String?, chatName: String) {
         viewModelScope.launch {
@@ -94,29 +101,14 @@ class TaskChatViewModel(
     @OptIn(ExperimentalUuidApi::class)
     private fun startListeningForMessages(conversationId: String) {
         messageSubscriptionJob?.cancel()
-        Log.d("WebSocketChat", "🔄 Bắt đầu thiết lập lắng nghe cho phòng: $conversationId")
-
         messageSubscriptionJob = viewModelScope.launch {
             val myUserId = authPreferences.userId.firstOrNull() ?: return@launch
-            Log.d("WebSocketChat", "👤 My User ID: $myUserId")
-
-            Log.d("WebSocketChat", "📡 Đang kết nối GraphQL Subscription...")
             chatRepository.subscribeToMessages(conversationId, myUserId)
-                .catch { e ->
-                    Log.e("WebSocketChat", "❌ Lỗi luồng WebSocket: ${e.message}", e)
-                }
+                .catch { e -> Log.e("WebSocketChat", "Lỗi: ${e.message}") }
                 .collect { newMessage ->
-                    Log.d("WebSocketChat", "📥 NHẬN ĐƯỢC TIN NHẮN TỪ WEBSOCKET: ${newMessage.content}")
                     val currentList = _uiState.value.messages
-                    val isDuplicate = currentList.any { it.uuid == newMessage.uuid }
-
-                    if (!isDuplicate) {
-                        Log.d("WebSocketChat", "✅ Tin nhắn hợp lệ, đang cập nhật lên UI...")
-                        _uiState.value = _uiState.value.copy(
-                            messages = currentList + newMessage
-                        )
-                    }else {
-                        Log.w("WebSocketChat", "⚠️ Tin nhắn bị trùng lặp (có thể do tự gửi), bỏ qua update.")
+                    if (!currentList.any { it.uuid == newMessage.uuid }) {
+                        _uiState.value = _uiState.value.copy(messages = currentList + newMessage)
                     }
                 }
         }
@@ -146,7 +138,9 @@ class TaskChatViewModel(
     // SEND MESSAGE & UPLOAD MEDIA
     @OptIn(ExperimentalUuidApi::class)
     fun sendMessage(content: String, mediaBytes: ByteArray?, mediaType: String?) {
+        val currentReplyToId = _replyingToMessage.value?.uuid?.toString()
         viewModelScope.launch {
+            _replyingToMessage.value = null
             _uiState.value = _uiState.value.copy(error = null)
             var finalContent = content
 
@@ -185,7 +179,7 @@ class TaskChatViewModel(
                 }
             }
 
-            val result = chatRepository.sendMessage(conversationId = convId, content = finalContent)
+            val result = chatRepository.sendMessage(conversationId = convId, content = finalContent, replyToId = currentReplyToId)
 
             result.onSuccess {
                 sentMessage ->

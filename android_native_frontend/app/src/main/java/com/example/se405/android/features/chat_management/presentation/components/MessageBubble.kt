@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextOverflow
+import com.example.se405.android.features.chat_management.domain.entity.ReplyMessageInfo
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -28,6 +30,7 @@ fun MessageBubble(
     senderAvatarUrl: String?,
     isOwnMessage: Boolean,
     time: String,
+    replyTo: ReplyMessageInfo? = null,
     onImageClick: (String) -> Unit = {}
 ) {
     // --- 1. LOGIC BÓC TÁCH LINK ẢNH ---
@@ -128,6 +131,38 @@ fun MessageBubble(
                         )
                         if (textContent.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(6.dp))
+                        }
+                    }
+
+                    if (replyTo != null) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.Black.copy(alpha = 0.1f))
+                                .padding(start = 4.dp) // Dành không gian cho viền trái
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .background(if (isOwnMessage) Color(0xFF3B82F6) else Color.White)
+                                    .padding(8.dp)
+                                    .fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = replyTo.senderName,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp,
+                                    color = if (isOwnMessage) Color.White else Color(0xFF2563EB)
+                                )
+                                Text(
+                                    text = replyTo.content.replace("\n", " "),
+                                    fontSize = 12.sp,
+                                    color = if (isOwnMessage) Color.White.copy(alpha = 0.8f) else Color.DarkGray,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
 

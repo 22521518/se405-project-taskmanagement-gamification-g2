@@ -44,6 +44,8 @@ type Query {
 }
 
 type Mutation {
+    #User
+    updateFcmToken(token: String!): Boolean
     # Task CRUD
     createTask(input: CreateTaskInput!): Task!
     updateTask(input: UpdateTaskInput!): Task!
@@ -68,7 +70,7 @@ type Mutation {
     # Tạo phòng chat mới (Đơn hoặc Nhóm)
     createConversation(type: ConversationType!, name: String, participantIds: [ID!]!): Conversation!
     # Gửi tin nhắn vào phòng chat
-    sendMessage(conversationId: ID!, content: String!): Message!
+    sendMessage(conversationId: ID!, content: String!, replyToId: ID): Message!
 
     renameConversation(conversationId: ID!, newName: String!): Conversation!
 }
@@ -168,6 +170,7 @@ type Message {
     createdAt: String!
     sender: User!
     conversationId: ID!
+    replyTo: Message
 }
 
 type Conversation {
@@ -188,7 +191,8 @@ type MessagePayload {
     content: String!
     createdAt: String!
     sender: User!
-    conversationId: ID!
+    conversationId: ID
+    replyTo: MessagePayload
 }
 # ═══════════════════════════════════════════════════════════════
 # Input types

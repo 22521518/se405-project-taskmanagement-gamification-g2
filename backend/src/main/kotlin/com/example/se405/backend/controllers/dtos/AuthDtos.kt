@@ -49,7 +49,8 @@ data class MessagePayload(
     val content: String,
     val createdAt: String,
     val conversationId: String,
-    val sender: UserPayload
+    val sender: UserPayload,
+    val replyTo: MessagePayload? = null
 )
 
 data class UserPayload(

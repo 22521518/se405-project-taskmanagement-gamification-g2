@@ -3,7 +3,10 @@ package com.example.se405.backend.controllers
 import com.example.se405.backend.controllers.dtos.*
 import com.example.se405.backend.services.AuthService
 import com.example.se405.backend.services.JwtUtils
+import org.springframework.graphql.data.method.annotation.Argument
+import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import java.util.*
 

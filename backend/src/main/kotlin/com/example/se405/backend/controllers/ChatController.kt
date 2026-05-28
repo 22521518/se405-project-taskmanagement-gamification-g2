@@ -17,8 +17,8 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Controller
 import java.util.UUID
 import org.springframework.graphql.data.method.annotation.SubscriptionMapping
+import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 
 @Controller
 class ChatController(
@@ -38,16 +38,19 @@ class ChatController(
     }
 
     @QueryMapping
+    @Transactional(readOnly = true)
     fun getMyConversations(): List<ConversationEntity> {
         return conversationService.getUserConversations(getCurrentUserUuid())
     }
 
     @QueryMapping
+    @Transactional(readOnly = true)
     fun getMessagesByConversation(@Argument conversationId: String): List<MessageEntity> {
         return messageService.getMessagesByConversation(UUID.fromString(conversationId), getCurrentUserUuid())
     }
 
     @QueryMapping
+    @Transactional
     fun getConversationByTask(@Argument taskId: String, @Argument taskName: String): ConversationEntity {
         val userUuid = getCurrentUserUuid()
         val taskUuid = UUID.fromString(taskId)
@@ -65,6 +68,7 @@ class ChatController(
     }
 
     @MutationMapping
+    @Transactional
     fun createConversation(
         @Argument type: ConversationType,
         @Argument name: String?,
@@ -77,44 +81,40 @@ class ChatController(
     }
 
     @MutationMapping
+    @Transactional
     fun sendMessage(
         @Argument conversationId: String,
-        @Argument content: String
+        @Argument content: String,
+        @Argument replyToId: String?
     ): MessageEntity {
-        return messageService.sendMessage(UUID.fromString(conversationId), getCurrentUserUuid(), content)
+        val principal = SecurityContextHolder.getContext().authentication.principal
+        val senderUuid = principal as? UUID ?: getCurrentUserUuid()
+
+        val convUuid = UUID.fromString(conversationId)
+
+        val replyToUuid = if (!replyToId.isNullOrBlank()) UUID.fromString(replyToId) else null
+
+        return messageService.sendMessage(
+            conversationId = convUuid,
+            senderId = senderUuid,
+            content = content,
+            replyToId = replyToUuid
+        )
     }
 
     @SubscriptionMapping
     fun messageAdded(@Argument conversationId: String): Flux<MessagePayload> {
-        println("================ CONTROLLER WEBSOCKET ================")
-        println("📥 Đã chạm vào hàm messageAdded tại Controller!")
-        println("🆔 Tham số conversationId nhận được từ Android: '$conversationId'")
-        if (conversationId.isBlank()) {
-            println("❌ Thất bại: conversationId truyền lên bị NULL hoặc RỖNG!")
-            println("=====================================================")
-            return Flux.empty()
-        }
+        if (conversationId.isBlank()) return Flux.empty()
         return try {
             val uuid = UUID.fromString(conversationId.trim())
-            println("✅ Parse UUID thành công: $uuid. Tiến hành gọi Service...")
-            println("=====================================================")
-
             messageService.subscribeToMessages(uuid)
-
-        } catch (e: IllegalArgumentException) {
-            println("❌ Thất bại: Chuỗi '$conversationId' KHÔNG ĐÚNG định dạng UUID!")
-            e.printStackTrace()
-            println("=====================================================")
-            Flux.empty()
         } catch (e: Exception) {
-            println("❌ Lỗi không xác định tại Controller: ${e.message}")
-            e.printStackTrace()
-            println("=====================================================")
             Flux.empty()
         }
     }
 
     @MutationMapping
+    @Transactional
     fun renameConversation(
         @Argument conversationId: UUID,
         @Argument newName: String
@@ -128,7 +128,6 @@ class ChatController(
             val task = taskRepository.findById(conversation.taskUuid).orElse(null)
             return task?.title ?: "Thảo luận công việc"
         }
-
         return conversation.name
     }
 }

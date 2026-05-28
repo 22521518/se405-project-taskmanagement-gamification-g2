@@ -14,7 +14,7 @@ interface ChatRepository {
     suspend fun getMessagesByConversation(conversationId: String): Result<List<MessageEntity>>
 
     // 3. Gửi tin nhắn (Đã sửa tham số từ taskId -> conversationId)
-    suspend fun sendMessage(conversationId: String, content: String): Result<MessageEntity>
+    suspend fun sendMessage(conversationId: String, content: String, replyToId: String? = null): Result<MessageEntity>
 
     // 4. Lấy danh sách các phòng chat cho màn hình Inbox
     fun getMyConversations(): Flow<List<Conversation>>

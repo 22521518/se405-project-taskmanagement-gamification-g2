@@ -2,6 +2,7 @@
 
 package com.example.se405.android.features.chat_management.presentation.screen
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Reply
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -49,6 +51,7 @@ fun TaskChatScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentChatName by viewModel.chatNameState.collectAsState()
+    val replyingTo by viewModel.replyingToMessage.collectAsState()
     val listState = rememberLazyListState()
     val context = LocalContext.current
 
@@ -60,6 +63,7 @@ fun TaskChatScreen(
 
     val primaryBlue = Color(0xFF2563EB)
 
+    // ... (Giữ nguyên các khối lệnh LaunchedEffect và Dialog xem ảnh/đổi tên)
     LaunchedEffect(taskId, pendingParticipantIds) {
         viewModel.initChat(taskId, isFromTask, pendingParticipantIds, taskName)
     }
@@ -70,7 +74,6 @@ fun TaskChatScreen(
         }
     }
 
-    // UI: Trình xem ảnh toàn màn hình
     if (selectedImageToView != null) {
         Dialog(
             onDismissRequest = { selectedImageToView = null },
@@ -122,7 +125,6 @@ fun TaskChatScreen(
         )
     }
 
-    // UI: Menu tùy chọn chat
     if (showChatOptions) {
         ModalBottomSheet(
             onDismissRequest = { showChatOptions = false },
@@ -154,6 +156,7 @@ fun TaskChatScreen(
             }
         }
     }
+
 
     Scaffold(
         modifier = Modifier.fillMaxSize().imePadding(),
@@ -214,6 +217,8 @@ fun TaskChatScreen(
         },
         bottomBar = {
             ChatInputBar(
+                replyingTo = replyingTo,
+                onCancelReply = { viewModel.setReplyMessage(null) },
                 onSendMessage = { content, mediaUri, mediaType ->
                     val mediaBytes = mediaUri?.let { uri -> context.contentResolver.openInputStream(uri)?.use { it.readBytes() } }
                     viewModel.sendMessage(content, mediaBytes, mediaType)
@@ -259,16 +264,59 @@ fun TaskChatScreen(
                                 "${message.createdAt.hour}:${String.format("%02d", message.createdAt.minute)}"
                             } catch (e: Exception) { "" }
 
-                            MessageBubble(
-                                message = message.content,
-                                senderName = message.sender.displayName,
-                                isOwnMessage = message.isOwnMessage,
-                                senderAvatarUrl = message.sender.avatarUrl,
-                                time = timeString,
-                                onImageClick = { clickedUrl ->
-                                    selectedImageToView = clickedUrl
+                            // 💡 XÁC ĐỊNH HƯỚNG VUỐT DỰA TRÊN QUYỀN SỞ HỮU TIN NHẮN
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = { dismissValue ->
+                                    if ((message.isOwnMessage && dismissValue == SwipeToDismissBoxValue.EndToStart) ||
+                                        (!message.isOwnMessage && dismissValue == SwipeToDismissBoxValue.StartToEnd)) {
+                                        viewModel.setReplyMessage(message)
+                                    }
+                                    false
                                 }
                             )
+
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                enableDismissFromStartToEnd = !message.isOwnMessage,
+                                enableDismissFromEndToStart = message.isOwnMessage,
+                                backgroundContent = {
+                                    val isSwiping = (message.isOwnMessage && (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart || dismissState.currentValue == SwipeToDismissBoxValue.EndToStart)) ||
+                                            (!message.isOwnMessage && (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd || dismissState.currentValue == SwipeToDismissBoxValue.StartToEnd))
+
+                                    if (isSwiping) {
+                                        val color by animateColorAsState(
+                                            targetValue = primaryBlue.copy(alpha = 0.15f), label = ""
+                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(color)
+                                                .padding(horizontal = 16.dp),
+                                            contentAlignment = if (message.isOwnMessage) Alignment.CenterEnd else Alignment.CenterStart
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Rounded.Reply,
+                                                contentDescription = "Trả lời",
+                                                tint = primaryBlue
+                                            )
+                                        }
+                                    }
+                                }
+                            ) {
+                                Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+                                    MessageBubble(
+                                        message = message.content,
+                                        senderName = message.sender.displayName,
+                                        isOwnMessage = message.isOwnMessage,
+                                        senderAvatarUrl = message.sender.avatarUrl,
+                                        time = timeString,
+                                        replyTo = message.replyTo,
+                                        onImageClick = { clickedUrl ->
+                                            selectedImageToView = clickedUrl
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }

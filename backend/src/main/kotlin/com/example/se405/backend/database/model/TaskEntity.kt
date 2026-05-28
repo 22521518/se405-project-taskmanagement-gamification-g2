@@ -61,4 +61,30 @@ data class TaskEntity(
         inverseJoinColumns = [JoinColumn(name = "tag_id")],
     )
     val tags: MutableList<TagEntity> = mutableListOf(),
-)
+){
+    override fun toString(): String {
+        return "TaskEntity(uuid=$uuid, title='$title', status=$status, type=$type)"
+    }
+    override fun hashCode(): Int = uuid?.hashCode() ?: 0
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as TaskEntity
+
+        if (repetition != other.repetition) return false
+        if (uuid != other.uuid) return false
+        if (title != other.title) return false
+        if (description != other.description) return false
+        if (type != other.type) return false
+        if (status != other.status) return false
+        if (priority != other.priority) return false
+        if (creatorId != other.creatorId) return false
+        if (projectId != other.projectId) return false
+        if (startDate != other.startDate) return false
+        if (dueDate != other.dueDate) return false
+        if (tags != other.tags) return false
+
+        return true
+    }
+}

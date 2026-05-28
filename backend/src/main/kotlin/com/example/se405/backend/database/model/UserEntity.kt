@@ -30,4 +30,31 @@ data class UserEntity(
 
     @Column(name = "updated_at", nullable = false)
     val updatedAt: LocalDateTime = LocalDateTime.now(),
-)
+
+    @Column(name = "fcm_token")
+    var fcmToken: String? = null
+){
+    override fun toString(): String {
+        return "UserEntity(uuid=$uuid, username='$username', email='$email', displayName='$displayName')"
+    }
+
+    override fun hashCode(): Int = uuid.hashCode() ?: 0
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as UserEntity
+
+        if (uuid != other.uuid) return false
+        if (email != other.email) return false
+        if (username != other.username) return false
+        if (passwordHash != other.passwordHash) return false
+        if (displayName != other.displayName) return false
+        if (avatarUrl != other.avatarUrl) return false
+        if (createdAt != other.createdAt) return false
+        if (updatedAt != other.updatedAt) return false
+        if (fcmToken != other.fcmToken) return false
+
+        return true
+    }
+}

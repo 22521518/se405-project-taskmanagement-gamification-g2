@@ -8,6 +8,7 @@ import com.example.se405.android.core.authentication.data.CloudinaryResponse
 import com.example.se405.android.features.chat_management.domain.entity.Conversation
 import com.example.se405.android.features.chat_management.domain.entity.LastMessageInfo
 import com.example.se405.android.features.chat_management.domain.entity.MessageEntity
+import com.example.se405.android.features.chat_management.domain.entity.ReplyMessageInfo
 import com.example.se405.android.features.chat_management.domain.repository.ChatRepository
 import com.example.se405.android.features.users_management.domain.entity.User
 import com.example.se405.android.graphql.CreateConversationMutation
@@ -65,7 +66,6 @@ class ChatRepositoryImpl(
     override suspend fun getMessagesByConversation(conversationId: String): Result<List<MessageEntity>> {
         return try {
             val myUserId = authPrefs.userId.first() ?: ""
-
             val response = apolloClient.query(GetMessagesByConversationQuery(conversationId)).execute()
 
             if (response.hasErrors()) {
@@ -131,6 +131,14 @@ class ChatRepositoryImpl(
 
         val isMine = dto.sender.uuid == myUserId
 
+        val replyInfo = dto.replyTo?.let { replyDto ->
+            ReplyMessageInfo(
+                uuid = Uuid.parse(replyDto.uuid),
+                content = replyDto.content,
+                senderName = replyDto.sender.displayName ?: "Người dùng"
+            )
+        }
+
         return MessageEntity(
             uuid = Uuid.parse(dto.uuid),
             content = dto.content,
@@ -146,7 +154,8 @@ class ChatRepositoryImpl(
                 updatedAt = LocalDateTime.now()
             ),
             createdAt = parseIsoDate(dto.createdAt),
-            isOwnMessage = isMine
+            isOwnMessage = isMine,
+            replyTo = replyInfo
         )
     }
 
@@ -161,9 +170,15 @@ class ChatRepositoryImpl(
         }
     }
 
-    override suspend fun sendMessage(conversationId: String, content: String): Result<MessageEntity> {
+    override suspend fun sendMessage(conversationId: String, content: String, replyToId: String?): Result<MessageEntity> {
         return try {
-            val response = apolloClient.mutation(SendMessageMutation(conversationId, content)).execute()
+            val response = apolloClient.mutation(
+                SendMessageMutation(
+                    conversationId = conversationId,
+                    content = content,
+                    replyToId = Optional.presentIfNotNull(replyToId)
+                )
+            ).execute()
 
             if (response.hasErrors()) {
                 return Result.failure(Exception(response.errors?.firstOrNull()?.message ?: "Lỗi từ Backend"))
@@ -171,6 +186,14 @@ class ChatRepositoryImpl(
 
             val dto = response.data?.sendMessage
                 ?: return Result.failure(Exception("Không lấy được dữ liệu tin nhắn vừa gửi"))
+
+            val replyInfo = dto.replyTo?.let { replyDto ->
+                ReplyMessageInfo(
+                    uuid = Uuid.parse(replyDto.uuid),
+                    content = replyDto.content,
+                    senderName = replyDto.sender.displayName ?: "Người dùng"
+                )
+            }
 
             val sentMessage = MessageEntity(
                 uuid = Uuid.parse(dto.uuid),
@@ -187,7 +210,8 @@ class ChatRepositoryImpl(
                     updatedAt = LocalDateTime.now()
                 ),
                 createdAt = parseIsoDate(dto.createdAt),
-                isOwnMessage = true
+                isOwnMessage = true,
+                replyTo = replyInfo
             )
 
             Result.success(sentMessage)
@@ -265,34 +289,24 @@ class ChatRepositoryImpl(
     override fun subscribeToMessages(conversationId: String, myUserId: String): Flow<MessageEntity> {
         return apolloClient.subscription(OnMessageAddedSubscription(conversationId))
             .toFlow()
-            .onStart {
-                Log.d("WebSocketChat", "🟢 Luồng Apollo Flow ĐÃ MỞ và đang chực chờ dữ liệu!")
-            }
-            // 💡 2. Báo hiệu luồng bị sập hoặc bị Server từ chối
-            .onCompletion { error ->
-                Log.d("WebSocketChat", "🔴 Luồng Apollo Flow ĐÃ BỊ ĐÓNG! Nguyên nhân: ${error?.message ?: "Server tự ngắt kết nối hoặc Auth thất bại"}")
-            }
+            .onStart { Log.d("WebSocketChat", "🟢 Luồng Apollo Flow ĐÃ MỞ!") }
+            .onCompletion { error -> Log.d("WebSocketChat", "🔴 Luồng Apollo Flow ĐÃ BỊ ĐÓNG: ${error?.message}") }
             .mapNotNull { response ->
-                if (response.exception != null) {
-                    Log.e("WebSocketChat", "🚨 APOLLO EXCEPTION CHÍ MẠNG: ${response.exception?.message}", response.exception)
-                    return@mapNotNull null
-                }
+                if (response.exception != null) return@mapNotNull null
+                if (response.hasErrors()) return@mapNotNull null
 
-                if (response.hasErrors()) {
-                    Log.e("WebSocketChat", "🚨 SERVER GRAPHQL BÁO LỖI: ${response.errors?.joinToString { it.message }}")
-                    return@mapNotNull null
-                }
-
-                val dto = response.data?.messageAdded
-                if (dto == null) {
-                    Log.w("WebSocketChat", "⚠️ Server không báo lỗi nhưng trả về data rỗng!")
-                    return@mapNotNull null
-                }
-
-                Log.d("WebSocketChat", "✅ Parse JSON thành công, nội dung: ${dto.content}")
+                val dto = response.data?.messageAdded ?: return@mapNotNull null
 
                 try {
                     val isMine = dto.sender.uuid == myUserId
+
+                    val replyInfo = dto.replyTo?.let { replyDto ->
+                        ReplyMessageInfo(
+                            uuid = Uuid.parse(replyDto.uuid),
+                            content = replyDto.content,
+                            senderName = replyDto.sender.displayName ?: "Người dùng"
+                        )
+                    }
 
                     MessageEntity(
                         uuid = Uuid.parse(dto.uuid),
@@ -309,10 +323,10 @@ class ChatRepositoryImpl(
                             updatedAt = LocalDateTime.now()
                         ),
                         createdAt = parseIsoDate(dto.createdAt),
-                        isOwnMessage = isMine
+                        isOwnMessage = isMine,
+                        replyTo = replyInfo
                     )
                 } catch (e: Exception) {
-                    Log.e("WebSocketChat", "🚨 Lỗi khi chuyển đổi dữ liệu ở Frontend: ${e.message}", e)
                     null
                 }
             }
