@@ -47,6 +47,10 @@ data class SimpleMessageResponse(
 data class MessagePayload(
     val uuid: String,
     val content: String,
+    val type: String,
+    val fileUrl: String?,
+    val fileName: String?,
+    val fileSize: String?,
     val createdAt: String,
     val conversationId: String,
     val sender: UserPayload,

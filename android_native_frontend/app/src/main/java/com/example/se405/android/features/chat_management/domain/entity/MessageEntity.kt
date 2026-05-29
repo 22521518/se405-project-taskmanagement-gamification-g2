@@ -18,7 +18,11 @@ data class MessageEntity(
     val sender: User,
     val createdAt: LocalDateTime,
     val isOwnMessage: Boolean,
-    val replyTo: ReplyMessageInfo? = null
+    val replyTo: ReplyMessageInfo? = null,
+    val type: String = "TEXT",
+    val fileUrl: String? = null,
+    val fileName: String? = null,
+    val fileSize: String? = null
 ) {
     init {
         require(content.isNotBlank()) { "Message content must not be blank" }

@@ -2,6 +2,8 @@ package com.example.se405.backend.database.model
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -22,6 +24,18 @@ data class MessageEntity(
     @Column(nullable = false, columnDefinition = "TEXT")
     val content: String,
 
+    @Column(name = "type", nullable = false)
+    val type: String = "TEXT",
+
+    @Column(name = "file_url", nullable = true)
+    val fileUrl: String? = null,
+
+    @Column(name = "file_name", nullable = true)
+    val fileName: String? = null,
+
+    @Column(name = "file_size", nullable = true)
+    val fileSize: String? = null,
+
     @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 
@@ -35,7 +49,7 @@ data class MessageEntity(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reply_to_uuid", nullable = true)
-    val replyTo: MessageEntity? = null
+    val replyTo: MessageEntity? = null,
 ){
     val conversationId: String
         get() = conversation.uuid.toString()

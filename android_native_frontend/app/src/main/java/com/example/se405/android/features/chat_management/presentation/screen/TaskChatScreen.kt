@@ -2,6 +2,9 @@
 
 package com.example.se405.android.features.chat_management.presentation.screen
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,6 +42,20 @@ import com.example.se405.android.features.chat_management.presentation.viewmodel
 import org.koin.androidx.compose.koinViewModel
 import kotlin.uuid.ExperimentalUuidApi
 
+// Hàm hỗ trợ lấy tên file thật từ thiết bị
+private fun getFileNameFromUri(context: Context, uri: Uri): String? {
+    var result: String? = null
+    if (uri.scheme == "content") {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index != -1) result = cursor.getString(index)
+            }
+        }
+    }
+    return result ?: uri.path?.substringAfterLast('/')
+}
+
 @Composable
 fun TaskChatScreen(
     taskId: String,
@@ -63,7 +80,6 @@ fun TaskChatScreen(
 
     val primaryBlue = Color(0xFF2563EB)
 
-    // ... (Giữ nguyên các khối lệnh LaunchedEffect và Dialog xem ảnh/đổi tên)
     LaunchedEffect(taskId, pendingParticipantIds) {
         viewModel.initChat(taskId, isFromTask, pendingParticipantIds, taskName)
     }
@@ -161,8 +177,10 @@ fun TaskChatScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize().imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
+        //contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TopAppBar(
+                windowInsets = WindowInsets(0),
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
@@ -189,7 +207,7 @@ fun TaskChatScreen(
                         Text(
                             text = currentChatName.ifBlank { taskName },
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             color = primaryBlue,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -216,14 +234,18 @@ fun TaskChatScreen(
             )
         },
         bottomBar = {
-            ChatInputBar(
-                replyingTo = replyingTo,
-                onCancelReply = { viewModel.setReplyMessage(null) },
-                onSendMessage = { content, mediaUri, mediaType ->
-                    val mediaBytes = mediaUri?.let { uri -> context.contentResolver.openInputStream(uri)?.use { it.readBytes() } }
-                    viewModel.sendMessage(content, mediaBytes, mediaType)
-                }
-            )
+                ChatInputBar(
+                    replyingTo = replyingTo,
+                    onCancelReply = { viewModel.setReplyMessage(null) },
+                    onSendMessage = { content, mediaUri, mediaType ->
+                        val mediaBytes = mediaUri?.let { uri ->
+                            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        }
+                        val fileName = mediaUri?.let { getFileNameFromUri(context, it) }
+
+                        viewModel.sendMessage(content, mediaBytes, mediaType, fileName)
+                    }
+                )
         }
     ) { paddingValues ->
 
@@ -261,10 +283,16 @@ fun TaskChatScreen(
                     ) {
                         items(uiState.messages) { message ->
                             val timeString = try {
-                                "${message.createdAt.hour}:${String.format("%02d", message.createdAt.minute)}"
-                            } catch (e: Exception) { "" }
+                                "${message.createdAt.hour}:${
+                                    String.format(
+                                        "%02d",
+                                        message.createdAt.minute
+                                    )
+                                }"
+                            } catch (e: Exception) {
+                                ""
+                            }
 
-                            // 💡 XÁC ĐỊNH HƯỚNG VUỐT DỰA TRÊN QUYỀN SỞ HỮU TIN NHẮN
                             val dismissState = rememberSwipeToDismissBoxState(
                                 confirmValueChange = { dismissValue ->
                                     if ((message.isOwnMessage && dismissValue == SwipeToDismissBoxValue.EndToStart) ||
@@ -310,6 +338,10 @@ fun TaskChatScreen(
                                         isOwnMessage = message.isOwnMessage,
                                         senderAvatarUrl = message.sender.avatarUrl,
                                         time = timeString,
+                                        type = message.type,
+                                        fileUrl = message.fileUrl,
+                                        fileName = message.fileName,
+                                        fileSize = message.fileSize,
                                         replyTo = message.replyTo,
                                         onImageClick = { clickedUrl ->
                                             selectedImageToView = clickedUrl

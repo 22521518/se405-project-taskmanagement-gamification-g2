@@ -1,6 +1,8 @@
 package com.example.se405.android.features.chat_management.presentation.components
 
+import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,6 +19,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.InsertDriveFile
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,6 +51,7 @@ fun ChatInputBar(
     var selectedMediaUri by remember { mutableStateOf<Uri?>(null) }
     var selectedMediaType by remember { mutableStateOf<String?>(null) }
 
+    val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -62,12 +67,18 @@ fun ChatInputBar(
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
-        onResult = { uri -> /* Xử lý file sau */ showBottomSheet = false }
+        onResult = { uri ->
+            uri?.let {
+                selectedMediaUri = it
+                selectedMediaType = "FILE"
+            }
+            showBottomSheet = false
+        }
     )
 
-    val activeColor = Color(0xFF0084FF) // Màu xanh chuẩn Messenger
+    val activeColor = Color(0xFF0084FF)
     val surfaceColor = Color(0xFFFFFFFF)
-    val inputBackgroundColor = Color(0xFFF0F2F5) // Màu nền xám nhạt cực êm
+    val inputBackgroundColor = Color(0xFFF0F2F5)
 
     if (showBottomSheet) {
         ModalBottomSheet(
@@ -110,7 +121,6 @@ fun ChatInputBar(
         modifier = Modifier
             .fillMaxWidth()
             .background(surfaceColor)
-            .navigationBarsPadding()
     ) {
 
         // --- KHỐI HIỂN THỊ "ĐANG TRẢ LỜI..." ---
@@ -179,6 +189,30 @@ fun ChatInputBar(
                         contentScale = ContentScale.Crop
                     )
                 }
+                else if (selectedMediaType == "FILE") {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(inputBackgroundColor)
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Rounded.InsertDriveFile,
+                            contentDescription = "File Icon",
+                            tint = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = selectedMediaUri?.let { getFileName(context, it) } ?: "Tài liệu",
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
                 IconButton(
                     onClick = {
                         selectedMediaUri = null
@@ -186,7 +220,7 @@ fun ChatInputBar(
                     },
                     modifier = Modifier
                         .size(24.dp)
-                        .offset(x = 8.dp, y = (-8).dp)
+                        .offset(x = if (selectedMediaType == "IMAGE") 8.dp else (-4).dp, y = if (selectedMediaType == "IMAGE") (-8).dp else 8.dp)
                         .clip(CircleShape)
                         .background(Color.White)
                         .align(Alignment.TopEnd)
@@ -201,7 +235,7 @@ fun ChatInputBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.Bottom // Căn đáy để khi gõ text dài không bị xô lệch icon
+            //verticalAlignment = Alignment.Bottom
         ) {
             // Nút (+) Đính kèm
             IconButton(
@@ -285,4 +319,17 @@ fun RowScope.BottomSheetActionItem(
         Spacer(modifier = Modifier.height(8.dp))
         Text(title, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
     }
+}
+
+private fun getFileName(context: Context, uri: Uri): String {
+    var result: String? = null
+    if (uri.scheme == "content") {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index != -1) result = cursor.getString(index)
+            }
+        }
+    }
+    return result ?: uri.path?.substringAfterLast('/') ?: "Tài liệu đính kèm"
 }

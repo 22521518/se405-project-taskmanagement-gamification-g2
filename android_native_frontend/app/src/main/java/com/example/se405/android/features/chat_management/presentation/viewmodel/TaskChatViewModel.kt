@@ -137,16 +137,17 @@ class TaskChatViewModel(
 
     // SEND MESSAGE & UPLOAD MEDIA
     @OptIn(ExperimentalUuidApi::class)
-    fun sendMessage(content: String, mediaBytes: ByteArray?, mediaType: String?) {
+    fun sendMessage(content: String, mediaBytes: ByteArray?, mediaType: String?, originalFileName: String? = null) {
         val currentReplyToId = _replyingToMessage.value?.uuid?.toString()
+
         viewModelScope.launch {
+            // 1. Reset state hiển thị UI
             _replyingToMessage.value = null
             _uiState.value = _uiState.value.copy(error = null)
-            var finalContent = content
 
+            // 2. Tạo phòng chat nếu chưa tồn tại
             if (realConversationId == null && pendingParticipantIds != null) {
                 val isGroupChat = pendingParticipantIds!!.size > 1
-
                 val newConvResult = chatRepository.createConversation(
                     participantIds = pendingParticipantIds!!,
                     isGroup = isGroupChat,
@@ -164,26 +165,61 @@ class TaskChatViewModel(
 
             val convId = realConversationId ?: return@launch
 
-            if (mediaType == "IMAGE" && mediaBytes != null) {
-                val uploadResult = chatRepository.uploadImageToCloudinary(mediaBytes)
+            // 3. Khởi tạo Metadata mặc định
+            var finalType = "TEXT"
+            var finalFileUrl: String? = null
+            var finalFileName: String? = null
+            var finalFileSize: String? = null
+
+            // 4. Xử lý Upload Media/File nếu có
+            if (mediaType != null && mediaBytes != null) {
+                finalType = mediaType // "IMAGE" hoặc "FILE"
+                val isImage = mediaType == "IMAGE"
+
+                // Lấy tên file gốc hoặc tự tạo tên nếu Client không truyền vào
+                val uploadFileName = originalFileName ?: if (isImage) {
+                    "image_${System.currentTimeMillis()}.jpg"
+                } else {
+                    "document_${System.currentTimeMillis()}.pdf"
+                }
+
+                val uploadResult = chatRepository.uploadFileToCloudinary(
+                    fileBytes = mediaBytes,
+                    fileName = uploadFileName,
+                    isImage = isImage
+                )
 
                 uploadResult.onSuccess { secureUrl ->
-                    finalContent = if (finalContent.isNotBlank()) {
-                        "$finalContent\n[IMAGE:$secureUrl]"
-                    } else {
-                        "[IMAGE:$secureUrl]"
+                    finalFileUrl = secureUrl
+                    finalFileName = uploadFileName
+
+                    // Tự động tính toán dung lượng File sang đơn vị chuẩn (KB, MB)
+                    val kb = mediaBytes.size / 1024.0
+                    val mb = kb / 1024.0
+                    finalFileSize = when {
+                        mb >= 1.0 -> String.format(java.util.Locale.US, "%.1f MB", mb)
+                        kb >= 1.0 -> String.format(java.util.Locale.US, "%.1f KB", kb)
+                        else -> "${mediaBytes.size} Bytes"
                     }
                 }.onFailure {
-                    _uiState.value = _uiState.value.copy(error = "Không thể tải ảnh lên máy chủ!")
+                    _uiState.value = _uiState.value.copy(error = "Không thể tải tệp lên máy chủ!")
                     return@launch
                 }
             }
 
-            val result = chatRepository.sendMessage(conversationId = convId, content = finalContent, replyToId = currentReplyToId)
+            // 5. Gửi dữ liệu đồng bộ lên GraphQL Server
+            val result = chatRepository.sendMessage(
+                conversationId = convId,
+                content = content,
+                replyToId = currentReplyToId,
+                type = finalType,
+                fileUrl = finalFileUrl,
+                fileName = finalFileName,
+                fileSize = finalFileSize
+            )
 
-            result.onSuccess {
-                sentMessage ->
-
+            // 6. Cập nhật UI nếu thành công
+            result.onSuccess { sentMessage ->
                 val currentList = _uiState.value.messages
                 val isDuplicate = currentList.any { it.uuid == sentMessage.uuid }
 

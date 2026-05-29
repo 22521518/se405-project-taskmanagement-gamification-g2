@@ -56,10 +56,14 @@ apollo {
 
 dependencies {
     implementation(libs.androidx.biometric)
+    implementation(libs.androidx.lifecycle.process)
     implementation(platform(libs.firebase.bom))
     implementation(libs.androidx.compose.animation)
+    implementation(libs.androidx.media3.exoplayer)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.storage)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

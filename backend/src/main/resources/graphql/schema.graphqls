@@ -13,6 +13,12 @@ enum ConversationType {
     TASK
 }
 
+enum MessageType {
+    TEXT
+    IMAGE
+    FILE
+}
+
 # ═══════════════════════════════════════════════════════════════
 # Root operations
 # ═══════════════════════════════════════════════════════════════
@@ -70,7 +76,14 @@ type Mutation {
     # Tạo phòng chat mới (Đơn hoặc Nhóm)
     createConversation(type: ConversationType!, name: String, participantIds: [ID!]!): Conversation!
     # Gửi tin nhắn vào phòng chat
-    sendMessage(conversationId: ID!, content: String!, replyToId: ID): Message!
+    sendMessage(
+        conversationId: ID!,
+        content: String!,
+        replyToId: ID,
+        type: MessageType!,
+        fileUrl: String,
+        fileName: String,
+        fileSize: String): Message!
 
     renameConversation(conversationId: ID!, newName: String!): Conversation!
 }
@@ -167,6 +180,10 @@ type User {
 type Message {
     uuid: ID!
     content: String!
+    type: MessageType!
+    fileUrl: String
+    fileName: String
+    fileSize: String
     createdAt: String!
     sender: User!
     conversationId: ID!
@@ -189,6 +206,10 @@ type Subscription {
 type MessagePayload {
     uuid: ID!
     content: String!
+    type: MessageType!
+    fileUrl: String
+    fileName: String
+    fileSize: String
     createdAt: String!
     sender: User!
     conversationId: ID

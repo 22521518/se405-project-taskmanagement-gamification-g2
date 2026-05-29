@@ -1,7 +1,27 @@
-mutation SendMessage($conversationId: ID!, $content: String!, $replyToId: ID) {
-    sendMessage(conversationId: $conversationId, content: $content, replyToId: $replyToId) {
+mutation SendMessage(
+    $conversationId: ID!,
+    $content: String!,
+    $replyToId: ID,
+    $type: MessageType!,
+    $fileUrl: String,
+    $fileName: String,
+    $fileSize: String
+) {
+    sendMessage(
+        conversationId: $conversationId,
+        content: $content,
+        replyToId: $replyToId,
+        type: $type,
+        fileUrl: $fileUrl,
+        fileName: $fileName,
+        fileSize: $fileSize
+    ) {
         uuid
         content
+        type
+        fileUrl
+        fileName
+        fileSize
         createdAt
         conversationId
         sender {

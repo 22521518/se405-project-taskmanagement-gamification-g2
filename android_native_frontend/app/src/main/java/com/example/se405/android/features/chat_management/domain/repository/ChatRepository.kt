@@ -14,7 +14,7 @@ interface ChatRepository {
     suspend fun getMessagesByConversation(conversationId: String): Result<List<MessageEntity>>
 
     // 3. Gửi tin nhắn (Đã sửa tham số từ taskId -> conversationId)
-    suspend fun sendMessage(conversationId: String, content: String, replyToId: String? = null): Result<MessageEntity>
+    suspend fun sendMessage(conversationId: String, content: String, replyToId: String? = null, type: String = "TEXT", fileUrl: String? = null, fileName: String? = null, fileSize: String? = null): Result<MessageEntity>
 
     // 4. Lấy danh sách các phòng chat cho màn hình Inbox
     fun getMyConversations(): Flow<List<Conversation>>
@@ -24,7 +24,7 @@ interface ChatRepository {
 
     fun subscribeToMessages(conversationId: String, myUserId: String): Flow<MessageEntity>
 
-    suspend fun uploadImageToCloudinary(imageBytes: ByteArray, isAvatar: Boolean = false): Result<String>
+    suspend fun uploadFileToCloudinary(fileBytes: ByteArray, fileName: String, isImage: Boolean): Result<String>
 
     suspend fun renameConversation(conversationId: String, newName: String): Result<Boolean>
 }

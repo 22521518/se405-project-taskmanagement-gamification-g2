@@ -2,6 +2,10 @@ query GetMessagesByConversation($conversationId: ID!) {
     getMessagesByConversation(conversationId: $conversationId) {
         uuid
         content
+        type
+        fileUrl
+        fileName
+        fileSize
         createdAt
         conversationId
         sender {

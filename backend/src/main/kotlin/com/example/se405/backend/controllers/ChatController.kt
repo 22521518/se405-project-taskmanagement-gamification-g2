@@ -85,20 +85,27 @@ class ChatController(
     fun sendMessage(
         @Argument conversationId: String,
         @Argument content: String,
-        @Argument replyToId: String?
+        @Argument replyToId: String?,
+        @Argument type: String,
+        @Argument fileUrl: String?,
+        @Argument fileName: String?,
+        @Argument fileSize: String?
     ): MessageEntity {
         val principal = SecurityContextHolder.getContext().authentication.principal
         val senderUuid = principal as? UUID ?: getCurrentUserUuid()
 
         val convUuid = UUID.fromString(conversationId)
-
         val replyToUuid = if (!replyToId.isNullOrBlank()) UUID.fromString(replyToId) else null
 
         return messageService.sendMessage(
             conversationId = convUuid,
             senderId = senderUuid,
             content = content,
-            replyToId = replyToUuid
+            replyToId = replyToUuid,
+            type = type,
+            fileUrl = fileUrl,
+            fileName = fileName,
+            fileSize = fileSize
         )
     }
 

@@ -19,6 +19,7 @@ import com.example.se405.android.graphql.OnMessageAddedSubscription
 import com.example.se405.android.graphql.RenameConversationMutation
 import com.example.se405.android.graphql.SendMessageMutation
 import com.example.se405.android.graphql.type.ConversationType
+import com.google.firebase.storage.FirebaseStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.logging.LogLevel
@@ -42,6 +43,7 @@ import kotlin.uuid.Uuid
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onStart      // 💡 Thêm 2 dòng import này
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalUuidApi::class)
 class ChatRepositoryImpl(
@@ -82,44 +84,51 @@ class ChatRepositoryImpl(
         }
     }
 
-    override suspend fun uploadImageToCloudinary(imageBytes: ByteArray, isAvatar: Boolean): Result<String> = runCatching {
-        val cloudName = "de5l5byyn"
-        val uploadPreset = if (isAvatar) "se405_avatar_upload" else "se405_attachment_upload"
+    override suspend fun uploadFileToCloudinary(fileBytes: ByteArray, fileName: String, isImage: Boolean): Result<String> = runCatching {
+        if (isImage) {
+            // ==========================================
+            // 1. NHÁNH ẢNH: UPLOAD LÊN CLOUDINARY
+            // ==========================================
+            val cloudName = "de5l5byyn"
+            val resourceType = "image"
+            val uploadPreset = "se405_attachment_upload"
 
-        val url = "https://api.cloudinary.com/v1_1/$cloudName/image/upload"
+            val url = "https://api.cloudinary.com/v1_1/$cloudName/$resourceType/upload"
 
-        val cleanClient = HttpClient(OkHttp) {
-            install(Logging) {
-                level = LogLevel.ALL
-                logger = object : Logger {
-                    override fun log(message: String) {
-                        Log.d("CLOUDINARY_LOG", message)
-                    }
-                }
+            val cleanClient = HttpClient(OkHttp) {
+                install(Logging) { level = LogLevel.INFO }
             }
-        }
 
-        cleanClient.use { client ->
-            val response = client.submitFormWithBinaryData(
-                url = url,
-                formData = formData {
-                    append("upload_preset", uploadPreset)
+            cleanClient.use { client ->
+                val response = client.submitFormWithBinaryData(
+                    url = url,
+                    formData = formData {
+                        append("upload_preset", uploadPreset)
+                        append("file", fileBytes, Headers.build {
+                            append(HttpHeaders.ContentType, "image/jpeg")
+                            append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                        })
+                    }
+                )
 
-                    append("file", imageBytes, Headers.build {
-                        append(HttpHeaders.ContentType, "image/jpeg")
-                        append(HttpHeaders.ContentDisposition, "filename=\"image.jpg\"")
-                    })
-                }
-            )
+                response.ensureSuccess()
+                val responseBody = response.bodyAsText()
+                val jsonParser = Json { ignoreUnknownKeys = true }
+                val cloudinaryResponse = jsonParser.decodeFromString<CloudinaryResponse>(responseBody)
 
-            response.ensureSuccess()
+                return@runCatching cloudinaryResponse.secure_url
+            }
+        } else {
+            // ==========================================
+            // 2. NHÁNH FILE: UPLOAD LÊN FIREBASE STORAGE
+            // ==========================================
+            val storageRef = FirebaseStorage.getInstance().reference
+                .child("chat_documents/${System.currentTimeMillis()}_$fileName")
+            storageRef.putBytes(fileBytes).await()
 
-            val responseBody = response.bodyAsText()
+            val downloadUrl = storageRef.downloadUrl.await()
 
-            val jsonParser = Json { ignoreUnknownKeys = true }
-            val cloudinaryResponse = jsonParser.decodeFromString<CloudinaryResponse>(responseBody)
-
-            cloudinaryResponse.secure_url
+            return@runCatching downloadUrl.toString()
         }
     }
 
@@ -128,21 +137,15 @@ class ChatRepositoryImpl(
         myUserId: String,
         conversationId: String
     ): MessageEntity {
-
         val isMine = dto.sender.uuid == myUserId
-
-        val replyInfo = dto.replyTo?.let { replyDto ->
-            ReplyMessageInfo(
-                uuid = Uuid.parse(replyDto.uuid),
-                content = replyDto.content,
-                senderName = replyDto.sender.displayName ?: "Người dùng"
-            )
-        }
-
         return MessageEntity(
             uuid = Uuid.parse(dto.uuid),
             content = dto.content,
             conversationId = Uuid.parse(conversationId),
+            type = dto.type.name, // Lấy Enum từ GraphQL map thành String
+            fileUrl = dto.fileUrl,
+            fileName = dto.fileName,
+            fileSize = dto.fileSize,
             sender = User(
                 uuid = Uuid.parse(dto.sender.uuid),
                 email = dto.sender.email,
@@ -150,12 +153,11 @@ class ChatRepositoryImpl(
                 displayName = dto.sender.displayName ?: "Người dùng ẩn danh",
                 avatarUrl = dto.sender.avatarUrl ?: "",
                 passwordHash = null,
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now()
+                createdAt = LocalDateTime.now(), updatedAt = LocalDateTime.now()
             ),
             createdAt = parseIsoDate(dto.createdAt),
             isOwnMessage = isMine,
-            replyTo = replyInfo
+            replyTo = dto.replyTo?.let { ReplyMessageInfo(Uuid.parse(it.uuid), it.content, it.sender.displayName ?: "") }
         )
     }
 
@@ -170,13 +172,32 @@ class ChatRepositoryImpl(
         }
     }
 
-    override suspend fun sendMessage(conversationId: String, content: String, replyToId: String?): Result<MessageEntity> {
+    override suspend fun sendMessage(
+        conversationId: String,
+        content: String,
+        replyToId: String?,
+        type: String,
+        fileUrl: String?,
+        fileName: String?,
+        fileSize: String?
+    ): Result<MessageEntity> {
         return try {
+            // Chuyển String Type từ Mobile sang cấu trúc Enum chuẩn mã sinh bởi Apollo
+            val gqlType = when(type) {
+                "IMAGE" -> com.example.se405.android.graphql.type.MessageType.IMAGE
+                "FILE" -> com.example.se405.android.graphql.type.MessageType.FILE
+                else -> com.example.se405.android.graphql.type.MessageType.TEXT
+            }
+
             val response = apolloClient.mutation(
                 SendMessageMutation(
                     conversationId = conversationId,
                     content = content,
-                    replyToId = Optional.presentIfNotNull(replyToId)
+                    replyToId = Optional.presentIfNotNull(replyToId),
+                    type = gqlType,
+                    fileUrl = Optional.presentIfNotNull(fileUrl),
+                    fileName = Optional.presentIfNotNull(fileName),
+                    fileSize = Optional.presentIfNotNull(fileSize)
                 )
             ).execute()
 
@@ -184,37 +205,23 @@ class ChatRepositoryImpl(
                 return Result.failure(Exception(response.errors?.firstOrNull()?.message ?: "Lỗi từ Backend"))
             }
 
-            val dto = response.data?.sendMessage
-                ?: return Result.failure(Exception("Không lấy được dữ liệu tin nhắn vừa gửi"))
+            val dto = response.data?.sendMessage ?: return Result.failure(Exception("Không lấy dữ liệu thành công"))
 
-            val replyInfo = dto.replyTo?.let { replyDto ->
-                ReplyMessageInfo(
-                    uuid = Uuid.parse(replyDto.uuid),
-                    content = replyDto.content,
-                    senderName = replyDto.sender.displayName ?: "Người dùng"
+            Result.success(
+                MessageEntity(
+                    uuid = Uuid.parse(dto.uuid),
+                    content = dto.content,
+                    conversationId = Uuid.parse(dto.conversationId),
+                    type = dto.type.name,
+                    fileUrl = dto.fileUrl,
+                    fileName = dto.fileName,
+                    fileSize = dto.fileSize,
+                    sender = User(uuid = Uuid.parse(dto.sender.uuid), email = dto.sender.email, username = "unknown", displayName = dto.sender.displayName ?: "Tôi", avatarUrl = dto.sender.avatarUrl, passwordHash = null, createdAt = LocalDateTime.now(), updatedAt = LocalDateTime.now()),
+                    createdAt = parseIsoDate(dto.createdAt),
+                    isOwnMessage = true,
+                    replyTo = dto.replyTo?.let { ReplyMessageInfo(Uuid.parse(it.uuid), it.content, it.sender.displayName ?: "") }
                 )
-            }
-
-            val sentMessage = MessageEntity(
-                uuid = Uuid.parse(dto.uuid),
-                content = dto.content,
-                conversationId = Uuid.parse(dto.conversationId),
-                sender = User(
-                    uuid = Uuid.parse(dto.sender.uuid),
-                    email = dto.sender.email,
-                    username = "unknown",
-                    displayName = dto.sender.displayName ?: "Tôi",
-                    avatarUrl = dto.sender.avatarUrl,
-                    passwordHash = null,
-                    createdAt = LocalDateTime.now(),
-                    updatedAt = LocalDateTime.now()
-                ),
-                createdAt = parseIsoDate(dto.createdAt),
-                isOwnMessage = true,
-                replyTo = replyInfo
             )
-
-            Result.success(sentMessage)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -289,8 +296,6 @@ class ChatRepositoryImpl(
     override fun subscribeToMessages(conversationId: String, myUserId: String): Flow<MessageEntity> {
         return apolloClient.subscription(OnMessageAddedSubscription(conversationId))
             .toFlow()
-            .onStart { Log.d("WebSocketChat", "🟢 Luồng Apollo Flow ĐÃ MỞ!") }
-            .onCompletion { error -> Log.d("WebSocketChat", "🔴 Luồng Apollo Flow ĐÃ BỊ ĐÓNG: ${error?.message}") }
             .mapNotNull { response ->
                 if (response.exception != null) return@mapNotNull null
                 if (response.hasErrors()) return@mapNotNull null
@@ -322,6 +327,10 @@ class ChatRepositoryImpl(
                             createdAt = LocalDateTime.now(),
                             updatedAt = LocalDateTime.now()
                         ),
+                        type = dto.type.name,
+                        fileUrl = dto.fileUrl,
+                        fileName = dto.fileName,
+                        fileSize = dto.fileSize,
                         createdAt = parseIsoDate(dto.createdAt),
                         isOwnMessage = isMine,
                         replyTo = replyInfo

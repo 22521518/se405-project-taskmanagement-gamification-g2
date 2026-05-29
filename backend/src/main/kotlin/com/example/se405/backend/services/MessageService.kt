@@ -42,7 +42,7 @@ class MessageService(
     }
 
     @Transactional
-    fun sendMessage(conversationId: UUID, senderId: UUID, content: String, replyToId: UUID? = null): MessageEntity {
+    fun sendMessage(conversationId: UUID, senderId: UUID, content: String, replyToId: UUID? = null, type: String = "TEXT",fileUrl: String? = null, fileName: String? = null, fileSize: String? = null): MessageEntity {
         val conversation = conversationRepository.findById(conversationId).orElseThrow()
         val sender = userRepository.findById(senderId).orElseThrow()
 
@@ -56,6 +56,10 @@ class MessageService(
         val savedMessage = messageRepository.save(
             MessageEntity(
                 content = content,
+                type = type,
+                fileUrl = fileUrl,
+                fileName = fileName,
+                fileSize = fileSize,
                 conversation = conversation,
                 sender = sender,
                 replyTo = replyToMessage,
@@ -67,6 +71,10 @@ class MessageService(
             return MessagePayload(
                 uuid = entity.uuid.toString(),
                 content = entity.content,
+                type = entity.type,
+                fileUrl = entity.fileUrl,
+                fileName = entity.fileName,
+                fileSize = entity.fileSize,
                 createdAt = entity.createdAt.toString(),
                 conversationId = entity.conversation.uuid.toString(),
                 sender = UserPayload(
@@ -88,6 +96,12 @@ class MessageService(
         val otherParticipants = participantRepository.findByConversation(conversation)
             .filter { it.user.uuid != senderId }
 
+        val notificationBody = when (type) {
+            "IMAGE" -> "[Hình ảnh]"
+            "FILE" -> "[Tài liệu] $fileName"
+            else -> content
+        }
+
         for (participant in otherParticipants) {
             val token = participant.user.fcmToken
             if (!token.isNullOrBlank()) {
@@ -100,7 +114,7 @@ class MessageService(
                         .setNotification(
                             Notification.builder()
                                 .setTitle(sender.displayName ?: "Tin nhắn mới")
-                                .setBody(content)
+                                .setBody(notificationBody)
                                 .build()
                         )
                         .build()
@@ -116,12 +130,6 @@ class MessageService(
     }
 
     fun subscribeToMessages(conversationId: UUID): Flux<MessagePayload> {
-        println("🚀 WebSocket: Có người yêu cầu Lắng nghe phòng $conversationId")
         return getOrCreateSink(conversationId).asFlux()
-            .doOnSubscribe { println("🔗 WebSocket: Một Client VỪA KẾT NỐI thành công vào ống (Sink) của phòng $conversationId") }
-            .doOnCancel { println("❌ WebSocket: Client VỪA NGẮT KẾT NỐI khỏi phòng $conversationId") }
-            .doOnComplete { println("✅ WebSocket: Ống (Sink) của phòng $conversationId ĐÃ ĐÓNG HOÀN TOÀN") }
-            .doOnError { e -> println("🚨 WebSocket: Ống (Sink) BỊ LỖI - ${e.message}") }
-
     }
 }
