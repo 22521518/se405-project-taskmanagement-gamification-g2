@@ -10,6 +10,7 @@ query GetMyConversations {
             avatarUrl
             email
             username
+            isOnline
         }
         lastMessage {
             uuid
@@ -18,6 +19,7 @@ query GetMyConversations {
             sender {
                 uuid
                 displayName
+                isOnline
             }
         }
     }

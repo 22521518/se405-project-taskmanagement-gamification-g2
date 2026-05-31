@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 
 class NewMessageViewModel(
     private val userRepository: UserRepository,
-    // Tiêm thêm ChatRepository để thực hiện chức năng tạo phòng chat
     private val chatRepository: ChatRepository
 ) : ViewModel() {
 
@@ -29,7 +28,6 @@ class NewMessageViewModel(
     val error: StateFlow<String?> = _error.asStateFlow()
 
     init {
-        // Ngay khi mở màn hình Tạo tin nhắn, tự động gọi API lấy danh sách User
         loadAllUsers()
     }
 
@@ -39,7 +37,6 @@ class NewMessageViewModel(
             _error.value = null
 
             try {
-                // Gọi xuống tầng Data/Repository để lấy dữ liệu
                 val userList = userRepository.getAllUsers()
                 _users.value = userList
             } catch (e: Exception) {
@@ -75,7 +72,6 @@ class NewMessageViewModel(
                 )
 
                 result.onSuccess { newConversationId ->
-                    // Trả ID thật về cho UI (để MainNavHost chuyển trang)
                     onSuccess(newConversationId)
                 }.onFailure { e ->
                     _error.value = e.message ?: "Không thể tạo phòng chat. Vui lòng thử lại!"

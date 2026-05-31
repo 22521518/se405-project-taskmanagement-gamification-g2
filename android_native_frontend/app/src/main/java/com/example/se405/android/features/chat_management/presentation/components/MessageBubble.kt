@@ -62,6 +62,7 @@ fun MessageBubble(
     replyTo: ReplyMessageInfo? = null,
     onImageClick: (String) -> Unit = {},
     isRevoked: Boolean = false,
+    isSenderOnline: Boolean = false,
     onRevokeClick: () -> Unit = {},
     onPinClick: () -> Unit = {}
 ) {
@@ -92,25 +93,40 @@ fun MessageBubble(
         if (!isOwnMessage) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
                     .padding(top = 2.dp)
-                    .clip(CircleShape)
-                    .background(Color.LightGray),
-                contentAlignment = Alignment.Center
+                    .size(34.dp)
             ) {
-                if (!senderAvatarUrl.isNullOrBlank() && senderAvatarUrl != "null") {
-                    GlideImage(
-                        model = senderAvatarUrl,
-                        contentDescription = "Avatar",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Text(
-                        text = senderName.take(1).uppercase(),
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontSize = 14.sp
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .padding(top = 2.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!senderAvatarUrl.isNullOrBlank() && senderAvatarUrl != "null") {
+                        GlideImage(
+                            model = senderAvatarUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text(
+                            text = senderName.take(1).uppercase(),
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+                if (isSenderOnline) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF22C55E))
+                            .align(Alignment.BottomEnd)
                     )
                 }
             }
@@ -283,7 +299,6 @@ fun MessageBubble(
                                     .background(bubbleColor)
                                     .padding(12.dp)
                             ) {
-                                // 💡 ĐÃ SỬA: SỬ DỤNG formatMentionText Ở ĐÂY
                                 Text(
                                     text = formatMentionText(content = message, primaryColor = mentionColor),
                                     color = textColor,

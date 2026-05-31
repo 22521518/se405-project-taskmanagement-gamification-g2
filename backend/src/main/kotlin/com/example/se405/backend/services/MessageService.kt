@@ -83,14 +83,13 @@ class MessageService(
                 conversation = conversation,
                 sender = sender,
                 replyTo = replyToMessage,
-                mentions = mentionedUsers, // 💡 Lưu danh sách người bị tag vào Database
+                mentions = mentionedUsers,
                 createdAt = LocalDateTime.now()
             )
         )
 
         val payload = MessagePayload("CREATED", savedMessage)
 
-        // 1. Đẩy tin nhắn qua luồng WebSocket (Real-time)
         getOrCreateSink(conversationId).tryEmitNext(payload)
 
         // 2. Bắn Push Notification qua Firebase cho các thành viên khác
@@ -133,9 +132,7 @@ class MessageService(
                         .build()
 
                     FirebaseMessaging.getInstance().send(fcmMessage)
-                } catch (e: Exception) {
-                    println("🚨 Lỗi khi gửi FCM cho user ${participant.user.username}: ${e.message}")
-                }
+                } catch (e: Exception) { }
             }
         }
 
@@ -194,17 +191,13 @@ class MessageService(
                 val blob = bucket.get("chat_documents/${msg.fileName}")
                 if (blob != null) {
                     blob.delete()
-                    println("✅ Đã xóa file tài liệu: ${msg.fileName} khỏi Firebase Storage")
                 }
 
             } else if (msg.type == "IMAGE" && !msg.fileUrl.isNullOrBlank()) {
                 val publicId = msg.fileUrl!!.substringAfterLast("/").substringBeforeLast(".")
                 cloudinary.uploader().destroy(publicId, com.cloudinary.utils.ObjectUtils.emptyMap())
-                println("✅ Sẵn sàng xóa ảnh khỏi Cloudinary với public_id: $publicId")
             }
-        } catch (e: Exception) {
-            println("🚨 Lỗi khi xóa file vật lý trên Cloud: ${e.message}")
-        }
+        } catch (e: Exception) { }
 
         msg.content = ""
         msg.fileUrl = null

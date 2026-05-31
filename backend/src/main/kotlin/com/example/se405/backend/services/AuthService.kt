@@ -129,7 +129,6 @@ class AuthService(
     fun updateProfile(userId: UUID, req: UpdateProfileRequest): UserProfileResponse {
         val user = userRepository.findById(userId).orElseThrow()
 
-        // Chỉ cập nhật nếu giá trị truyền lên không null
         val updatedUser = user.copy(
             displayName = req.displayName ?: user.displayName,
             email = req.email ?: user.email,

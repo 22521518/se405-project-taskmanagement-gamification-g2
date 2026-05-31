@@ -1,10 +1,12 @@
 package com.example.se405.android.features.users_management.data.repositoryImpl
 
+import android.util.Log
 import com.apollographql.apollo.ApolloClient
 import com.example.se405.android.features.users_management.domain.repository.UserRepository
 import com.example.se405.android.features.users_management.domain.entity.User
 import com.example.se405.android.graphql.GetAllUsersQuery
 import com.example.se405.android.graphql.UpdateFcmTokenMutation
+import com.example.se405.android.graphql.UpdateUserPresenceMutation
 import java.time.LocalDate
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -51,6 +53,25 @@ class UserRepositoryImpl(
                 Result.success(success)
             }
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateUserPresence(isOnline: Boolean): Result<Boolean> {
+        return try {
+            val response = apolloClient.mutation(UpdateUserPresenceMutation(isOnline)).execute()
+
+            if (response.hasErrors()) {
+                val errorMsg = response.errors?.first()?.message
+                Log.e("PresenceDebug", "Lỗi GraphQL khi cập nhật trạng thái: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            } else {
+                val success = response.data?.updateUserPresence ?: false
+                Log.d("PresenceDebug", "Đã cập nhật trạng thái Online = $isOnline")
+                Result.success(success)
+            }
+        } catch (e: Exception) {
+            Log.e("PresenceDebug", "Lỗi mạng khi cập nhật trạng thái: ${e.message}")
             Result.failure(e)
         }
     }

@@ -14,18 +14,47 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.example.se405.android.core.navigations.MainNavHost
 import com.example.se405.android.core.presentation.popup.LocalPopupController
 import com.example.se405.android.core.presentation.popup.PopupController
 import com.example.se405.android.core.presentation.popup.PopupHost
 import com.example.se405.android.core.presentation.theme.Android_Theme
+import com.example.se405.android.features.users_management.domain.repository.UserRepository
+import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 
 class MainActivity : FragmentActivity() {
+    private val userRepository: UserRepository by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         enableEdgeToEdge()
+
+        lifecycle.addObserver(LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> {
+                    // Người dùng vào App -> Sáng đèn
+                    lifecycleScope.launch {
+                        userRepository.updateUserPresence(true)
+                    }
+                }
+
+                Lifecycle.Event.ON_STOP -> {
+                    // Người dùng ẩn App -> Tắt đèn
+                    lifecycleScope.launch {
+                        userRepository.updateUserPresence(false)
+                    }
+                }
+
+                else -> {}
+            }
+        })
+
         setContent {
             Android_Theme {
                 App()

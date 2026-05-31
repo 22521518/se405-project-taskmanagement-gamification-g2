@@ -481,6 +481,7 @@ fun TaskChatScreen(
                                                     fileSize = message.fileSize,
                                                     replyTo = message.replyTo,
                                                     isRevoked = message.isRevoked,
+                                                    isSenderOnline = message.sender.isOnline,
                                                     onImageClick = { selectedImageToView = it },
                                                     onPinClick = { viewModel.togglePinMessage(message.uuid.toString()) },
                                                     onRevokeClick = { viewModel.revokeMessage(message.uuid.toString()) }

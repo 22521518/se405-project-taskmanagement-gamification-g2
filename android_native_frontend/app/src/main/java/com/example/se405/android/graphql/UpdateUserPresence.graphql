@@ -1,0 +1,3 @@
+mutation UpdateUserPresence($isOnline: Boolean!) {
+    updateUserPresence(isOnline: $isOnline)
+}

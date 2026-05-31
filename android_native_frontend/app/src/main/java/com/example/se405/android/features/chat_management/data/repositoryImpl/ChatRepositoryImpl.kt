@@ -30,7 +30,6 @@ import com.google.firebase.storage.FirebaseStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
@@ -42,21 +41,21 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.onStart      // 💡 Thêm 2 dòng import này
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalUuidApi::class)
 class ChatRepositoryImpl(
     private val apolloClient: ApolloClient,
     private val authPrefs: AuthPreferences
 ) : ChatRepository {
+
     override suspend fun getConversationByTask(taskId: String, taskName: String): Result<String> {
         return try {
             val response = apolloClient.query(GetConversationByTaskQuery(taskId = taskId, taskName = taskName)).execute()
@@ -96,9 +95,6 @@ class ChatRepositoryImpl(
 
     override suspend fun uploadFileToCloudinary(fileBytes: ByteArray, fileName: String, isImage: Boolean): Result<String> = runCatching {
         if (isImage) {
-            // ==========================================
-            // 1. NHÁNH ẢNH: UPLOAD LÊN CLOUDINARY
-            // ==========================================
             val cloudName = "de5l5byyn"
             val resourceType = "image"
             val uploadPreset = "se405_attachment_upload"
@@ -129,15 +125,11 @@ class ChatRepositoryImpl(
                 return@runCatching cloudinaryResponse.secure_url
             }
         } else {
-            // ==========================================
-            // 2. NHÁNH FILE: UPLOAD LÊN FIREBASE STORAGE
-            // ==========================================
             val storageRef = FirebaseStorage.getInstance().reference
                 .child("chat_documents/${System.currentTimeMillis()}_$fileName")
             storageRef.putBytes(fileBytes).await()
 
             val downloadUrl = storageRef.downloadUrl.await()
-
             return@runCatching downloadUrl.toString()
         }
     }
@@ -164,7 +156,9 @@ class ChatRepositoryImpl(
                 displayName = dto.sender.displayName ?: "Người dùng ẩn danh",
                 avatarUrl = dto.sender.avatarUrl ?: "",
                 passwordHash = null,
-                createdAt = LocalDateTime.now(), updatedAt = LocalDateTime.now()
+                createdAt = LocalDateTime.now(),
+                updatedAt = LocalDateTime.now(),
+                isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
             ),
             createdAt = parseIsoDate(dto.createdAt),
             isOwnMessage = isMine,
@@ -211,7 +205,7 @@ class ChatRepositoryImpl(
                     fileUrl = Optional.presentIfNotNull(fileUrl),
                     fileName = Optional.presentIfNotNull(fileName),
                     fileSize = Optional.presentIfNotNull(fileSize),
-                    mentionedUserIds = Optional.presentIfNotNull(mentionedUserIds) // 💡 TRUYỀN VÀO APOLLO
+                    mentionedUserIds = Optional.presentIfNotNull(mentionedUserIds)
                 )
             ).execute()
 
@@ -238,7 +232,8 @@ class ChatRepositoryImpl(
                         avatarUrl = dto.sender.avatarUrl,
                         passwordHash = null,
                         createdAt = LocalDateTime.now(),
-                        updatedAt = LocalDateTime.now()
+                        updatedAt = LocalDateTime.now(),
+                        isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                     ),
                     createdAt = parseIsoDate(dto.createdAt),
                     isOwnMessage = true,
@@ -281,16 +276,17 @@ class ChatRepositoryImpl(
                         email = p.email,
                         username = p.username,
                         passwordHash = null,
-                        createdAt = LocalDateTime.now(), updatedAt = LocalDateTime.now()
+                        createdAt = LocalDateTime.now(),
+                        updatedAt = LocalDateTime.now(),
+                        isOnline = p.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                     )
-                },lastMessage = lastMsg
+                }, lastMessage = lastMsg
             )
         } ?: emptyList()
 
         emit(conversations)
     }
 
-    // 5. Tạo phòng chat mới
     override suspend fun createConversation(
         participantIds: List<String>,
         isGroup: Boolean,
@@ -328,7 +324,6 @@ class ChatRepositoryImpl(
                 val payload = response.data?.messageEvents ?: return@mapNotNull null
                 val msgDto = payload.message
 
-
                 try {
                     val isMine = msgDto.sender.uuid == myUserId
                     val isMsgRevoked = msgDto.isRevoked
@@ -354,7 +349,8 @@ class ChatRepositoryImpl(
                             avatarUrl = msgDto.sender.avatarUrl,
                             passwordHash = null,
                             createdAt = LocalDateTime.now(),
-                            updatedAt = LocalDateTime.now()
+                            updatedAt = LocalDateTime.now(),
+                            isOnline = msgDto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                         ),
                         fileUrl = msgDto.fileUrl,
                         fileName = msgDto.fileName,
@@ -428,7 +424,8 @@ class ChatRepositoryImpl(
                     avatarUrl = dto.sender.avatarUrl,
                     passwordHash = null,
                     createdAt = LocalDateTime.now(),
-                    updatedAt = LocalDateTime.now()
+                    updatedAt = LocalDateTime.now(),
+                    isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                 ),
                 replyTo = null
             )
@@ -460,7 +457,8 @@ class ChatRepositoryImpl(
                     avatarUrl = dto.sender.avatarUrl,
                     passwordHash = null,
                     createdAt = LocalDateTime.now(),
-                    updatedAt = LocalDateTime.now()
+                    updatedAt = LocalDateTime.now(),
+                    isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                 ),
                 replyTo = null
             )
@@ -470,6 +468,7 @@ class ChatRepositoryImpl(
     override suspend fun getSharedLinks(conversationId: String, myUserId: String): Result<List<MessageEntity>> = runCatching {
         val response = apolloClient.query(GetSharedLinksQuery(conversationId)).execute()
         if (response.hasErrors()) throw Exception(response.errors?.first()?.message)
+
         response.data?.getSharedLinks?.map { dto ->
             MessageEntity(
                 uuid = Uuid.parse(dto.uuid),
@@ -481,7 +480,17 @@ class ChatRepositoryImpl(
                 isOwnMessage = dto.sender.uuid == myUserId,
                 isRevoked = dto.isRevoked,
                 isPinned = false,
-                sender = User(uuid = Uuid.parse(dto.sender.uuid), email=dto.sender.email, username=dto.sender.username, displayName=dto.sender.displayName ?: "", avatarUrl=dto.sender.avatarUrl, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now(), passwordHash = ""),
+                sender = User(
+                    uuid = Uuid.parse(dto.sender.uuid),
+                    email=dto.sender.email,
+                    username=dto.sender.username,
+                    displayName=dto.sender.displayName ?: "",
+                    avatarUrl=dto.sender.avatarUrl,
+                    passwordHash = "",
+                    createdAt=LocalDateTime.now(),
+                    updatedAt=LocalDateTime.now(),
+                    isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                ),
                 replyTo = null
             )
         } ?: emptyList()
@@ -504,7 +513,17 @@ class ChatRepositoryImpl(
                 isOwnMessage = dto.sender.uuid == myUserId,
                 isRevoked = dto.isRevoked,
                 isPinned = false,
-                sender = User(uuid = Uuid.parse(dto.sender.uuid), email=dto.sender.email, username=dto.sender.username, displayName=dto.sender.displayName ?: "", avatarUrl=dto.sender.avatarUrl, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now(), passwordHash = ""),
+                sender = User(
+                    uuid = Uuid.parse(dto.sender.uuid),
+                    email=dto.sender.email,
+                    username=dto.sender.username,
+                    displayName=dto.sender.displayName ?: "",
+                    avatarUrl=dto.sender.avatarUrl,
+                    passwordHash = "",
+                    createdAt=LocalDateTime.now(),
+                    updatedAt=LocalDateTime.now(),
+                    isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                ),
                 replyTo = null
             )
         } ?: emptyList()
@@ -522,7 +541,6 @@ class ChatRepositoryImpl(
             throw Exception(response.errors?.first()?.message)
         }
 
-        // 💡 Lấy trực tiếp từ getConversationMembers thay vì chui qua getConversation -> participants
         response.data?.getConversationMembers?.map { userDto ->
             User(
                 uuid = kotlin.uuid.Uuid.parse(userDto.uuid),
@@ -532,7 +550,8 @@ class ChatRepositoryImpl(
                 avatarUrl = userDto.avatarUrl,
                 passwordHash = null,
                 createdAt = java.time.LocalDateTime.now(),
-                updatedAt = java.time.LocalDateTime.now()
+                updatedAt = java.time.LocalDateTime.now(),
+                isOnline = userDto.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
             )
         } ?: emptyList()
     }

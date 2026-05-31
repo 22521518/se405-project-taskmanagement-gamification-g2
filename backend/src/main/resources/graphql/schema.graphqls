@@ -58,6 +58,7 @@ type Query {
 type Mutation {
     #User
     updateFcmToken(token: String!): Boolean
+    updateUserPresence(isOnline: Boolean!): Boolean!
     # Task CRUD
     createTask(input: CreateTaskInput!): Task!
     updateTask(input: UpdateTaskInput!): Task!
@@ -185,6 +186,8 @@ type User {
     avatarUrl: String
     createdAt: String!
     updatedAt: String!
+    isOnline: Boolean!
+    lastSeen: String
 }
 
 type Message {

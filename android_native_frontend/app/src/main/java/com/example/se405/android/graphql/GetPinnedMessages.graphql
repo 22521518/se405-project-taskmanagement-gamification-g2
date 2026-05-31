@@ -10,6 +10,6 @@ query GetPinnedMessages($conversationId: ID!) {
         isRevoked
         isPinned
         pinnedAt
-        sender { uuid username email displayName avatarUrl }
+        sender { uuid username email displayName avatarUrl isOnline }
     }
 }

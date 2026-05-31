@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
 import com.example.se405.android.features.users_management.domain.entity.User
+import com.example.se405.android.features.users_management.domain.repository.UserRepository
 
 data class ChatUiState(
     val messages: List<MessageEntity> = emptyList(),
@@ -25,7 +26,8 @@ data class ChatUiState(
 
 class TaskChatViewModel(
     private val chatRepository: ChatRepository,
-    private val authPreferences: AuthPreferences
+    private val authPreferences: AuthPreferences,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     // STATES

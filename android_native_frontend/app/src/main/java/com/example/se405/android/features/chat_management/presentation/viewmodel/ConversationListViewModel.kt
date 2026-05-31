@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.se405.android.core.authentication.data.AuthPreferences
 import com.example.se405.android.features.chat_management.domain.entity.Conversation
 import com.example.se405.android.features.chat_management.domain.repository.ChatRepository
+import com.example.se405.android.features.users_management.domain.repository.UserRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,8 @@ data class ConversationListUiState(
 
 class ConversationListViewModel(
     private val chatRepository: ChatRepository,
-    private val authPrefs: AuthPreferences
+    private val authPrefs: AuthPreferences,
+    val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConversationListUiState())

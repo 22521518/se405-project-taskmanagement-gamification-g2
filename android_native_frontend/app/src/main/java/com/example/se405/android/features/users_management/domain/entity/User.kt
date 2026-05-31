@@ -12,9 +12,9 @@ constructor(
     val passwordHash: String?,
     val displayName: String,
     val avatarUrl: String?,
-
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
+    val isOnline: Boolean = false
 ) {
     init {
         require(email.isNotBlank()) { "Email must not be blank" }

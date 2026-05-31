@@ -32,7 +32,13 @@ data class UserEntity(
     val updatedAt: LocalDateTime = LocalDateTime.now(),
 
     @Column(name = "fcm_token")
-    var fcmToken: String? = null
+    var fcmToken: String? = null,
+
+    @Column(name = "is_online")
+    var isOnline: Boolean = false,
+
+    @Column(name = "last_seen")
+    var lastSeen: java.time.LocalDateTime? = null
 ){
     override fun toString(): String {
         return "UserEntity(uuid=$uuid, username='$username', email='$email', displayName='$displayName')"

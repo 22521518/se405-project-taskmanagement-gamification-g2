@@ -16,6 +16,7 @@ query GetMessagesByConversation($conversationId: ID!) {
             displayName
             avatarUrl
             email
+            isOnline
         }
         replyTo {
             uuid
