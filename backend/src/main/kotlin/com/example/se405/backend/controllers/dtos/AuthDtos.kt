@@ -1,5 +1,6 @@
 package com.example.se405.backend.controllers.dtos
 
+import com.example.se405.backend.database.model.MessageEntity
 import java.util.UUID
 
 data class RegisterRequest(
@@ -45,16 +46,8 @@ data class SimpleMessageResponse(
 )
 
 data class MessagePayload(
-    val uuid: String,
-    val content: String,
-    val type: String,
-    val fileUrl: String?,
-    val fileName: String?,
-    val fileSize: String?,
-    val createdAt: String,
-    val conversationId: String,
-    val sender: UserPayload,
-    val replyTo: MessagePayload? = null
+    val eventType: String, // "CREATED", "REVOKED", "PINNED", "UNPINNED"
+    val message: MessageEntity
 )
 
 data class UserPayload(

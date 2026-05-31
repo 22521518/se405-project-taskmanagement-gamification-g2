@@ -1,0 +1,15 @@
+query GetPinnedMessages($conversationId: ID!) {
+    getPinnedMessages(conversationId: $conversationId) {
+        uuid
+        content
+        type
+        fileUrl
+        fileName
+        fileSize
+        createdAt
+        isRevoked
+        isPinned
+        pinnedAt
+        sender { uuid username email displayName avatarUrl }
+    }
+}

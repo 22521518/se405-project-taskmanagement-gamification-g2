@@ -1,0 +1,19 @@
+subscription MessageEvents($conversationId: ID!) {
+    messageEvents(conversationId: $conversationId) {
+        eventType
+        message {
+            uuid
+            content
+            type
+            fileUrl
+            fileName
+            fileSize
+            createdAt
+            isRevoked
+            isPinned
+            pinnedAt
+            sender { uuid username email displayName avatarUrl }
+            replyTo { uuid content sender { displayName } }
+        }
+    }
+}

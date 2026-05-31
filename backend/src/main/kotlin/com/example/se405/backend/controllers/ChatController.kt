@@ -63,6 +63,30 @@ class ChatController(
     }
 
     @QueryMapping
+    @Transactional(readOnly = true)
+    fun getPinnedMessages(@Argument conversationId: String): List<MessageEntity> {
+        return messageService.getPinnedMessages(UUID.fromString(conversationId))
+    }
+
+    @QueryMapping
+    @Transactional(readOnly = true)
+    fun getSharedMedia(@Argument conversationId: String): List<MessageEntity> {
+        return messageService.getSharedMedia(UUID.fromString(conversationId))
+    }
+
+    @MutationMapping
+    @Transactional
+    fun togglePinMessage(@Argument messageId: String): MessageEntity {
+        return messageService.togglePinMessage(UUID.fromString(messageId))
+    }
+
+    @MutationMapping
+    @Transactional
+    fun revokeMessage(@Argument messageId: String): MessageEntity {
+        return messageService.revokeMessage(UUID.fromString(messageId), getCurrentUserUuid())
+    }
+
+    @QueryMapping
     fun getAllUsers(): List<UserEntity> {
         return userRepository.findAll()
     }
@@ -89,13 +113,22 @@ class ChatController(
         @Argument type: String,
         @Argument fileUrl: String?,
         @Argument fileName: String?,
-        @Argument fileSize: String?
+        @Argument fileSize: String?,
+        @Argument mentionedUserIds: List<String>?
     ): MessageEntity {
         val principal = SecurityContextHolder.getContext().authentication.principal
         val senderUuid = principal as? UUID ?: getCurrentUserUuid()
-
         val convUuid = UUID.fromString(conversationId)
         val replyToUuid = if (!replyToId.isNullOrBlank()) UUID.fromString(replyToId) else null
+
+        // 💡 XỬ LÝ MENTIONS: Map an toàn từ List<String> sang List<UUID>
+        val mentionedUuids = mentionedUserIds?.mapNotNull { idStr ->
+            try {
+                UUID.fromString(idStr)
+            } catch (e: Exception) {
+                null // Bỏ qua nếu có ID rác/không hợp lệ gửi lên
+            }
+        }
 
         return messageService.sendMessage(
             conversationId = convUuid,
@@ -105,12 +138,13 @@ class ChatController(
             type = type,
             fileUrl = fileUrl,
             fileName = fileName,
-            fileSize = fileSize
+            fileSize = fileSize,
+            mentionedUserIds = mentionedUuids
         )
     }
 
     @SubscriptionMapping
-    fun messageAdded(@Argument conversationId: String): Flux<MessagePayload> {
+    fun messageEvents(@Argument conversationId: String): Flux<MessagePayload> {
         if (conversationId.isBlank()) return Flux.empty()
         return try {
             val uuid = UUID.fromString(conversationId.trim())
@@ -136,5 +170,23 @@ class ChatController(
             return task?.title ?: "Thảo luận công việc"
         }
         return conversation.name
+    }
+
+    @QueryMapping
+    @Transactional(readOnly = true)
+    fun getSharedLinks(@Argument conversationId: String): List<MessageEntity> {
+        return messageService.getSharedLinks(UUID.fromString(conversationId))
+    }
+
+    @QueryMapping
+    @Transactional(readOnly = true)
+    fun searchMessages(@Argument conversationId: String, @Argument keyword: String): List<MessageEntity> {
+        return messageService.searchMessages(UUID.fromString(conversationId), keyword.trim())
+    }
+
+    @QueryMapping
+    @Transactional(readOnly = true)
+    fun getConversationMembers(@Argument conversationId: String): List<UserEntity> {
+        return messageService.getConversationMembers(UUID.fromString(conversationId))
     }
 }

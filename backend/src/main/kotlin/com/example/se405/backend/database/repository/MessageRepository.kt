@@ -9,4 +9,20 @@ import java.util.UUID
 interface MessageRepository : JpaRepository<MessageEntity, UUID> {
     // Lấy tin nhắn theo ID của Conversation
     fun findByConversationUuidOrderByCreatedAtAsc(conversationUuid: UUID): List<MessageEntity>
+    fun findByConversationUuidAndIsPinnedTrueOrderByPinnedAtAsc(conversationId: UUID): List<MessageEntity>
+    fun findByConversationUuidAndTypeInAndIsRevokedFalseOrderByCreatedAtDesc(
+        conversationId: UUID,
+        types: List<String>
+    ): List<MessageEntity>
+
+    fun findByConversationUuidAndTypeAndContentContainingIgnoreCaseAndIsRevokedFalseOrderByCreatedAtDesc(
+        conversationUuid: UUID,
+        type: String,
+        keyword: String
+    ): List<MessageEntity>
+
+    fun findByConversationUuidAndContentContainingIgnoreCaseAndIsRevokedFalseOrderByCreatedAtDesc(
+        conversationUuid: UUID,
+        keyword: String
+    ): List<MessageEntity>
 }

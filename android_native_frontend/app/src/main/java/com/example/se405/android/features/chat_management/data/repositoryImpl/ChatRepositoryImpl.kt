@@ -13,11 +13,18 @@ import com.example.se405.android.features.chat_management.domain.repository.Chat
 import com.example.se405.android.features.users_management.domain.entity.User
 import com.example.se405.android.graphql.CreateConversationMutation
 import com.example.se405.android.graphql.GetConversationByTaskQuery
+import com.example.se405.android.graphql.GetConversationMembersQuery
 import com.example.se405.android.graphql.GetMessagesByConversationQuery
 import com.example.se405.android.graphql.GetMyConversationsQuery
-import com.example.se405.android.graphql.OnMessageAddedSubscription
+import com.example.se405.android.graphql.GetPinnedMessagesQuery
+import com.example.se405.android.graphql.GetSharedLinksQuery
+import com.example.se405.android.graphql.GetSharedMediaQuery
+import com.example.se405.android.graphql.MessageEventsSubscription
 import com.example.se405.android.graphql.RenameConversationMutation
+import com.example.se405.android.graphql.RevokeMessageMutation
+import com.example.se405.android.graphql.SearchMessagesQuery
 import com.example.se405.android.graphql.SendMessageMutation
+import com.example.se405.android.graphql.TogglePinMessageMutation
 import com.example.se405.android.graphql.type.ConversationType
 import com.google.firebase.storage.FirebaseStorage
 import io.ktor.client.HttpClient
@@ -71,7 +78,9 @@ class ChatRepositoryImpl(
             val response = apolloClient.query(GetMessagesByConversationQuery(conversationId)).execute()
 
             if (response.hasErrors()) {
-                Result.failure(Exception(response.errors?.first()?.message))
+                val errorMsg = response.errors?.first()?.message
+                Log.e("ChatDebug", "Query GraphQL Error: $errorMsg")
+                throw Exception(errorMsg)
             } else {
                 val messages = response.data?.getMessagesByConversation?.map { dto ->
                     mapGqlMessageToEntity(dto, myUserId, conversationId)
@@ -80,7 +89,8 @@ class ChatRepositoryImpl(
                 Result.success(messages)
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Log.e("ChatDebug", "💥 Lỗi Mapping trong GetMessages: ${e.message}", e)
+            throw e
         }
     }
 
@@ -137,12 +147,13 @@ class ChatRepositoryImpl(
         myUserId: String,
         conversationId: String
     ): MessageEntity {
+        val isMsgRevoked = dto.isRevoked
         val isMine = dto.sender.uuid == myUserId
         return MessageEntity(
             uuid = Uuid.parse(dto.uuid),
-            content = dto.content,
+            content = if (isMsgRevoked) "Tin nhắn đã được thu hồi" else dto.content,
             conversationId = Uuid.parse(conversationId),
-            type = dto.type.name, // Lấy Enum từ GraphQL map thành String
+            type = if (isMsgRevoked) "TEXT" else dto.type.name,
             fileUrl = dto.fileUrl,
             fileName = dto.fileName,
             fileSize = dto.fileSize,
@@ -157,6 +168,8 @@ class ChatRepositoryImpl(
             ),
             createdAt = parseIsoDate(dto.createdAt),
             isOwnMessage = isMine,
+            isRevoked = isMsgRevoked,
+            isPinned = dto.isPinned,
             replyTo = dto.replyTo?.let { ReplyMessageInfo(Uuid.parse(it.uuid), it.content, it.sender.displayName ?: "") }
         )
     }
@@ -179,10 +192,10 @@ class ChatRepositoryImpl(
         type: String,
         fileUrl: String?,
         fileName: String?,
-        fileSize: String?
+        fileSize: String?,
+        mentionedUserIds: List<String>?
     ): Result<MessageEntity> {
         return try {
-            // Chuyển String Type từ Mobile sang cấu trúc Enum chuẩn mã sinh bởi Apollo
             val gqlType = when(type) {
                 "IMAGE" -> com.example.se405.android.graphql.type.MessageType.IMAGE
                 "FILE" -> com.example.se405.android.graphql.type.MessageType.FILE
@@ -197,7 +210,8 @@ class ChatRepositoryImpl(
                     type = gqlType,
                     fileUrl = Optional.presentIfNotNull(fileUrl),
                     fileName = Optional.presentIfNotNull(fileName),
-                    fileSize = Optional.presentIfNotNull(fileSize)
+                    fileSize = Optional.presentIfNotNull(fileSize),
+                    mentionedUserIds = Optional.presentIfNotNull(mentionedUserIds) // 💡 TRUYỀN VÀO APOLLO
                 )
             ).execute()
 
@@ -216,9 +230,20 @@ class ChatRepositoryImpl(
                     fileUrl = dto.fileUrl,
                     fileName = dto.fileName,
                     fileSize = dto.fileSize,
-                    sender = User(uuid = Uuid.parse(dto.sender.uuid), email = dto.sender.email, username = "unknown", displayName = dto.sender.displayName ?: "Tôi", avatarUrl = dto.sender.avatarUrl, passwordHash = null, createdAt = LocalDateTime.now(), updatedAt = LocalDateTime.now()),
+                    sender = User(
+                        uuid = Uuid.parse(dto.sender.uuid),
+                        email = dto.sender.email,
+                        username = "unknown",
+                        displayName = dto.sender.displayName ?: "Tôi",
+                        avatarUrl = dto.sender.avatarUrl,
+                        passwordHash = null,
+                        createdAt = LocalDateTime.now(),
+                        updatedAt = LocalDateTime.now()
+                    ),
                     createdAt = parseIsoDate(dto.createdAt),
                     isOwnMessage = true,
+                    isRevoked = dto.isRevoked,
+                    isPinned = dto.isPinned,
                     replyTo = dto.replyTo?.let { ReplyMessageInfo(Uuid.parse(it.uuid), it.content, it.sender.displayName ?: "") }
                 )
             )
@@ -293,19 +318,22 @@ class ChatRepositoryImpl(
         }
     }
 
-    override fun subscribeToMessages(conversationId: String, myUserId: String): Flow<MessageEntity> {
-        return apolloClient.subscription(OnMessageAddedSubscription(conversationId))
+    override fun subscribeToMessages(conversationId: String, myUserId: String): Flow<Pair<String, MessageEntity>> {
+        return apolloClient.subscription(MessageEventsSubscription(conversationId))
             .toFlow()
             .mapNotNull { response ->
                 if (response.exception != null) return@mapNotNull null
                 if (response.hasErrors()) return@mapNotNull null
 
-                val dto = response.data?.messageAdded ?: return@mapNotNull null
+                val payload = response.data?.messageEvents ?: return@mapNotNull null
+                val msgDto = payload.message
+
 
                 try {
-                    val isMine = dto.sender.uuid == myUserId
+                    val isMine = msgDto.sender.uuid == myUserId
+                    val isMsgRevoked = msgDto.isRevoked
 
-                    val replyInfo = dto.replyTo?.let { replyDto ->
+                    val replyInfo = msgDto.replyTo?.let { replyDto ->
                         ReplyMessageInfo(
                             uuid = Uuid.parse(replyDto.uuid),
                             content = replyDto.content,
@@ -313,29 +341,36 @@ class ChatRepositoryImpl(
                         )
                     }
 
-                    MessageEntity(
-                        uuid = Uuid.parse(dto.uuid),
-                        content = dto.content,
+                    val entity = MessageEntity(
+                        uuid = Uuid.parse(msgDto.uuid),
+                        content = if (isMsgRevoked) "Tin nhắn đã được thu hồi" else msgDto.content,
+                        type = if (isMsgRevoked) "TEXT" else msgDto.type.name,
                         conversationId = Uuid.parse(conversationId),
                         sender = User(
-                            uuid = Uuid.parse(dto.sender.uuid),
-                            email = dto.sender.email,
+                            uuid = Uuid.parse(msgDto.sender.uuid),
+                            email = msgDto.sender.email,
                             username = "unknown",
-                            displayName = dto.sender.displayName ?: "Người dùng",
-                            avatarUrl = dto.sender.avatarUrl,
+                            displayName = msgDto.sender.displayName ?: "Người dùng",
+                            avatarUrl = msgDto.sender.avatarUrl,
                             passwordHash = null,
                             createdAt = LocalDateTime.now(),
                             updatedAt = LocalDateTime.now()
                         ),
-                        type = dto.type.name,
-                        fileUrl = dto.fileUrl,
-                        fileName = dto.fileName,
-                        fileSize = dto.fileSize,
-                        createdAt = parseIsoDate(dto.createdAt),
+                        fileUrl = msgDto.fileUrl,
+                        fileName = msgDto.fileName,
+                        fileSize = msgDto.fileSize,
+                        createdAt = parseIsoDate(msgDto.createdAt),
                         isOwnMessage = isMine,
-                        replyTo = replyInfo
+                        replyTo = replyInfo,
+                        isRevoked = msgDto.isRevoked,
+                        isPinned = msgDto.isPinned
                     )
+
+                    Log.d("ChatDebug", "Nhận thành công Event: ${payload.eventType} - Tin nhắn ID: ${entity.uuid}")
+                    Pair(payload.eventType, entity)
+
                 } catch (e: Exception) {
+                    Log.e("ChatDebug", "💥 Lỗi Mapping trong Subscription: ${e.message}", e)
                     null
                 }
             }
@@ -355,6 +390,153 @@ class ChatRepositoryImpl(
             Result.failure(e)
         }
     }
+
+    override suspend fun togglePinMessage(messageId: String): Result<Boolean> = runCatching {
+        val response = apolloClient.mutation(TogglePinMessageMutation(messageId)).execute()
+        if (response.hasErrors()) throw Exception(response.errors?.first()?.message)
+        true
+    }
+
+    override suspend fun revokeMessage(messageId: String): Result<Boolean> = runCatching {
+        val response = apolloClient.mutation(RevokeMessageMutation(messageId)).execute()
+        if (response.hasErrors()) throw Exception(response.errors?.first()?.message)
+        true
+    }
+
+    override suspend fun getPinnedMessages(conversationId: String, myUserId: String): Result<List<MessageEntity>> = runCatching {
+        val response = apolloClient.query(GetPinnedMessagesQuery(conversationId)).execute()
+        if (response.hasErrors()) throw Exception(response.errors?.first()?.message)
+
+        response.data?.getPinnedMessages?.map { dto ->
+            MessageEntity(
+                uuid = Uuid.parse(dto.uuid),
+                content = dto.content,
+                conversationId = Uuid.parse(conversationId),
+                type = dto.type.name,
+                fileUrl = dto.fileUrl,
+                fileName = dto.fileName,
+                fileSize = dto.fileSize,
+                createdAt = parseIsoDate(dto.createdAt),
+                isOwnMessage = dto.sender.uuid == myUserId,
+                isRevoked = dto.isRevoked,
+                isPinned = dto.isPinned,
+                sender = User(
+                    uuid = Uuid.parse(dto.sender.uuid),
+                    email = dto.sender.email,
+                    username = "unknown",
+                    displayName = dto.sender.displayName ?: "Người dùng",
+                    avatarUrl = dto.sender.avatarUrl,
+                    passwordHash = null,
+                    createdAt = LocalDateTime.now(),
+                    updatedAt = LocalDateTime.now()
+                ),
+                replyTo = null
+            )
+        } ?: emptyList()
+    }
+
+    override suspend fun getSharedMedia(conversationId: String, myUserId: String): Result<List<MessageEntity>> = runCatching {
+        val response = apolloClient.query(GetSharedMediaQuery(conversationId)).execute()
+        if (response.hasErrors()) throw Exception(response.errors?.first()?.message)
+
+        response.data?.getSharedMedia?.map { dto ->
+            MessageEntity(
+                uuid = Uuid.parse(dto.uuid),
+                content = dto.content,
+                conversationId = Uuid.parse(conversationId),
+                type = dto.type.name,
+                fileUrl = dto.fileUrl,
+                fileName = dto.fileName,
+                fileSize = dto.fileSize,
+                createdAt = parseIsoDate(dto.createdAt),
+                isOwnMessage = dto.sender.uuid == myUserId,
+                isRevoked = dto.isRevoked,
+                isPinned = dto.isPinned,
+                sender = User(
+                    uuid = Uuid.parse(dto.sender.uuid),
+                    email = dto.sender.email,
+                    username = "unknown",
+                    displayName = dto.sender.displayName ?: "Người dùng",
+                    avatarUrl = dto.sender.avatarUrl,
+                    passwordHash = null,
+                    createdAt = LocalDateTime.now(),
+                    updatedAt = LocalDateTime.now()
+                ),
+                replyTo = null
+            )
+        } ?: emptyList()
+    }
+
+    override suspend fun getSharedLinks(conversationId: String, myUserId: String): Result<List<MessageEntity>> = runCatching {
+        val response = apolloClient.query(GetSharedLinksQuery(conversationId)).execute()
+        if (response.hasErrors()) throw Exception(response.errors?.first()?.message)
+        response.data?.getSharedLinks?.map { dto ->
+            MessageEntity(
+                uuid = Uuid.parse(dto.uuid),
+                content = dto.content,
+                conversationId = Uuid.parse(conversationId),
+                type = dto.type.name,
+                fileUrl = null, fileName = null, fileSize = null,
+                createdAt = parseIsoDate(dto.createdAt),
+                isOwnMessage = dto.sender.uuid == myUserId,
+                isRevoked = dto.isRevoked,
+                isPinned = false,
+                sender = User(uuid = Uuid.parse(dto.sender.uuid), email=dto.sender.email, username=dto.sender.username, displayName=dto.sender.displayName ?: "", avatarUrl=dto.sender.avatarUrl, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now(), passwordHash = ""),
+                replyTo = null
+            )
+        } ?: emptyList()
+    }
+
+    override suspend fun searchMessages(conversationId: String, keyword: String, myUserId: String): Result<List<MessageEntity>> = runCatching {
+        val response = apolloClient.query(SearchMessagesQuery(conversationId, keyword)).execute()
+        if (response.hasErrors()) {
+            val errorMsg = response.errors?.first()?.message
+            throw Exception(errorMsg)
+        }
+        val resultList = response.data?.searchMessages?.map { dto ->
+            MessageEntity(
+                uuid = Uuid.parse(dto.uuid),
+                content = dto.content,
+                conversationId = Uuid.parse(conversationId),
+                type = dto.type.name,
+                fileUrl = null, fileName = null, fileSize = null,
+                createdAt = parseIsoDate(dto.createdAt),
+                isOwnMessage = dto.sender.uuid == myUserId,
+                isRevoked = dto.isRevoked,
+                isPinned = false,
+                sender = User(uuid = Uuid.parse(dto.sender.uuid), email=dto.sender.email, username=dto.sender.username, displayName=dto.sender.displayName ?: "", avatarUrl=dto.sender.avatarUrl, createdAt=LocalDateTime.now(), updatedAt=LocalDateTime.now(), passwordHash = ""),
+                replyTo = null
+            )
+        } ?: emptyList()
+
+        Log.d("SearchDebug", "✅ Tìm thấy ${resultList.size} tin nhắn hợp lệ")
+        resultList
+    }.onFailure {
+        Log.e("SearchDebug", "💥 Lỗi Code/Mapping trong Android: ${it.message}", it)
+    }
+
+    override suspend fun getConversationMembers(conversationId: String): Result<List<User>> = runCatching {
+        val response = apolloClient.query(GetConversationMembersQuery(conversationId)).execute()
+
+        if (response.hasErrors()) {
+            throw Exception(response.errors?.first()?.message)
+        }
+
+        // 💡 Lấy trực tiếp từ getConversationMembers thay vì chui qua getConversation -> participants
+        response.data?.getConversationMembers?.map { userDto ->
+            User(
+                uuid = kotlin.uuid.Uuid.parse(userDto.uuid),
+                email = userDto.email,
+                username = userDto.username,
+                displayName = userDto.displayName ?: "Người dùng",
+                avatarUrl = userDto.avatarUrl,
+                passwordHash = null,
+                createdAt = java.time.LocalDateTime.now(),
+                updatedAt = java.time.LocalDateTime.now()
+            )
+        } ?: emptyList()
+    }
+
 
     private fun parseIsoDate(dateString: String): LocalDateTime {
         return try {

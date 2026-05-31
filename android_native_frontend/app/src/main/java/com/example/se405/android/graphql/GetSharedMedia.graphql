@@ -1,0 +1,20 @@
+query GetSharedMedia($conversationId: ID!) {
+    getSharedMedia(conversationId: $conversationId) {
+        uuid
+        content
+        type
+        fileUrl
+        fileName
+        fileSize
+        createdAt
+        isRevoked
+        isPinned
+        sender {
+            uuid
+            username
+            email
+            displayName
+            avatarUrl
+        }
+    }
+}

@@ -5,7 +5,8 @@ mutation SendMessage(
     $type: MessageType!,
     $fileUrl: String,
     $fileName: String,
-    $fileSize: String
+    $fileSize: String,
+    $mentionedUserIds: [ID!]
 ) {
     sendMessage(
         conversationId: $conversationId,
@@ -14,7 +15,8 @@ mutation SendMessage(
         type: $type,
         fileUrl: $fileUrl,
         fileName: $fileName,
-        fileSize: $fileSize
+        fileSize: $fileSize,
+        mentionedUserIds: $mentionedUserIds
     ) {
         uuid
         content
@@ -24,6 +26,9 @@ mutation SendMessage(
         fileSize
         createdAt
         conversationId
+        isRevoked
+        isPinned
+        pinnedAt
         sender {
             uuid
             displayName

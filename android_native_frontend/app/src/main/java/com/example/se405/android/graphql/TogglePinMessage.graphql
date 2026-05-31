@@ -1,0 +1,7 @@
+mutation TogglePinMessage($messageId: ID!) {
+    togglePinMessage(messageId: $messageId) {
+        uuid
+        isPinned
+        pinnedAt
+    }
+}

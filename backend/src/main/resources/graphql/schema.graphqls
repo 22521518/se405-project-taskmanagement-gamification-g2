@@ -47,6 +47,12 @@ type Query {
     # Lấy tin nhắn theo phòng chat thay vì theo Task
     getMessagesByConversation(conversationId: ID!): [Message!]!
     getConversationByTask(taskId: ID!, taskName: String!): Conversation!
+    getPinnedMessages(conversationId: ID!): [Message!]!
+    getSharedMedia(conversationId: ID!): [Message!]!
+
+    getSharedLinks(conversationId: ID!): [Message!]!
+    searchMessages(conversationId: ID!, keyword: String!): [Message!]!
+    getConversationMembers(conversationId: ID!): [User!]!
 }
 
 type Mutation {
@@ -83,9 +89,13 @@ type Mutation {
         type: MessageType!,
         fileUrl: String,
         fileName: String,
-        fileSize: String): Message!
+        fileSize: String,
+        mentionedUserIds: [ID!]): Message!
+
 
     renameConversation(conversationId: ID!, newName: String!): Conversation!
+    revokeMessage(messageId: ID!): Message!
+    togglePinMessage(messageId: ID!): Message!
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -188,6 +198,10 @@ type Message {
     sender: User!
     conversationId: ID!
     replyTo: Message
+    isRevoked: Boolean!
+    isPinned: Boolean!
+    pinnedAt: String
+    mentions: [User!]!
 }
 
 type Conversation {
@@ -200,20 +214,12 @@ type Conversation {
 }
 
 type Subscription {
-    messageAdded(conversationId: ID!): MessagePayload!
+    messageEvents(conversationId: ID!): MessagePayload!
 }
 
 type MessagePayload {
-    uuid: ID!
-    content: String!
-    type: MessageType!
-    fileUrl: String
-    fileName: String
-    fileSize: String
-    createdAt: String!
-    sender: User!
-    conversationId: ID
-    replyTo: MessagePayload
+    eventType: String!
+    message: Message!
 }
 # ═══════════════════════════════════════════════════════════════
 # Input types

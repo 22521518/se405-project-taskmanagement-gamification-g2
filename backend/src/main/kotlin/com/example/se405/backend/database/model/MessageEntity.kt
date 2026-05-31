@@ -9,6 +9,8 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinTable
+import jakarta.persistence.ManyToMany
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.LocalDateTime
@@ -22,22 +24,31 @@ data class MessageEntity(
     val uuid: UUID? = null,
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    val content: String,
+    var content: String,
 
     @Column(name = "type", nullable = false)
-    val type: String = "TEXT",
+    var type: String = "TEXT",
 
     @Column(name = "file_url", nullable = true)
-    val fileUrl: String? = null,
+    var fileUrl: String? = null,
 
     @Column(name = "file_name", nullable = true)
-    val fileName: String? = null,
+    var fileName: String? = null,
 
     @Column(name = "file_size", nullable = true)
-    val fileSize: String? = null,
+    var fileSize: String? = null,
 
     @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "is_revoked")
+    var isRevoked: Boolean = false,
+
+    @Column(name = "is_pinned")
+    var isPinned: Boolean = false,
+
+    @Column(name = "pinned_at")
+    var pinnedAt: LocalDateTime? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_uuid", nullable = false)
@@ -50,6 +61,14 @@ data class MessageEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reply_to_uuid", nullable = true)
     val replyTo: MessageEntity? = null,
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "message_mentions",
+        joinColumns = [JoinColumn(name = "message_uuid")],
+        inverseJoinColumns = [JoinColumn(name = "user_uuid")]
+    )
+    var mentions: MutableList<UserEntity> = mutableListOf(),
 ){
     val conversationId: String
         get() = conversation.uuid.toString()

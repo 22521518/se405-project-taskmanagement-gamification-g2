@@ -35,7 +35,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-websocket")
 	implementation("io.projectreactor:reactor-core")
 	implementation("com.google.firebase:firebase-admin:9.2.0")
-	
+	implementation("com.cloudinary:cloudinary-http45:1.39.0")
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")

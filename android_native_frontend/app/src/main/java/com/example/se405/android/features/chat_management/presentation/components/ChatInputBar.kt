@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AttachFile
@@ -37,15 +38,17 @@ import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.se405.android.features.chat_management.domain.entity.MessageEntity
+import androidx.compose.ui.text.input.TextFieldValue
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun ChatInputBar(
+    textValue: TextFieldValue,
+    onTextChanged: (TextFieldValue) -> Unit,
     onSendMessage: (content: String, mediaUri: Uri?, mediaType: String?) -> Unit,
     replyingTo: MessageEntity? = null,
     onCancelReply: () -> Unit = {}
 ) {
-    var text by remember { mutableStateOf("") }
     var showBottomSheet by remember { mutableStateOf(false) }
 
     var selectedMediaUri by remember { mutableStateOf<Uri?>(null) }
@@ -199,7 +202,7 @@ fun ChatInputBar(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            Icons.Rounded.InsertDriveFile,
+                            Icons.AutoMirrored.Rounded.InsertDriveFile,
                             contentDescription = "File Icon",
                             tint = Color.Gray
                         )
@@ -254,12 +257,14 @@ fun ChatInputBar(
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                if (text.isEmpty()) {
+                if (textValue.text.isEmpty()) {
                     Text("Nhập tin nhắn...", color = Color.Gray, fontSize = 15.sp)
                 }
                 BasicTextField(
-                    value = text,
-                    onValueChange = { text = it },
+                    value = textValue,
+                    onValueChange = { newTextValue ->
+                        onTextChanged(newTextValue)
+                    },
                     textStyle = TextStyle(fontSize = 15.sp, color = Color.Black),
                     cursorBrush = SolidColor(activeColor),
                     modifier = Modifier.fillMaxWidth(),
@@ -270,12 +275,11 @@ fun ChatInputBar(
             Spacer(modifier = Modifier.width(4.dp))
 
             // Nút Send
-            val isEnabled = text.isNotBlank() || selectedMediaUri != null
+            val isEnabled = textValue.text.isNotBlank() || selectedMediaUri != null
             IconButton(
                 onClick = {
                     if (isEnabled) {
-                        onSendMessage(text.trim(), selectedMediaUri, selectedMediaType)
-                        text = ""
+                        onSendMessage(textValue.text.trim(), selectedMediaUri, selectedMediaType)
                         selectedMediaUri = null
                         selectedMediaType = null
                     }

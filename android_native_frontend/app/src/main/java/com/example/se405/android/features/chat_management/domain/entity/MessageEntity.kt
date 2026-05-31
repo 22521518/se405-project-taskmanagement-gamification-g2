@@ -22,9 +22,7 @@ data class MessageEntity(
     val type: String = "TEXT",
     val fileUrl: String? = null,
     val fileName: String? = null,
-    val fileSize: String? = null
-) {
-    init {
-        require(content.isNotBlank()) { "Message content must not be blank" }
-    }
-}
+    val fileSize: String? = null,
+    val isRevoked: Boolean = false,
+    val isPinned: Boolean = false
+) {}

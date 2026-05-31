@@ -8,6 +8,9 @@ query GetMessagesByConversation($conversationId: ID!) {
         fileSize
         createdAt
         conversationId
+        isRevoked
+        isPinned
+        pinnedAt
         sender {
             uuid
             displayName
