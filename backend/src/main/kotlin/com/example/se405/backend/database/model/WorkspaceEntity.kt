@@ -5,11 +5,23 @@ import java.util.UUID
 
 @Entity
 @Table(name = "workspaces")
-data class WorkspaceEntity(
+class WorkspaceEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     val uuid: UUID? = null,
 
     @Column(nullable = false)
-    val name: String,
+    var name: String,
+
+
+    @OneToMany(mappedBy = "workspace", fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
+    @OrderBy("createdAt DESC")
+    var projects: List<ProjectEntity> = mutableListOf(),
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "owner_id", nullable = false)
+    var owner: UserEntity,
+
+    @OneToMany(mappedBy = "workspace", fetch = FetchType.EAGER)
+    var members: List<WorkspaceMemberEntity> = mutableListOf()
 )

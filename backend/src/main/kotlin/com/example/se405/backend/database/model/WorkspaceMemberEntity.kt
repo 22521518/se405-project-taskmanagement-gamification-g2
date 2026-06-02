@@ -5,31 +5,42 @@ import java.io.Serializable
 import java.time.LocalDateTime
 import java.util.UUID
 
-/** Composite PK for workspace_members table */
+/** Composite PK for workspace_members table */@Embeddable
 data class WorkspaceMemberId(
-    val workspaceId: UUID = UUID.randomUUID(),
-    val userId: UUID = UUID.randomUUID(),
+    @Column(name = "workspace_id")
+    val workspaceId: UUID,
+
+    @Column(name = "user_id")
+    val userId: UUID
 ) : Serializable
 
 @Entity
 @Table(name = "workspace_members")
-@IdClass(WorkspaceMemberId::class)
-data class WorkspaceMemberEntity(
-    @Id
-    @Column(name = "workspace_id", nullable = false)
-    val workspaceId: UUID,
+class WorkspaceMemberEntity(
 
-    @Id
-    @Column(name = "user_id", nullable = false)
-    val userId: UUID,
+    @EmbeddedId
+    val id: WorkspaceMemberId,
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @MapsId("workspaceId")
+    @JoinColumn(name = "workspace_id")
+    var workspace: WorkspaceEntity,
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @MapsId("userId")
+    @JoinColumn(name = "user_id")
+    var user: UserEntity,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    val role: WorkspaceRole,
+    var role: WorkspaceRole,
 
     @Column(name = "joined_at", nullable = false)
-    val joinedAt: LocalDateTime = LocalDateTime.now(),
-)
+    val joinedAt: LocalDateTime = LocalDateTime.now()
+) {
+    val userId: UUID get() = id.userId
+    val workspaceId: UUID get() = id.workspaceId
+}
 
 enum class WorkspaceRole {
     OWNER,

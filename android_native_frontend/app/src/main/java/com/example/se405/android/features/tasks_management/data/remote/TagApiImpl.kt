@@ -142,7 +142,7 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
             Optional.of(
                 created.toDomainTag(
                     fallbackWorkspaceId = tag.workspaceId,
-                    fallbackCreatedBy = tag.createdBy,
+                    fallbackCreatedBy = tag.createdBy ?: ZERO_UUID,
                 )
             )
         } catch (e: Exception) {
@@ -177,7 +177,7 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
             Optional.of(
                 updated.toDomainTag(
                     fallbackWorkspaceId = tag.workspaceId,
-                    fallbackCreatedBy = tag.createdBy,
+                    fallbackCreatedBy = tag.createdBy ?: ZERO_UUID,
                 )
             )
         } catch (e: Exception) {
@@ -361,6 +361,17 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         projectId = projectId,
         startDate = startDate,
         dueDate = dueDate,
+        assignees = assignees.map { assignee ->
+            toDomainUser(
+                uuid = assignee.user.uuid,
+                email = assignee.user.email,
+                username = assignee.user.username,
+                displayName = assignee.user.displayName,
+                avatarUrl = assignee.user.avatarUrl,
+                createdAt = "",
+                updatedAt = ""
+            )
+        }
     )
 
     private fun GetTagsByUserQuery.Task.toDomainTask(): Task = toDomainTask(
@@ -371,6 +382,17 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         projectId = projectId,
         startDate = startDate,
         dueDate = dueDate,
+        assignees = assignees.map { assignee ->
+            toDomainUser(
+                uuid = assignee.user.uuid,
+                email = assignee.user.email,
+                username = assignee.user.username,
+                displayName = assignee.user.displayName,
+                avatarUrl = assignee.user.avatarUrl,
+                createdAt = "",
+                updatedAt = ""
+            )
+        }
     )
 
     private fun GetTagsForTaskOwnershipQuery.Task.toDomainTask(): Task = toDomainTask(
@@ -381,6 +403,17 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         projectId = projectId,
         startDate = startDate,
         dueDate = dueDate,
+        assignees = assignees.map { assignee ->
+            toDomainUser(
+                uuid = assignee.user.uuid,
+                email = assignee.user.email,
+                username = assignee.user.username,
+                displayName = assignee.user.displayName,
+                avatarUrl = assignee.user.avatarUrl,
+                createdAt = "",
+                updatedAt = ""
+            )
+        }
     )
 
     private fun toDomainTask(
@@ -391,6 +424,7 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         projectId: String?,
         startDate: String?,
         dueDate: String?,
+        assignees: List<User> = emptyList(),
     ): Task {
         val domainProjectId = projectId.safeUuidOrNull()
         return Task(
@@ -404,6 +438,7 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
             creator = null,
             tags = emptyList(),
             taskCompletionLog = emptyList(),
+            assignees = assignees,
             startDate = startDate.toLocalDateOrNull(),
             dueDate = dueDate.toLocalDateOrNull(),
             projectId = domainProjectId,
@@ -445,11 +480,6 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
         return runCatching { LocalDateTime.parse(this) }.getOrDefault(LocalDateTime.now())
     }
 
-    private fun String?.toLocalDateOrNull(): LocalDate? {
-        if (this.isNullOrBlank()) return null
-        return runCatching { LocalDate.parse(this) }.getOrNull()
-    }
-
     private fun String?.safeUuidOrNull(): Uuid? {
         if (this.isNullOrBlank()) return null
         return runCatching { Uuid.parse(this) }.getOrNull()
@@ -479,4 +509,9 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
     private companion object {
         val ZERO_UUID: Uuid = Uuid.fromLongs(0L, 0L)
     }
+}
+
+fun String?.toLocalDateOrNull(): LocalDate? {
+    if (this.isNullOrBlank()) return null
+    return runCatching { LocalDate.parse(this) }.getOrNull()
 }

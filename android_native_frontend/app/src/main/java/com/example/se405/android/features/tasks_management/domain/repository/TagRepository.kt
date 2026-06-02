@@ -10,9 +10,7 @@ import kotlin.uuid.Uuid
 interface TagRepository {
     suspend fun getTagsForTaskOwnership(taskId: Uuid): List<Tag>
 
-    suspend fun getTagsByWorkspace(
-        workspaceId: Uuid,
-    ): List<Tag>
+    suspend fun getTagsByWorkspace(workspaceId: Uuid, ): List<Tag>
 
     suspend fun getTagsByUser(userId: Uuid): List<Tag>
 

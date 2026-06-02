@@ -13,7 +13,7 @@ private val LightColorScheme = lightColorScheme(
     // secondary group
     secondary = Blue80,          // pallet2-2nd
     secondaryContainer = BlueGrey70, // pallet-2nd-2nd
-    onSecondary = Blue40,
+    onSecondary = Blue50,
 
     // accent / tertiary
     tertiary = Blue60,           // pallet2-2nd-accent

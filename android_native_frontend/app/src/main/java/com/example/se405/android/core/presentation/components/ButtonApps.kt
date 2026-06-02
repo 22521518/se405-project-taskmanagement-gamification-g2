@@ -27,16 +27,17 @@ enum class ButtonType {  FILLED, OUTLINED, ROUNDED, TEXT }
 fun ButtonApp(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(vertical = 0.dp, horizontal = 16.dp),
     border: BorderStroke = BorderStroke(2.dp,MaterialTheme.colorScheme.onPrimary),
     type: ButtonType = ButtonType.FILLED,
     content: @Composable () -> Unit
 ) {
     when (type) {
-        ButtonType.FILLED -> ButtonCTA(onClick, contentPadding = contentPadding, modifier = modifier, content = content)
-        ButtonType.OUTLINED -> ButtonCTAOutline(onClick,  contentPadding = contentPadding, modifier = modifier, border = border, content = content)
-        ButtonType.ROUNDED -> ButtonCTA(onClick,  contentPadding = contentPadding, modifier = modifier, RoundedCornerShape(999.dp), content)
-        ButtonType.TEXT -> ButtonCTAText(onClick,  contentPadding = contentPadding, modifier = modifier, content = content)
+        ButtonType.FILLED -> ButtonCTA(onClick = onClick, enabled = enabled, contentPadding = contentPadding, modifier = modifier, content = content)
+        ButtonType.OUTLINED -> ButtonCTAOutline(onClick = onClick, enabled = enabled,  contentPadding = contentPadding, modifier = modifier, border = border, content = content)
+        ButtonType.ROUNDED -> ButtonCTA(onClick = onClick, enabled = enabled,  contentPadding = contentPadding, modifier = modifier, shape = RoundedCornerShape(999.dp), content =  content)
+        ButtonType.TEXT -> ButtonCTAText(onClick = onClick, enabled = enabled,  contentPadding = contentPadding, modifier = modifier, content = content)
     }
 }
 
@@ -45,10 +46,12 @@ fun ButtonCTA(
     onClick: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     shape: RoundedCornerShape = RoundedCornerShape(8.dp),
     content: @Composable () -> Unit = {},
 ) {
     Button(onClick = onClick,
+        enabled = enabled,
         shape = shape,
         colors = ButtonDefaults.buttonColors(
 //            containerColor = MaterialTheme.colorScheme.onPrimary,
@@ -68,11 +71,13 @@ fun ButtonCTAOutline(
     onClick: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     shape: RoundedCornerShape = RoundedCornerShape(8.dp),
     border: BorderStroke,
     content: @Composable () -> Unit = {},
 ) {
     OutlinedButton(onClick = onClick,
+        enabled = enabled,
         shape = shape,
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = MaterialTheme.colorScheme.primary,
@@ -90,10 +95,12 @@ fun ButtonCTAOutline(
 fun ButtonCTAText(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     content: @Composable () -> Unit = {},
 ) {
     TextButton(onClick = onClick,
+        enabled = enabled,
         modifier = Modifier.padding(0.dp).then(modifier),
         contentPadding = contentPadding,
     ){

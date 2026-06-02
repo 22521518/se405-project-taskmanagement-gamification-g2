@@ -6,7 +6,9 @@ import com.apollographql.apollo.ApolloClient
 import com.example.se405.android.features.tasks_management.domain.entity.Project
 import com.example.se405.android.features.tasks_management.domain.entity.WorkspaceRole
 import com.example.se405.android.features.tasks_management.domain.entity.WorkspaceMember
+import com.example.se405.android.features.users_management.domain.entity.User
 import com.example.se405.android.graphql.GetMembersByWorkspaceQuery
+import com.example.se405.android.graphql.GetMembersByWorkspaceQuery.User as GqlUser
 import com.example.se405.android.graphql.GetProjectsByWorkspaceQuery
 import com.example.se405.android.graphql.type.WorkspaceRole as GqlWorkspaceRole
 import java.time.LocalDateTime
@@ -44,9 +46,22 @@ class WorkspaceApiImpl(private val apolloClient: ApolloClient) : WorkspaceApi {
                 userId = member.userId.let(Uuid::parse),
                 role = member.role.toWorkspaceRole(),
                 joinedAt = member.joinedAt.toLocalDateTimeOrNow(),
-                user = null,
+                user = member.user?.toUser(),
             )
         })
+    }
+
+    private fun GqlUser.toUser(): User {
+        return User(
+            uuid = this.uuid.let(Uuid::parse),
+            username = this.username,
+            email = this.email,
+            displayName = this.displayName,
+            avatarUrl = this.avatarUrl,
+            createdAt = null,
+            updatedAt = null,
+            passwordHash = null,
+        )
     }
 
     private fun GqlWorkspaceRole.toWorkspaceRole(): WorkspaceRole =
@@ -55,9 +70,10 @@ class WorkspaceApiImpl(private val apolloClient: ApolloClient) : WorkspaceApi {
             GqlWorkspaceRole.MEMBER -> WorkspaceRole.MEMBER
             else -> WorkspaceRole.MEMBER
         }
+}
 
-    private fun String?.toLocalDateTimeOrNow(): LocalDateTime {
-        if (this.isNullOrBlank()) return LocalDateTime.now()
-        return runCatching { LocalDateTime.parse(this) }.getOrDefault(LocalDateTime.now())
-    }
+
+fun String?.toLocalDateTimeOrNow(): LocalDateTime {
+    if (this.isNullOrBlank()) return LocalDateTime.now()
+    return runCatching { LocalDateTime.parse(this) }.getOrDefault(LocalDateTime.now())
 }

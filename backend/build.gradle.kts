@@ -36,6 +36,7 @@ dependencies {
 	implementation("io.projectreactor:reactor-core")
 	implementation("com.google.firebase:firebase-admin:9.2.0")
 	implementation("com.cloudinary:cloudinary-http45:1.39.0")
+
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
@@ -51,11 +52,14 @@ dependencies {
 	testImplementation("org.springframework.graphql:spring-graphql-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webflux")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-	
+
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:junit-jupiter:1.19.7")
 	testImplementation("org.testcontainers:postgresql:1.19.7")
-	
+
+	testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+	testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

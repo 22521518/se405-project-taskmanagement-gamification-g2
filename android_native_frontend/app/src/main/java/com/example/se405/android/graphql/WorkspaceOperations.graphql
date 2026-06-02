@@ -1,19 +1,311 @@
-query GetWorkspace($uuid: ID!) {
-    getWorkspace(uuid: $uuid) {
+query GetUsersExcluding($excludedUserId: ID!) {
+  getUsersExcluding(excludeUserId: $excludedUserId) {
+    uuid
+    username
+    displayName
+    email
+    avatarUrl
+  }
+}
+
+mutation AddMembersToWorkspace($workspaceId: ID!, $userIds: [ID!]!, $role: WorkspaceRole!) {
+  addMembersToWorkspace(workspaceId: $workspaceId, userIds: $userIds, role: $role) {
+    workspaceId
+    userId
+    role
+    joinedAt
+    user {
+      uuid
+      username
+      displayName
+      avatarUrl
+      email
+    }
+  }
+}
+
+mutation AddMembersToProject($projectId: ID!,$userIds: [ID!]!) {
+  addMembersToProject(projectId: $projectId, userIds: $userIds) {
+    projectId
+    workspaceId
+    userId
+    joinedAt
+    user {
+      uuid
+      username
+      displayName
+      avatarUrl
+      email
+    }
+  }
+}
+
+mutation AddMemberToWorkspace($workspaceId: ID!, $userId: ID!, $role: WorkspaceRole!) {
+  addMemberToWorkspace(workspaceId: $workspaceId, userId: $userId, role: $role) {
+    workspaceId
+    userId
+    role
+    joinedAt
+    user {
+      uuid
+      username
+      displayName
+      avatarUrl
+      email
+    }
+  }
+}
+
+mutation AddMemberToProject($projectId: ID!, $userId: ID!) {
+  addMemberToProject(projectId: $projectId, userId: $userId) {
+    projectId
+    workspaceId
+    userId
+    joinedAt
+    user {
+      uuid
+      username
+      displayName
+      avatarUrl
+      email
+    }
+  }
+}
+
+mutation CreateProject($input: CreateProjectInput!) {
+  createProject(input: $input) {
+    uuid
+    name,
+    workspaceId,
+    members {
+      user {
+        uuid,
+        displayName,
+        username,
+        avatarUrl,
+      }
+      joinedAt,
+    }
+    createdAt
+    tasks {
+      type
+      uuid,
+      priority
+      creator {
+        uuid,
+        displayName,
+        avatarUrl
+      }
+      title
+      repetition
+      description
+      projectId
+      status
+      taskCompletionLogs {
+        userId,
+        taskCompletionId,
+        status,
+        completedAt
+      }
+      startDate
+      dueDate
+      assignees {
+        userId
+        user {
+          uuid
+          username
+          displayName
+          email
+          avatarUrl
+        }
+      }
+    }
+  }
+}
+
+mutation CreateWorkspace($input: CreateWorkspaceInput!) {
+  createWorkspace(input: $input) {
+    uuid
+    name
+    owner {
+      uuid
+      username
+      displayName
+      avatarUrl
+    }
+  }
+}
+
+query GetProject($uuid: ID!) {
+  getProject(uuid: $uuid) {
+    uuid
+    name,
+    workspaceId,
+    members {
+      user {
+        uuid,
+        displayName,
+        email
+        username,
+        avatarUrl,
+      }
+      joinedAt,
+    }
+    createdAt
+    tasks {
+      type
+      uuid,
+      priority
+      creator {
+        uuid,
+        displayName,
+        avatarUrl
+      }
+      title
+      repetition
+      description
+      tags {
         uuid
+        color
         name
-        projects {
+        label {
+          uuid
+          description
+          name
+        }
+        ownershipType
+        workspaceId
+        createdBy
+      }
+      projectId
+      status
+      taskCompletionLogs {
+        userId,
+        taskCompletionId,
+        status,
+        completedAt
+      }
+      startDate
+      dueDate
+      assignees {
+        userId
+        user {
+          uuid
+          username
+          displayName
+          email
+          avatarUrl
+        }
+      }
+    }
+  }
+}
+
+query GetWorkspaceListByUserId($uuid: ID!) {
+  getWorkspaceListByUserId(userId: $uuid) {
+    uuid
+    name
+    members {
+      userId
+      user {
+        username
+        displayName
+        email
+        avatarUrl
+      }
+      role
+      joinedAt
+    }
+    owner {
+      username
+      uuid
+      displayName
+    }
+    projects {
+      uuid
+      name
+      members {
+        userId
+        user {
+          username
+          displayName
+          email
+          avatarUrl
+        }
+        joinedAt
+      }
+    }
+  }
+}
+
+query GetWorkspace($uuid: ID!) {
+  getWorkspace(uuid: $uuid) {
+    uuid
+    name
+    projects {
+      uuid
+      name
+      createdAt
+      workspaceId
+      members {
+        userId
+        user {
+          username
+          email
+          avatarUrl
+          displayName
+        }
+      }
+      tasks {
+        uuid
+        type
+        title
+        description
+        startDate
+        dueDate
+        priority
+        tags {
+          uuid
+          name
+          color
+          ownershipType
+          workspaceId
+          label {
             uuid
             name
-            workspaceId
+            description
+          }
         }
-        members {
-            workspaceId
-            userId
-            role
-            joinedAt
+        status
+        taskCompletionLogs {
+          status
         }
+        assignees {
+          userId
+          user {
+            uuid
+            username
+            displayName
+            email
+            avatarUrl
+          }
+        }
+      }
     }
+    members {
+      workspaceId
+      userId
+      role
+      joinedAt
+      user {
+        uuid
+        username
+        displayName
+        avatarUrl
+        email
+      }
+    }
+  }
 }
 
 query GetProjectsByWorkspace($workspaceId: ID!) {
@@ -25,10 +317,60 @@ query GetProjectsByWorkspace($workspaceId: ID!) {
 }
 
 query GetMembersByWorkspace($workspaceId: ID!) {
-    getMembersByWorkspace(workspaceId: $workspaceId) {
-        workspaceId
-        userId
-        role
-        joinedAt
+  getMembersByWorkspace(workspaceId: $workspaceId) {
+    workspaceId
+    userId
+    role
+    joinedAt
+    user {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
     }
+  }
+}
+
+query GetMembersByProject($projectId: ID!) {
+  getMembersByProject(projectId: $projectId) {
+    projectId
+    workspaceId
+    userId
+    joinedAt
+    user {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+    }
+  }
+}
+
+query GetWorkspaceActivities($uuid: ID!, $pagination: PaginationInput) {
+  getWorkspaceActivities(uuid: $uuid, pagination: $pagination) {
+    content {
+      status
+      taskCompletionId
+      completedAt
+      task {
+        uuid
+        priority
+        title
+      }
+      user {
+        uuid
+        displayName
+      }
+    }
+    pageInfo {
+      totalElements
+      totalPages
+      pageSize
+      currentPage
+      hasNext
+      hasPrevious
+    }
+  }
 }

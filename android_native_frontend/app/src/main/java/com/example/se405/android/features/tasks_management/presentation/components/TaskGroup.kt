@@ -39,7 +39,7 @@ import com.example.se405.android.core.presentation.theme.BlueGrey80
 import com.example.se405.android.features.tasks_management.domain.entity.Project
 import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Task
-import com.example.se405.android.features.tasks_management.domain.entity.Workspace
+import com.example.se405.android.features.workspaces_management.domain.entity.Workspace
 import java.util.Calendar
 import kotlin.collections.plus
 import kotlin.uuid.ExperimentalUuidApi

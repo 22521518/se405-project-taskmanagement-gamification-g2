@@ -61,6 +61,23 @@ data class TaskEntity(
         inverseJoinColumns = [JoinColumn(name = "tag_id")],
     )
     val tags: MutableList<TagEntity> = mutableListOf(),
+
+    @OneToMany(
+        mappedBy = "task",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
+    val assignees: MutableList<TaskAssigneeEntity> = mutableListOf(),
+
+    @OneToMany(
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
+    @JoinColumn(name = "task_id", referencedColumnName = "uuid", insertable = false, updatable = false)
+    val taskCompletionLogs: MutableList<TaskCompletionLogEntity> = mutableListOf()
+)
 ){
     override fun toString(): String {
         return "TaskEntity(uuid=$uuid, title='$title', status=$status, type=$type)"

@@ -45,7 +45,7 @@ data class TagEntity(
      * Inverse side of Task.tags ManyToMany.
      * mappedBy points to the field name in TaskEntity.
      */
-    @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "tags", fetch = FetchType.EAGER)
     val tasks: MutableList<TaskEntity> = mutableListOf(),
 ){
     override fun toString(): String {

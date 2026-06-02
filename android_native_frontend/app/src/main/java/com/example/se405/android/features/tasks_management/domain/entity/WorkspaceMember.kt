@@ -10,7 +10,7 @@ constructor(
     val workspaceId: Uuid,
     val userId: Uuid,
     val role: WorkspaceRole,
-    val joinedAt: LocalDateTime,
+    val joinedAt: LocalDateTime?,
     val user: User?,
 )
 

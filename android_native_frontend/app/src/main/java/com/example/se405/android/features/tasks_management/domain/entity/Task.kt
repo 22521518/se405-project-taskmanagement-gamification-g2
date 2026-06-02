@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
 package com.example.se405.android.features.tasks_management.domain.entity
 
 import com.example.se405.android.features.users_management.domain.entity.User
@@ -9,28 +11,34 @@ import kotlin.uuid.Uuid
 data class Task(
     val uuid: Uuid,
     val title: String,
-    val description: String,
-    val repetition: Int,
-    val type: TaskType,
-    val status: TaskStatus,
-    val priority: TaskPriority,
-    val creator: User?,
-    val tags: List<Tag>,
-    val taskCompletionLog: List<TaskCompletionLog>,
+    val description: String = "",
+    val repetition: Int = 0,
+    val type: TaskType = TaskType.HABIT,
+    val status: TaskStatus = TaskStatus.TODO,
+    val priority: TaskPriority = TaskPriority.LOW,
+    val creator: User? = null,
+    val tagIds: List<Uuid> = emptyList(),
+    val tags: List<Tag> = emptyList(),
+    val taskCompletionLog: List<TaskCompletionLog> = emptyList(),
+    val assignees: List<User> = emptyList(),
 
     val startDate: LocalDate? = null,
     val dueDate: LocalDate? = null,
     val projectId: Uuid? = null,
-)
+) {
+    val assignee: User? get() = assignees.firstOrNull()
+    fun getTaskStatus(targetDate: LocalDate): Task = this.copy(status = getTaskStatus(this, targetDate).status)
+}
 
-@OptIn(ExperimentalUuidApi::class)
+
+
 fun getTaskStatus(task: Task, targetDate: LocalDate): Task {
     val taskLogs = task.taskCompletionLog
     if (task.type == TaskType.HABIT) {
         val logs = taskLogs.filter { it.date == targetDate }
         val completedCount = logs.count { it.status == TaskStatus.DONE }
-        val requiredCount = if (task.repetition <= 0) 1 else task.repetition
-        val isDone = completedCount >= requiredCount
+        val requiredCount = task.repetition.let { if (it <= 0) 1 else task.repetition }
+        val isDone = completedCount >= (requiredCount)
         val isFailed = logs.any { it.status == TaskStatus.FAILED }
         val statusForDate = when {
             isDone -> TaskStatus.DONE

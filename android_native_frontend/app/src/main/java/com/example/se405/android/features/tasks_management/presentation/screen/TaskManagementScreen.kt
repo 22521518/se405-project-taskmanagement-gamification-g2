@@ -2,42 +2,16 @@
 
 package com.example.se405.android.features.tasks_management.presentation.screen
 
-import android.Manifest
-import android.os.Build
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import com.example.se405.android.R
-import com.example.se405.android.core.presentation.components.ButtonApp
-import com.example.se405.android.core.presentation.components.ButtonType
+import androidx.compose.foundation.layout.Column
 import com.example.se405.android.core.presentation.popup.LocalPopupController
-import com.example.se405.android.core.presentation.theme.AppText
-import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
 import com.example.se405.android.features.tasks_management.presentation.components.CalendarHeader
 import com.example.se405.android.features.tasks_management.presentation.components.CreateTagPopUp
 import com.example.se405.android.features.tasks_management.presentation.components.TaskDetailActionUiState
@@ -320,119 +294,122 @@ fun TaskManagementScreen(
                                 },
                                 onEditClick = { taskToEdit ->
                                     popupController.push { onDismissEdit ->
-                                        var editUiState by remember {
-                                            mutableStateOf(TaskDetailActionUiState(
-                                                title = taskToEdit.title,
-                                                taskType = taskToEdit.type,
-                                                selectedTags = taskToEdit.tags,
-                                                priority = taskToEdit.priority,
-                                                description = taskToEdit.description,
-                                                selectedStartDateMillis = taskToEdit.startDate?.toEpochMillisAtStartOfDay(),
-                                                selectedDueDateMillis = taskToEdit.dueDate?.toEpochMillisAtStartOfDay(),
-                                                isTagSelectorVisible = false,
-                                                selectedProjectId = taskToEdit.projectId,
-                                                selectedAssigneeId = null,
-                                                repetition = taskToEdit.repetition
-                                            ))
-                                        }
+                                         var editUiState by remember {
+                                             mutableStateOf(TaskDetailActionUiState(
+                                                 title = taskToEdit.title,
+                                                 taskType = taskToEdit.type,
+                                                 selectedTags = taskToEdit.tags,
+                                                 priority = taskToEdit.priority,
+                                                 description = taskToEdit.description,
+                                                 selectedStartDateMillis = taskToEdit.startDate?.toEpochMillisAtStartOfDay(),
+                                                 selectedDueDateMillis = taskToEdit.dueDate?.toEpochMillisAtStartOfDay(),
+                                                 isTagSelectorVisible = false,
+                                                 selectedProjectId = taskToEdit.projectId,
+                                                 selectedAssigneeId = taskToEdit.assignee?.uuid,
+                                                 repetition = taskToEdit.repetition
+                                             ))
+                                         }
 
-                                        TaskDetailEditPopUp(
-                                            task = taskToEdit,
-                                            uiState = editUiState,
-                                            availableTags = availableTags,
-                                            projectsInWorkspace = projects,
-                                            membersInWorkspace = members,
-                                            onTitleChange = { editUiState = editUiState.copy(title = it) },
-                                            onDescriptionChange = { editUiState = editUiState.copy(description = it) },
-                                            onPriorityChange = { editUiState = editUiState.copy(priority = it) },
-                                            onRepetitionChange = {  editUiState = editUiState.copy(repetition = it) },
-                                            onToggleTag = { tag ->
-                                                val newTags = if (editUiState.selectedTags.any { it.uuid == tag.uuid }) {
-                                                    editUiState.selectedTags.filter { t -> t.uuid != tag.uuid }
-                                                } else {
-                                                    editUiState.selectedTags + tag
-                                                }
-                                                editUiState = editUiState.copy(selectedTags = newTags)
-                                            },
-                                            onProjectSelected = { editUiState = editUiState.copy(selectedProjectId = it) },
-                                            onAssigneeSelected = { editUiState = editUiState.copy(selectedAssigneeId = it) },
-                                            onTagSelectorVisibilityChange = { editUiState = editUiState.copy(isTagSelectorVisible = it) },
-                                            onOpenDateRangePicker = {
-                                                popupController.push { onDismissDatePicker ->
-                                                    com.example.se405.android.core.presentation.components.DateRangePickerPopUp(
-                                                        initialStartDate = editUiState.selectedStartDateMillis,
-                                                        initialEndDate = editUiState.selectedDueDateMillis,
-                                                        onDateRangeSelected = { (start, end) ->
-                                                            editUiState = editUiState.copy(
-                                                                selectedStartDateMillis = start,
-                                                                selectedDueDateMillis = end
-                                                            )
-                                                        },
-                                                        onDismiss = onDismissDatePicker
-                                                    )
-                                                }
-                                            },
-                                            onCreateTagClick = {
-                                                popupController.push { onDismissTag ->
-                                                    CreateTagPopUp(
-                                                        onCreate = { tagState ->
-                                                            viewModel.createTag(tagState) { createdTag ->
-                                                                if (createdTag != null) {
-                                                                    editUiState = editUiState.copy(
-                                                                        selectedTags = editUiState.selectedTags + createdTag
-                                                                    )
-                                                                    onDismissTag()
-                                                                }
-                                                            }
-                                                        },
-                                                        onCancel = { onDismissTag() },
-                                                        isLoading = isLoading
-                                                    )
-                                                }
-                                            },
-                                            onEditTagClick = { tagToEdit ->
-                                                popupController.push { onDismissTagEdit ->
-                                                    CreateTagPopUp(
-                                                        initialTag = tagToEdit,
-                                                        onCreate = {},
-                                                        onCancel = { onDismissTagEdit() },
-                                                        onUpdate = { tag, tagState ->
-                                                            viewModel.updateTag(tag, tagState) { updatedTag ->
-                                                                if (updatedTag != null) {
-                                                                    editUiState = editUiState.copy(
-                                                                        selectedTags = editUiState.selectedTags.map {
-                                                                            if (it.uuid == updatedTag.uuid) updatedTag else it
-                                                                        }
-                                                                    )
-                                                                    onDismissTagEdit()
-                                                                }
-                                                            }
-                                                        },
-                                                        isLoading = isLoading
-                                                    )
-                                                }
-                                            },
-                                            onDeleteTagClick = { tagToDelete ->
-                                                viewModel.deleteTag(tagToDelete.uuid) { success ->
-                                                    if (success) {
-                                                        editUiState = editUiState.copy(
-                                                            selectedTags = editUiState.selectedTags.filterNot { it.uuid == tagToDelete.uuid }
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            onDone = {
-                                                val updatedTask = editUiState.toDomainTask(taskToEdit)
-                                                viewModel.updateTask(updatedTask) { success ->
-                                                    if (success) {
-                                                        onDismissEdit()
-                                                    }
-                                                }
-                                            },
-                                            onCancel = { onDismissEdit() },
-                                            isLoading = isLoading
-                                        )
-                                    }
+                                         TaskDetailEditPopUp(
+                                             task = taskToEdit,
+                                             uiState = editUiState,
+                                             availableTags = availableTags,
+                                             projectsInWorkspace = projects,
+                                             membersInWorkspace = members,
+                                             onTitleChange = { editUiState = editUiState.copy(title = it) },
+                                             onDescriptionChange = { editUiState = editUiState.copy(description = it) },
+                                             onPriorityChange = { editUiState = editUiState.copy(priority = it) },
+                                             onRepetitionChange = {  editUiState = editUiState.copy(repetition = it) },
+                                             onToggleTag = { tag ->
+                                                 val newTags = if (editUiState.selectedTags.any { it.uuid == tag.uuid }) {
+                                                     editUiState.selectedTags.filter { t -> t.uuid != tag.uuid }
+                                                 } else {
+                                                     editUiState.selectedTags + tag
+                                                 }
+                                                 editUiState = editUiState.copy(selectedTags = newTags)
+                                             },
+                                             onProjectSelected = { editUiState = editUiState.copy(selectedProjectId = it) },
+                                             onAssigneeSelected = { editUiState = editUiState.copy(selectedAssigneeId = it) },
+                                             onTagSelectorVisibilityChange = { editUiState = editUiState.copy(isTagSelectorVisible = it) },
+                                             onOpenDateRangePicker = {
+                                                 popupController.push { onDismissDatePicker ->
+                                                     com.example.se405.android.core.presentation.components.DateRangePickerPopUp(
+                                                         initialStartDate = editUiState.selectedStartDateMillis,
+                                                         initialEndDate = editUiState.selectedDueDateMillis,
+                                                         onDateRangeSelected = { (start, end) ->
+                                                             editUiState = editUiState.copy(
+                                                                 selectedStartDateMillis = start,
+                                                                 selectedDueDateMillis = end
+                                                             )
+                                                         },
+                                                         onDismiss = onDismissDatePicker
+                                                     )
+                                                 }
+                                             },
+                                             onCreateTagClick = {
+                                                 popupController.push { onDismissTag ->
+                                                     CreateTagPopUp(
+                                                         onCreate = { tagState ->
+                                                             viewModel.createTag(tagState) { createdTag ->
+                                                                 if (createdTag != null) {
+                                                                     editUiState = editUiState.copy(
+                                                                         selectedTags = editUiState.selectedTags + createdTag
+                                                                     )
+                                                                     onDismissTag()
+                                                                 }
+                                                             }
+                                                         },
+                                                         onCancel = { onDismissTag() },
+                                                         isLoading = isLoading
+                                                     )
+                                                 }
+                                             },
+                                             onEditTagClick = { tagToEdit ->
+                                                 popupController.push { onDismissTagEdit ->
+                                                     CreateTagPopUp(
+                                                         initialTag = tagToEdit,
+                                                         onCreate = {},
+                                                         onCancel = { onDismissTagEdit() },
+                                                         onUpdate = { tag, tagState ->
+                                                             viewModel.updateTag(tag, tagState) { updatedTag ->
+                                                                 if (updatedTag != null) {
+                                                                     editUiState = editUiState.copy(
+                                                                         selectedTags = editUiState.selectedTags.map {
+                                                                             if (it.uuid == updatedTag.uuid) updatedTag else it
+                                                                         }
+                                                                     )
+                                                                     onDismissTagEdit()
+                                                                 }
+                                                             }
+                                                         },
+                                                         isLoading = isLoading
+                                                     )
+                                                 }
+                                             },
+                                             onDeleteTagClick = { tagToDelete ->
+                                                 viewModel.deleteTag(tagToDelete.uuid) { success ->
+                                                     if (success) {
+                                                         editUiState = editUiState.copy(
+                                                             selectedTags = editUiState.selectedTags.filterNot { it.uuid == tagToDelete.uuid }
+                                                         )
+                                                     }
+                                                 }
+                                             },
+                                             onDone = {
+                                                 val updatedTask = editUiState.toDomainTask(
+                                                     baseTask = taskToEdit,
+                                                     membersInWorkspace = members,
+                                                 )
+                                                 viewModel.updateTask(updatedTask) { success ->
+                                                     if (success) {
+                                                         onDismissEdit()
+                                                     }
+                                                 }
+                                             },
+                                             onCancel = { onDismissEdit() },
+                                             isLoading = isLoading
+                                         )
+                                     }
                                 },
                                 onClose = { onDismiss() },
                                 onDone = {

@@ -310,7 +310,7 @@ fun TaskDetailActionBasePopUp(
             onValueChange = onDescriptionChange,
             singleLine = false,
             maxLines = 5,
-            value = viewTask.description,
+            value = viewTask.description ,
             style = AppText.CaptionRegular.copy(lineHeight = 20.sp, color = MaterialTheme.colorScheme.surface),
             maxTextLen = 500
         )
@@ -776,11 +776,17 @@ fun TaskDetailActionUiState.toDomainTask(
     baseTask: Task,
     status: TaskStatus = baseTask.status,
     uuid: Uuid = baseTask.uuid,
+    membersInWorkspace: List<WorkspaceMember> = emptyList(),
 ): Task {
     val startDate = selectedStartDateMillis?.let(::toLocalDate) ?: baseTask.startDate
     val dueDate = selectedDueDateMillis?.let(::toLocalDate) ?: baseTask.dueDate
     val resolvedProjectId =
         if (taskType == TaskType.PROJECT) selectedProjectId ?: baseTask.projectId else null
+
+    val assigneeUser = selectedAssigneeId?.let { assigneeId ->
+        membersInWorkspace.firstOrNull { it.userId == assigneeId }?.user
+    }
+    val newAssignees = listOfNotNull(assigneeUser)
 
     return baseTask.copy(
         uuid = uuid,
@@ -790,6 +796,7 @@ fun TaskDetailActionUiState.toDomainTask(
         status = status,
         priority = priority,
         tags = selectedTags,
+        assignees = newAssignees,
         startDate = startDate,
         dueDate = dueDate,
         projectId = resolvedProjectId,

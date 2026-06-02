@@ -72,13 +72,15 @@ fun TaskCard(
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = task.description,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = AppText.CaptionRegular,
-                modifier = Modifier.fillMaxWidth()
-            )
+            task.description.let {
+                Text(
+                    text = it,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = AppText.CaptionRegular,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically)  {

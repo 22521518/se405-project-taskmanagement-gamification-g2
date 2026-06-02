@@ -9,21 +9,21 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class)
 data class Tag @OptIn(ExperimentalUuidApi::class)
 constructor(
-    val createdBy: Uuid,
+    val createdBy: Uuid? = null,
     val ownershipType: TagOwnershipType,
     val workspaceId: Uuid?,
-    val taskIds: List<Uuid>,
+    val taskIds: List<Uuid> = emptyList(),
 
     val uuid: Uuid,
     val name: String,
     val color: Int,
     val label: HabitLabel,
 
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime,
+    val createdAt: LocalDateTime? = null,
+    val updatedAt: LocalDateTime? = null,
 
-    val creator: User?,
-    val tasks: List<Task>,
+    val creator: User? = null,
+    val tasks: List<Task> = emptyList(),
     ) {
     init {
         require(name.isNotBlank()) { "Tag name must not be blank" }

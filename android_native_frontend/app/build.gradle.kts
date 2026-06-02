@@ -51,11 +51,16 @@ apollo {
     service("service") {
         packageName.set("com.example.se405.android.graphql")
         srcDir("src/main/java/com/example/se405/android/graphql")
+        mapScalar("UUID", "kotlin.String")
+        mapScalar("LocalDate", "kotlin.String")
     }
 }
 
 dependencies {
+    implementation(libs.coil.compose)
     implementation(libs.androidx.biometric)
+    implementation(libs.androidx.compose.material.icons.extended)
+
     implementation(libs.androidx.lifecycle.process)
     implementation(platform(libs.firebase.bom))
     implementation(libs.androidx.compose.animation)
@@ -85,6 +90,8 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.material3)
+    testImplementation(libs.androidx.navigation.testing)
     implementation(libs.compose.v100beta01)
     implementation(libs.transport.runtime)
     testImplementation(libs.junit)

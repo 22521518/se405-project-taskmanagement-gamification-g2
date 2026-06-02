@@ -27,6 +27,14 @@ import com.example.se405.android.features.chat_management.presentation.screen.Ne
 import com.example.se405.android.features.chat_management.presentation.screen.SearchScreen
 import com.example.se405.android.features.chat_management.presentation.screen.TaskChatScreen
 import com.example.se405.android.features.tasks_management.presentation.screen.TaskManagementScreen
+import com.example.se405.android.features.tasks_management.presentation.taskNavGraph
+import com.example.se405.android.features.workspaces_management.presentation.WorkspaceGraphNav
+import com.example.se405.android.features.workspaces_management.presentation.WorkspaceHomeNav
+import com.example.se405.android.features.workspaces_management.presentation.workspaceNavGraph
+import com.example.se405.android.navigation.AuthSettingsNav
+import com.example.se405.android.navigation.BiometricAuthNav
+import com.example.se405.android.navigation.DeviceAuthSuccessNav
+import com.example.se405.android.navigation.TaskManagementNav
 import com.example.se405.android.features.users_management.presentation.screen.EditProfileScreen
 import com.example.se405.android.features.users_management.presentation.screen.PersonalScreen
 import org.koin.compose.koinInject
@@ -37,16 +45,10 @@ fun MainNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
-
     val authPreferences: AuthPreferences = koinInject()
-
     val authToken by authPreferences.authToken.collectAsState(initial = null)
-
     val isAuthenticated = !authToken.isNullOrBlank()
-
-    val startDestination =
-        if (isAuthenticated) TaskManagementNav
-        else BiometricAuthNav
+    val startDestination = if (isAuthenticated) TaskManagementNav else BiometricAuthNav
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -72,7 +74,6 @@ fun MainNavHost(
                             selected = isSelected,
                             onClick = {
                                 navController.navigate(item.route) {
-                                    // Tránh xếp chồng nhiều màn hình khi bấm qua lại liên tục
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
@@ -87,25 +88,21 @@ fun MainNavHost(
         }
     ) { innerPadding ->
         NavHost(
-        navController = navController,
-        startDestination = startDestination,
-        modifier = modifier.padding(innerPadding),
-    ) {
+            navController = navController,
+            startDestination = startDestination,
+            modifier = modifier.padding(innerPadding),
+        ) {
 
             composable<BiometricAuthNav> {
                 BiometricAuthScreen(
                     onAuthenticated = {
                         navController.navigate(TaskManagementNav) {
-                            popUpTo(BiometricAuthNav) {
-                                inclusive = true
-                            }
+                            popUpTo(BiometricAuthNav) { inclusive = true }
                         }
                     },
                     onGuestAuthenticated = {
                         navController.navigate(TaskManagementNav) {
-                            popUpTo(BiometricAuthNav) {
-                                inclusive = true
-                            }
+                            popUpTo(BiometricAuthNav) { inclusive = true }
                         }
                     }
                 )
@@ -115,9 +112,7 @@ fun MainNavHost(
                 DeviceAuthSuccessScreen(
                     onLogout = {
                         navController.navigate(BiometricAuthNav) {
-                            popUpTo(DeviceAuthSuccessNav) {
-                                inclusive = true
-                            }
+                            popUpTo(DeviceAuthSuccessNav) { inclusive = true }
                         }
                     }
                 )
@@ -128,7 +123,7 @@ fun MainNavHost(
                     onNavigateToChat = { conversationId, conversationName, avatarUrl ->
                         navController.navigate(
                             TaskChatNav(
-                                taskId = conversationId, // Truyền ID phòng chat thật
+                                taskId = conversationId,
                                 taskName = conversationName,
                                 avatarUrl = avatarUrl,
                                 isFromTask = false,
@@ -175,9 +170,7 @@ fun MainNavHost(
                                 isFromTask = false
                             )
                         ) {
-                            popUpTo(NewMessageNav) {
-                                inclusive = true
-                            }
+                            popUpTo(NewMessageNav) { inclusive = true }
                         }
                     }
                 )
@@ -199,13 +192,10 @@ fun MainNavHost(
             }
 
             composable<TaskManagementNav> {
-
                 if (!isAuthenticated) {
                     LaunchedEffect(Unit) {
                         navController.navigate(BiometricAuthNav) {
-                            popUpTo(TaskManagementNav) {
-                                inclusive = true
-                            }
+                            popUpTo(TaskManagementNav) { inclusive = true }
                         }
                     }
                     return@composable
@@ -215,13 +205,12 @@ fun MainNavHost(
                     onSettingsClick = {
                         navController.navigate(AuthSettingsNav)
                     },
-                    // Ở màn hình Task, ID truyền vào là Task ID
                     navigateToChat = { taskId, taskName ->
                         navController.navigate(
                             TaskChatNav(
                                 taskId = taskId,
                                 taskName = taskName,
-                                isFromTask = true // Cờ báo hiệu cần qua trạm trung chuyển
+                                isFromTask = true
                             )
                         )
                     },
@@ -229,13 +218,10 @@ fun MainNavHost(
             }
 
             composable<AuthSettingsNav> {
-
                 if (!isAuthenticated) {
                     LaunchedEffect(Unit) {
                         navController.navigate(BiometricAuthNav) {
-                            popUpTo(AuthSettingsNav) {
-                                inclusive = true
-                            }
+                            popUpTo(AuthSettingsNav) { inclusive = true }
                         }
                     }
                     return@composable
@@ -244,20 +230,17 @@ fun MainNavHost(
                 AuthSettingsScreen(
                     onGoHome = {
                         navController.navigate(TaskManagementNav) {
-                            popUpTo(AuthSettingsNav) {
-                                inclusive = true
-                            }
+                            popUpTo(AuthSettingsNav) { inclusive = true }
                         }
                     },
                     onLogout = {
                         navController.navigate(BiometricAuthNav) {
-                            popUpTo(TaskManagementNav) {
-                                inclusive = true
-                            }
+                            popUpTo(TaskManagementNav) { inclusive = true }
                         }
                     },
                 )
             }
+
             composable<PersonalNav> {
                 PersonalScreen(
                     onLogoutClick = {
@@ -286,6 +269,9 @@ fun MainNavHost(
                     onBack = { navController.popBackStack() }
                 )
             }
+
+            workspaceNavGraph(navController)
+            taskNavGraph(navController)
         }
     }
 }

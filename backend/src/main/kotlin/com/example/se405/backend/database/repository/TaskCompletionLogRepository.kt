@@ -8,5 +8,7 @@ import java.util.UUID
 @Repository
 interface TaskCompletionLogRepository : JpaRepository<TaskCompletionLogEntity, UUID> {
     fun findByTaskId(taskId: UUID): List<TaskCompletionLogEntity>
-    fun findByUserId(userId: UUID): List<TaskCompletionLogEntity>
+    fun findByTaskIdInOrderByCompletedAtDesc(
+        taskIds: List<UUID>
+    ): List<TaskCompletionLogEntity>
 }
