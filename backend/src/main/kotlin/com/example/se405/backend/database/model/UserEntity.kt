@@ -1,12 +1,13 @@
 package com.example.se405.backend.database.model
 
 import jakarta.persistence.*
+import org.hibernate.annotations.ColumnDefault
 import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
 @Table(name = "users")
-class UserEntity(
+data class UserEntity(
     @Id
     val uuid: UUID,
 
@@ -34,7 +35,8 @@ class UserEntity(
     @Column(name = "fcm_token")
     var fcmToken: String? = null,
 
-    @Column(name = "is_online")
+    @Column(name = "is_online", nullable = false)
+    @ColumnDefault("false")
     var isOnline: Boolean = false,
 
     @Column(name = "last_seen")

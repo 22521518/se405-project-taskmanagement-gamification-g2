@@ -50,6 +50,7 @@ sealed interface CreateTaskUiState {
         // field errors
         val isTitleError: Boolean = false,
         val isDateRangeError: Boolean = false,
+        val isProjectError: Boolean = false,
     ) : CreateTaskUiState
 
     object Loading : CreateTaskUiState

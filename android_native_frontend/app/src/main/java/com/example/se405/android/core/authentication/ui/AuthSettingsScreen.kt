@@ -27,6 +27,34 @@ fun AuthSettingsScreen(
     val context = LocalContext.current
     val activity = context as? FragmentActivity
 
+    AuthSettingsContent(
+        displayName = viewModel.displayName,
+        username = viewModel.username,
+        isBiometricEnabled = viewModel.isBiometricEnabled,
+        error = viewModel.error,
+        onToggleBiometric = { enabled ->
+            activity?.let { act ->
+                viewModel.toggleBiometric(act, enabled)
+            }
+        },
+        onLogout = {
+            viewModel.logout()
+            onLogout()
+        },
+        onGoHome = onGoHome
+    )
+}
+
+@Composable
+fun AuthSettingsContent(
+    displayName: String?,
+    username: String?,
+    isBiometricEnabled: Boolean,
+    error: String?,
+    onToggleBiometric: (Boolean) -> Unit,
+    onLogout: () -> Unit,
+    onGoHome: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -56,7 +84,7 @@ fun AuthSettingsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = (viewModel.displayName ?: "U").take(1).uppercase(),
+                        text = (displayName ?: "U").take(1).uppercase(),
                         style = AppText.BodyBold,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
@@ -66,12 +94,12 @@ fun AuthSettingsScreen(
 
                 Column {
                     Text(
-                        text = viewModel.displayName ?: "User",
+                        text = displayName ?: "User",
                         style = AppText.BodyBold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                        text = "@${viewModel.username ?: "unknown"}",
+                        text = "@${username ?: "unknown"}",
                         style = AppText.CaptionRegular,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
@@ -124,19 +152,15 @@ fun AuthSettingsScreen(
                 }
 
                 Switch(
-                    checked = viewModel.isBiometricEnabled,
-                    onCheckedChange = {
-                        activity?.let { act ->
-                            viewModel.toggleBiometric(act, it)
-                        }
-                    }
+                    checked = isBiometricEnabled,
+                    onCheckedChange = onToggleBiometric
                 )
             }
         }
 
-        if (viewModel.error != null) {
+        if (error != null) {
             Text(
-                text = viewModel.error ?: "",
+                text = error,
                 color = MaterialTheme.colorScheme.error,
                 style = AppText.CaptionRegular,
                 modifier = Modifier.padding(top = 8.dp)
@@ -153,10 +177,7 @@ fun AuthSettingsScreen(
         }
         Spacer(modifier = Modifier.height(12.dp))
         ButtonApp(
-            onClick = {
-                viewModel.logout()
-                onLogout()
-            },
+            onClick = onLogout,
             type = ButtonType.OUTLINED,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -164,5 +185,21 @@ fun AuthSettingsScreen(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun AuthSettingsScreenPreview() {
+    com.example.se405.android.core.presentation.theme.Android_Theme {
+        AuthSettingsContent(
+            displayName = "John Doe",
+            username = "johndoe123",
+            isBiometricEnabled = true,
+            error = null,
+            onToggleBiometric = {},
+            onLogout = {},
+            onGoHome = {}
+        )
     }
 }

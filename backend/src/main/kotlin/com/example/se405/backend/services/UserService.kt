@@ -2,8 +2,10 @@ package com.example.se405.backend.services
 
 import com.example.se405.backend.database.repository.UserRepository
 import jakarta.transaction.Transactional
+import org.springframework.stereotype.Service
 import java.util.UUID
 
+@Service
 class UserService(
     private val userRepository: UserRepository,
 ) {

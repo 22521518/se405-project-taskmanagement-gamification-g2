@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -67,9 +68,9 @@ fun ProjectDetailKanbanSection(
 ) {
     var activeTab by remember { mutableStateOf(TaskStatus.TODO) }
     val tasks = orgTasks.filter { it.status == activeTab }
-    Column(modifier = modifier.fillMaxHeight().width(320.dp).padding(12.dp)) {
+    Column(modifier = modifier.fillMaxSize().padding(12.dp)) {
         TaskStatusTabs(activeTab = activeTab, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            onTabSelected = { tab -> })
+            onTabSelected = { tab -> activeTab = tab })
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = activeTab.displayName(), style = AppText.HeadBold)
@@ -80,6 +81,7 @@ fun ProjectDetailKanbanSection(
 
         Spacer(Modifier.height(12.dp))
         LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(

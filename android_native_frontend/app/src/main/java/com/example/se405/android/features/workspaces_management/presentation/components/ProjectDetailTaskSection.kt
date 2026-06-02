@@ -6,8 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,73 +44,74 @@ fun ProjectDetailTaskSection(
     tasks: List<GetProjectQuery.Task>,
     onTaskClick: (GetProjectQuery.Task) -> Unit = {},
 ) {
-    Column(modifier = modifier.fillMaxWidth()
-        .padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = "Task (${tasks.size})", style = AppText.HeadSemiBold)
-        val sortedTasks = remember(tasks) {
-            tasks.sortedWith(
-                compareBy { task ->
-                    val dueDate = task.dueDate.toLocalDateOrNull()
-                    val isOverdue =  dueDate != null && dueDate.isBefore(LocalDate.now()) && task.status != TaskStatus.DONE
-                    when {
-                        task.status == TaskStatus.TODO -> 1
-                        task.status == TaskStatus.FAILED -> 2
-                        isOverdue -> 2
-                        task.status == TaskStatus.DONE -> 4
-                        else -> 3
-                    }
+    val sortedTasks = remember(tasks) {
+        tasks.sortedWith(
+            compareBy { task ->
+                val dueDate = task.dueDate.toLocalDateOrNull()
+                val isOverdue =  dueDate != null && dueDate.isBefore(LocalDate.now()) && task.status != TaskStatus.DONE
+                when {
+                    task.status == TaskStatus.TODO -> 1
+                    task.status == TaskStatus.FAILED -> 2
+                    isOverdue -> 2
+                    task.status == TaskStatus.DONE -> 4
+                    else -> 3
                 }
-            )
+            }
+        )
+    }
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(text = "Task (${tasks.size})", style = AppText.HeadSemiBold)
         }
 
-        Column(modifier = Modifier.fillMaxWidth()) {
+        items(sortedTasks) { task ->
+            val dueDate = task.dueDate.toLocalDateOrNull()
+            val isOverdue = dueDate != null && dueDate.isBefore(LocalDate.now())
+            val dateString = if (!isOverdue) { "Deadline: " } else { "Overdue: " } + dueDate.toString()
+            val color = if (isOverdue && task.status != TaskStatus.DONE) { Color.Red }
+            else {
+                when (task.status) {
+                    TaskStatus.TODO -> Color.DarkGray
+                    TaskStatus.DONE -> Color.Green
+                    else -> Color.DarkGray
+                }
+            }
+
             Column(modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                for (task in sortedTasks) {
-                    val dueDate = task.dueDate.toLocalDateOrNull()
-                    val isOverdue = dueDate != null && dueDate.isBefore(LocalDate.now())
-                    val dateString = if (!isOverdue) { "Deadline: " } else { "Overdue: " } + dueDate.toString()
-                    val color = if (isOverdue && task.status != TaskStatus.DONE) { Color.Red }
-                    else {
-                        when (task.status) {
-                            TaskStatus.TODO -> Color.DarkGray
-                            TaskStatus.DONE -> Color.Green
-                            else -> Color.DarkGray
-                        }
+                .clickable { onTaskClick(task) }
+                .border(width = 1.dp, color = color, shape = RoundedCornerShape(12.dp))) {
+                Column (modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (task.status == TaskStatus.DONE)
+                            Icon(painter = painterResource(R.drawable.icon_done), contentDescription = "Done", tint = Color.Green)
+                        Text(text = task.title, style = AppText.HeadSemiBold)
                     }
-
-                    Column(modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onTaskClick(task) }
-                        .border(width = 1.dp, color = color, shape = RoundedCornerShape(12.dp))) {
-                        Column (modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                if (task.status == TaskStatus.DONE)
-                                    Icon(painter = painterResource(R.drawable.icon_done), contentDescription = "Done", tint = Color.Green)
-                                Text(text = task.title, style = AppText.HeadSemiBold)
-                            }
-                            val priorityColor = when (task.priority) {
-                                TaskPriority.HIGH -> Color.Red
-                                TaskPriority.MEDIUM -> MaterialTheme.colorScheme.onPrimary
-                                else -> Color.DarkGray
-                            }
-                            Text(text = task.priority.toString(),
-                                style = AppText.CaptionRegular,
-                                color = priorityColor,
-                                modifier = Modifier
-                                    .padding(vertical = 4.dp)
-                                    .background(
-                                        color = priorityColor.copy(alpha = 0.1f),
-                                        shape = RoundedCornerShape(12.dp)
-                                    )
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    val priorityColor = when (task.priority) {
+                        TaskPriority.HIGH -> Color.Red
+                        TaskPriority.MEDIUM -> MaterialTheme.colorScheme.onPrimary
+                        else -> Color.DarkGray
+                    }
+                    Text(text = task.priority.toString(),
+                        style = AppText.CaptionRegular,
+                        color = priorityColor,
+                        modifier = Modifier
+                            .padding(vertical = 4.dp)
+                            .background(
+                                color = priorityColor.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(12.dp)
                             )
-                        }
-                        Text(text = dateString, modifier = Modifier.padding(horizontal = 8.dp), style = AppText.BodyRegular, color = color)
-                        task.description?.let { Text(text = it, style = AppText.Body2Regular, modifier = Modifier.padding(12.dp), maxLines = 2, overflow = TextOverflow.Ellipsis) }
-                    }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
                 }
+                Text(text = dateString, modifier = Modifier.padding(horizontal = 8.dp), style = AppText.BodyRegular, color = color)
+                task.description?.let { Text(text = it, style = AppText.Body2Regular, modifier = Modifier.padding(12.dp), maxLines = 2, overflow = TextOverflow.Ellipsis) }
             }
         }
     }

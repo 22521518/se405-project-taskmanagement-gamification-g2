@@ -1,0 +1,13 @@
+query GetConversationByProject($projectId: ID!, $name: String!) {
+    getConversationByProject(projectId: $projectId, name: $name) {
+        uuid
+        type
+        name
+        projectUuid
+        participants {
+            uuid
+            displayName
+            avatarUrl
+        }
+    }
+}

@@ -2,11 +2,12 @@
 
 package com.example.se405.android.features.tasks_management.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import com.example.se405.android.core.presentation.components.PopUpLayout
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,13 +16,24 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,27 +41,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.se405.android.R
 import com.example.se405.android.core.presentation.components.ButtonApp
-import com.example.se405.android.core.presentation.components.ButtonCTAText
 import com.example.se405.android.core.presentation.components.ButtonType
-import com.example.se405.android.core.presentation.components.LabelColumnContent
-import com.example.se405.android.core.presentation.components.LabelRowContent
-import com.example.se405.android.core.presentation.components.TextFieldApp
+import com.example.se405.android.core.presentation.components.PopUpLayout
 import com.example.se405.android.core.presentation.components.formatDate
 import com.example.se405.android.core.presentation.components.menu.MenuDropDownApp
 import com.example.se405.android.core.presentation.components.menu.MenuSelectionItem
 import com.example.se405.android.core.presentation.components.menu.MenuSelectionPopUp
 import com.example.se405.android.core.presentation.theme.Android_Theme
 import com.example.se405.android.core.presentation.theme.AppText
+import com.example.se405.android.core.presentation.theme.Blue40
+import com.example.se405.android.core.presentation.theme.Blue60
+import com.example.se405.android.core.presentation.theme.Blue80
+import com.example.se405.android.core.presentation.theme.Blue90
+import com.example.se405.android.core.presentation.theme.BlueGrey70
 import com.example.se405.android.core.presentation.theme.BlueGrey80
+import com.example.se405.android.core.presentation.theme.White
 import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.tasks_management.domain.entity.Project
 import com.example.se405.android.features.tasks_management.domain.entity.Tag
@@ -58,6 +74,9 @@ import com.example.se405.android.features.tasks_management.domain.entity.TaskPri
 import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
 import com.example.se405.android.features.tasks_management.domain.entity.TaskType
 import com.example.se405.android.features.tasks_management.domain.entity.WorkspaceMember
+import com.example.se405.android.features.workspaces_management.presentation.components.DateChip
+import com.example.se405.android.features.workspaces_management.presentation.components.TagChip
+import com.example.se405.android.features.workspaces_management.presentation.components.TagChipUi
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -83,15 +102,8 @@ data class TaskDetailActionUiState(
 /**
  * Edit popup wrapper for task details.
  *
- * This composable is intentionally stateless regarding business logic:
- * all user interactions are delegated through callbacks so Screen/ViewModel
- * can coordinate side effects and persistence.
- *
- * API mapping note when both `task` and `uiState` are provided:
- * - Keep immutable identity/scope fields from `task` (e.g. task id, type).
- * - Use editable fields from `uiState` for request payload
- *   (`title`, `description`, `priority`, selected `tagIds`).
- * - Build request DTO in Screen/ViewModel, not in this composable.
+ * Stateless wrt business logic: every interaction is delegated to callbacks so
+ * the Screen/ViewModel can coordinate side effects and persistence.
  */
 @Composable
 fun TaskDetailEditPopUp(
@@ -119,6 +131,8 @@ fun TaskDetailEditPopUp(
 ) {
     TaskDetailActionBasePopUp(
         title = "Edit task",
+        subtitle = "Update the task details below.",
+        confirmLabel = "Save",
         task = task,
         uiState = uiState,
         availableTags = availableTags,
@@ -146,9 +160,9 @@ fun TaskDetailEditPopUp(
 }
 
 /**
- * Create popup wrapper for task draft details.
+ * Create popup wrapper for a task draft.
  *
- * Use this for create flow while keeping the same event contract as edit flow.
+ * Same event contract as the edit flow so callers stay symmetric.
  */
 @Composable
 fun TaskDetailCreatePopUp(
@@ -178,6 +192,8 @@ fun TaskDetailCreatePopUp(
 ) {
     TaskDetailActionBasePopUp(
         title = "Create new task",
+        subtitle = "Add a task to track progress.",
+        confirmLabel = "Create",
         task = taskDraft,
         uiState = uiState,
         availableTags = availableTags,
@@ -207,19 +223,16 @@ fun TaskDetailCreatePopUp(
 /**
  * Base UI for both create and edit task detail popups.
  *
- * Architecture note:
- * - Receives immutable UI state from upper layer.
- * - Emits user intents only via callbacks.
- * - Does not access repository, ViewModel, or global navigation/popup state directly.
+ * Restyled to share the design language of `CreateTaskPopUpContent`:
+ *  - DisplayBold header with a supporting subtitle.
+ *  - BodyBold field labels above `OutlinedTextField`s.
+ *  - Segmented chip selectors for task type and priority.
+ *  - Boxed dropdown fields for project / assignee.
+ *  - Reused `DateChip` range selector and `TagChip`s.
+ *  - Weighted Cancel / confirm action buttons with an inline loading spinner.
  *
- * API note:
- * - `task` is treated as source of immutable/base fields.
- * - `uiState` is treated as source of user-edited fields.
- * - On save, Screen/ViewModel should map these into API payload.
- * - `projectsInWorkspace` / `membersInWorkspace` should come from
- *   `getProjectsByWorkspace` / `getMembersByWorkspace` in Screen/ViewModel.
- * - Date picker popup should be opened from Screen via PopupController.
- *   This composable only emits `onOpenDateRangePicker` intent.
+ * Architecture note: receives immutable UI state and only emits intents via
+ * callbacks. It does not touch repositories, ViewModels, or global popup state.
  */
 @Composable
 fun TaskDetailActionBasePopUp(
@@ -229,6 +242,8 @@ fun TaskDetailActionBasePopUp(
     availableTags: List<Tag>,
     projectsInWorkspace: List<Project>,
     membersInWorkspace: List<WorkspaceMember>,
+    subtitle: String = "Add a task to track progress.",
+    confirmLabel: String = "Save",
     canChangeTaskType: Boolean = false,
     maxTagSelection: Int = DEFAULT_MAX_TAGS,
     onTaskTypeChange: (TaskType) -> Unit = {},
@@ -249,20 +264,8 @@ fun TaskDetailActionBasePopUp(
     onDeleteTagClick: (Tag) -> Unit = {},
     isLoading: Boolean = false,
 ) {
-    val selectedStartDateMillis = uiState.selectedStartDateMillis
-    val selectedDueDateMillis = uiState.selectedDueDateMillis
-
     val isProject = uiState.taskType == TaskType.PROJECT
 
-    val viewTask = task.copy(
-        title = uiState.title,
-        priority = uiState.priority,
-        tags = uiState.selectedTags,
-        description = uiState.description,
-        startDate = selectedStartDateMillis?.let(::toLocalDate) ?: task.startDate,
-        dueDate = selectedDueDateMillis?.let(::toLocalDate) ?: task.dueDate,
-        repetition = uiState.repetition,
-    )
     val selectedProjectName = projectsInWorkspace
         .firstOrNull { it.id == uiState.selectedProjectId }
         ?.name
@@ -272,493 +275,430 @@ fun TaskDetailActionBasePopUp(
         ?.user
         ?.displayName
 
-    PopUpLayout(
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text = "Cancel", style = AppText.BodySemiBold, color = Color.Gray, modifier = Modifier.clickable(onClick = onCancel))
-            Text(
-                text = title,
-                style = AppText.HeadBold,
-                color = Color.Black ,
-            )
-            if (isLoading) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
-                )
-            }
-            else {
-                Text(text = "Done", style = AppText.BodySemiBold, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.clickable{ onDone() })
-            }
-        }
-
-        TextFieldApp(
-            labelTitle = "Task Name",
-            value = uiState.title,
-            onValueChange = onTitleChange,
-            maxTextLen = 20,
+    if (uiState.isTagSelectorVisible) {
+        TagSelectorPopUp(
+            availableTags = availableTags,
+            selectedTags = uiState.selectedTags,
+            onToggleTag = onToggleTag,
+            onEditTagClick = onEditTagClick,
+            onDeleteTagClick = onDeleteTagClick,
+            onDismiss = { onTagSelectorVisibilityChange(false) },
         )
+    }
 
-        TextFieldApp(
-            labelTitle = "Description",
-            onValueChange = onDescriptionChange,
-            singleLine = false,
-            maxLines = 5,
-            value = viewTask.description ,
-            style = AppText.CaptionRegular.copy(lineHeight = 20.sp, color = MaterialTheme.colorScheme.surface),
-            maxTextLen = 500
-        )
-
-        LabelRowContent(
-            labelName = "Task Type: ",
-            modifier = Modifier.padding(horizontal = 20.dp)
+    PopUpLayout {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (canChangeTaskType) {
-                var isTaskTypeExpanded by remember { mutableStateOf(false) }
-                val rotation by animateFloatAsState(
-                    targetValue = if (!isTaskTypeExpanded) 180f else 0f,
-                    label = "icon rotation"
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(text = title, style = AppText.DisplayBold)
+                Text(text = subtitle, style = AppText.Body2Regular)
+            }
 
-                Box {
-                    Row(
-                        modifier = Modifier,
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(text = uiState.taskType.name, style = AppText.CaptionRegular)
-                        ButtonApp(
-                            onClick = { isTaskTypeExpanded = true },
-                            type = ButtonType.TEXT,
-                            contentPadding = PaddingValues(0.dp),
-                            border = BorderStroke(0.dp, MaterialTheme.colorScheme.secondaryContainer),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_arrow_down),
-                                contentDescription = null,
-                                modifier = Modifier.rotate(rotation).size(16.dp),
-                                tint = BlueGrey80
-                            )
-                        }
-                    }
-                    val taskTypeItems = TaskType.entries.map {
-                        MenuSelectionItem(
-                            data = it,
-                            selected = uiState.taskType == it,
-                        )
-                    }
-                    MenuDropDownApp(
-                        expanded = isTaskTypeExpanded,
-                        onExpandedChange = { expanded -> isTaskTypeExpanded = expanded },
-                        items = taskTypeItems,
-                        onDismiss = { isTaskTypeExpanded = false },
-                        onItemClick = { dropdownItem ->
-                            onTaskTypeChange(dropdownItem.data)
-                            isTaskTypeExpanded = false
+            // Title
+            Column {
+                Text(text = "Task title*", style = AppText.BodyBold)
+                OutlinedTextField(
+                    value = uiState.title,
+                    onValueChange = { if (it.length <= 50) onTitleChange(it) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    placeholder = { Text("Enter task title") },
+                    singleLine = true,
+                )
+            }
+
+            // Description
+            Column {
+                Text(text = "Description", style = AppText.BodyBold)
+                OutlinedTextField(
+                    value = uiState.description,
+                    onValueChange = { if (it.length <= 500) onDescriptionChange(it) },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 80.dp),
+                    placeholder = { Text("Optional description…") },
+                    maxLines = 4,
+                )
+            }
+
+            // Task type
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(text = "Task type", style = AppText.BodyBold)
+                TaskTypeSelector(
+                    selected = uiState.taskType,
+                    enabled = canChangeTaskType,
+                    onSelect = onTaskTypeChange,
+                )
+            }
+
+            // Priority
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(text = "Priority", style = AppText.BodyBold)
+                DomainPrioritySelector(selected = uiState.priority, onSelect = onPriorityChange)
+            }
+
+            if (isProject) {
+                // Project
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "Project*", style = AppText.BodyBold)
+                    DropdownField(
+                        valueText = selectedProjectName,
+                        placeholder = "Select project",
+                        items = projectsInWorkspace.map {
+                            MenuSelectionItem(data = it, selected = it.id == uiState.selectedProjectId)
                         },
-                    ) { item ->
-                        Text(item.data.name)
-                    }
-                }
-            } else {
-                Text(text = uiState.taskType.name, style = AppText.CaptionRegular)
-            }
-        }
-
-        LabelRowContent(labelName = "Tags: ", modifier = Modifier.padding(horizontal = 20.dp)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                uiState.selectedTags.forEach { tag ->
-                    Icon(
-                        painter = painterResource(tag.label.icon),
-                        tint = Color(tag.color),
-                        contentDescription = tag.name,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-
-                ButtonApp(
-                    onClick = {
-                        if (uiState.selectedTags.size >= maxTagSelection) {
-                            onMaxTagSelectionReached(maxTagSelection)
-                        } else {
-                            onTagSelectorVisibilityChange(true)
-                        }
-                    },
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondaryContainer),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                    type = ButtonType.OUTLINED,
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_plus),
-                            contentDescription = "Select",
-                            tint = MaterialTheme.colorScheme.secondaryContainer,
-                        )
-                        Text("Select", color = MaterialTheme.colorScheme.secondaryContainer)
-                    }
-                }
-
-                ButtonApp(
-                    onClick = onCreateTagClick,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                    type = ButtonType.TEXT,
-                ) {
-                    Text("New", color = MaterialTheme.colorScheme.secondaryContainer)
-                }
-            }
-        }
-
-        if (uiState.isTagSelectorVisible) {
-            val menuItems = availableTags.map { tag ->
-                MenuSelectionItem(
-                    data = tag,
-                    selected = uiState.selectedTags.any { selectedTag -> selectedTag.uuid == tag.uuid },
-                )
-            }
-
-            MenuSelectionPopUp(
-                items = menuItems,
-                onDismiss = { onTagSelectorVisibilityChange(false) },
-                onItemClick = { menuItem -> onToggleTag(menuItem.data) },
-            ) { item ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            painter = painterResource(item.data.label.icon),
-                            contentDescription = item.data.name,
-                            tint = Color(item.data.color),
-                            modifier = Modifier.size(20.dp),
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(item.data.name, color = MaterialTheme.colorScheme.onPrimary, style = AppText.BodyRegular)
-                    }
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_edit_pencil),
-                            contentDescription = "Edit Tag",
-                            tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                            modifier = Modifier
-                                .size(18.dp)
-                                .clickable {
-                                    onEditTagClick(item.data)
-                                }
-                        )
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_garbage),
-                            contentDescription = "Delete Tag",
-                            tint = Color.Red.copy(alpha = 0.9f),
-                            modifier = Modifier
-                                .size(18.dp)
-                                .clickable {
-                                    onDeleteTagClick(item.data)
-                                }
-                        )
-                        if (item.selected) {
-                            Icon(
-                                painter = painterResource(R.drawable.icon_done),
-                                tint = MaterialTheme.colorScheme.primaryContainer,
-                                contentDescription = "Selected",
-                                modifier = Modifier
-                                    .padding(start = 4.dp)
-                                    .size(16.dp)
-                                    .background(MaterialTheme.colorScheme.onPrimary)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        LabelRowContent(
-            labelName = "Priority: ",
-            modifier = Modifier.padding(horizontal = 20.dp)
-        ) {
-            var isPriorityExpanded by remember { mutableStateOf(false) }
-            val rotation by animateFloatAsState(
-                targetValue = if (!isPriorityExpanded) 180f else 0f,
-                label = "icon rotation"
-            )
-
-            Box {
-                Row(
-                    modifier = Modifier,
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(text = uiState.priority.toString(), style = AppText.CaptionRegular)
-                    ButtonApp(
-                        onClick = { isPriorityExpanded = true },
-                        type = ButtonType.TEXT,
-                        contentPadding = PaddingValues(0.dp),
-                        border = BorderStroke(
-                            0.dp,
-                            MaterialTheme.colorScheme.secondaryContainer
-                        ),
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_arrow_down),
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .rotate(rotation)
-                                    .size(16.dp),
-                                tint = BlueGrey80
-                            )
-                        }
-                    }
-                }
-                val priorityItems = TaskPriority.entries.map { priority ->
-                    MenuSelectionItem(
-                        data = priority,
-                        selected = uiState.priority == priority,
-                    )
-                }
-                MenuDropDownApp(
-                    expanded = isPriorityExpanded,
-                    onExpandedChange = { expanded -> isPriorityExpanded = expanded },
-                    items = priorityItems,
-                    onDismiss = { isPriorityExpanded = false },
-                    onItemClick = { dropdownItem ->
-                        onPriorityChange(dropdownItem.data)
-                        isPriorityExpanded = false
-                    },
-                ) { item ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        Text(item.data.name)
-                    }
-                }
-            }
-        }
-
-        if (isProject) {
-            LabelRowContent(
-                labelName = "Project: ",
-                modifier = Modifier.padding(horizontal = 20.dp)
-            ) {
-                var isProjectExpanded by remember { mutableStateOf(false) }
-                val rotation by animateFloatAsState(
-                    targetValue = if (!isProjectExpanded) 180f else 0f,
-                    label = "icon rotation"
-                )
-
-                Box {
-                    Row(
-                        modifier = Modifier,
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(
-                            text = selectedProjectName ?: "Select project",
-                            style = AppText.CaptionRegular,
-                            color = colorSelectedItem(selectedProjectName != null)
-                        )
-                        ButtonApp(
-                            onClick = { isProjectExpanded = true },
-                            type = ButtonType.TEXT,
-                            contentPadding = PaddingValues(0.dp),
-                            border = BorderStroke(
-                                0.dp,
-                                MaterialTheme.colorScheme.secondaryContainer
-                            ),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_arrow_down),
-                                contentDescription = "Select project",
-                                tint = BlueGrey80,
-                                modifier = Modifier.size(16.dp).rotate(rotation),
-                            )
-                        }
-                    }
-
-                    val projectItems = projectsInWorkspace.map { project ->
-                        MenuSelectionItem(
-                            data = project,
-                            selected = project.id == uiState.selectedProjectId,
-                        )
-                    }
-                    MenuDropDownApp(
-                        expanded = isProjectExpanded,
-                        onExpandedChange = { expanded -> isProjectExpanded = expanded },
-                        items = projectItems,
-                        onDismiss = { isProjectExpanded = false },
-                        onItemClick = { dropdownItem ->
-                            onProjectSelected(dropdownItem.data.id)
-                            isProjectExpanded = false
-                        },
+                        onItemSelected = { onProjectSelected(it.id) },
                     ) { item ->
                         Text(
                             item.data.name,
-                            style = if (item.selected) AppText.CaptionBold else AppText.CaptionRegular
+                            style = if (item.selected) AppText.BodyBold else AppText.BodyRegular,
                         )
                     }
                 }
-            }
 
-            LabelRowContent(
-                labelName = "Assignee: ",
-                modifier = Modifier.padding(horizontal = 20.dp)
-            ) {
-                var isAssigneeExpanded by remember { mutableStateOf(false) }
-                val rotation by animateFloatAsState(
-                    targetValue = if (!isAssigneeExpanded) 180f else 0f,
-                    label = "icon rotation"
-                )
-
-                Box {
-                    Row(
-                        modifier = Modifier,
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(
-                            text = selectedAssigneeName ?: "Select assignee",
-                            style = AppText.CaptionRegular,
-                            color = colorSelectedItem(selectedAssigneeName != null)
-                        )
-                        ButtonApp(
-                            onClick = { isAssigneeExpanded = true },
-                            type = ButtonType.TEXT,
-                            contentPadding = PaddingValues(0.dp),
-                            border = BorderStroke(
-                                0.dp,
-                                MaterialTheme.colorScheme.secondaryContainer
-                            ),
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_arrow_down),
-                                contentDescription = "Select assignee",
-                                tint = BlueGrey80,
-                                modifier = Modifier.rotate(rotation).size(16.dp),
-                            )
-                        }
-                    }
-
-                    val memberItems = membersInWorkspace.map { member ->
-                        MenuSelectionItem(
-                            data = member,
-                            selected = member.userId == uiState.selectedAssigneeId,
-                        )
-                    }
-                    MenuDropDownApp(
-                        expanded = isAssigneeExpanded,
-                        onExpandedChange = { expanded -> isAssigneeExpanded = expanded },
-                        items = memberItems,
-                        onDismiss = { isAssigneeExpanded = false },
-                        onItemClick = { dropdownItem ->
-                            onAssigneeSelected(dropdownItem.data.userId)
-                            isAssigneeExpanded = false
+                // Assignee
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "Assignee", style = AppText.BodyBold)
+                    DropdownField(
+                        valueText = selectedAssigneeName,
+                        placeholder = "Select assignee",
+                        items = membersInWorkspace.map {
+                            MenuSelectionItem(data = it, selected = it.userId == uiState.selectedAssigneeId)
                         },
+                        onItemSelected = { onAssigneeSelected(it.userId) },
                     ) { item ->
                         Text(
                             item.data.user?.displayName ?: item.data.userId.toString(),
-                            style = if (item.selected) AppText.CaptionBold else AppText.CaptionRegular
+                            style = if (item.selected) AppText.BodyBold else AppText.BodyRegular,
                         )
                     }
                 }
-            }
-            DueDatePickerSection(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .clickable { onOpenDateRangePicker() },
-            ) {
-                val isSelected = selectedStartDateMillis != null && selectedDueDateMillis != null
-                Text(
-                    text = if (isSelected) {
-                        "${formatDate(selectedStartDateMillis)} - ${formatDate(selectedDueDateMillis)}"
-                    } else {
-                        "No date range selected"
-                    },
-                    color = colorSelectedItem(isSelected)
-                )
-            }
-        } else {
-            TextFieldApp(
-                modifier = Modifier.padding(horizontal = 20.dp),
-                labelTitle = "Repetition",
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                onValueChange = { text ->
-                    val repetition = text.filter { it.isDigit() }.toIntOrNull() ?: 0
-                    onRepetitionChange(repetition)
-                },
-                singleLine = false,
-                maxLines = 5,
-                value = viewTask.repetition.toString(),
-                style = AppText.CaptionRegular.copy(lineHeight = 20.sp, color = MaterialTheme.colorScheme.surface),
-                maxTextLen = 3,
-                visibleMaxText = false
-            )
-        }
 
-//            Row(
-//                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-//                horizontalArrangement = Arrangement.spacedBy(12.dp),
-//            ) {
-//                ButtonApp(
-//                    onClick = { if (!isLoading) onCancel() },
-//                    modifier = Modifier.weight(1f),
-//                    type = ButtonType.OUTLINED,
-//                ) {
-//                    Text("Cancel")
-//                }
-//                ButtonApp(
-//                    onClick = { if (!isLoading) onDone() },
-//                    modifier = Modifier.weight(1f),
-//                    type = ButtonType.FILLED,
-//                ) {
-//                    if (isLoading) {
-//                        androidx.compose.material3.CircularProgressIndicator(
-//                            modifier = Modifier.size(16.dp),
-//                            color = MaterialTheme.colorScheme.primary,
-//                            strokeWidth = 2.dp
-//                        )
-//                    } else {
-//                        Text("Save")
-//                    }
-//                }
-//            }
+                // Date range
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "Date range", style = AppText.BodyBold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        DateChip(
+                            label = "Start",
+                            date = uiState.selectedStartDateMillis?.let(::formatDate),
+                            modifier = Modifier.weight(1f),
+                            onClick = onOpenDateRangePicker,
+                        )
+                        DateChip(
+                            label = "Due",
+                            date = uiState.selectedDueDateMillis?.let(::formatDate),
+                            modifier = Modifier.weight(1f),
+                            onClick = onOpenDateRangePicker,
+                        )
+                    }
+                }
+            } else {
+                // Repetition (HABIT)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = "Repetition", style = AppText.BodyBold)
+                    OutlinedTextField(
+                        value = if (uiState.repetition > 0) uiState.repetition.toString() else "",
+                        onValueChange = { text ->
+                            val repetition = text.filter { it.isDigit() }.take(3).toIntOrNull() ?: 0
+                            onRepetitionChange(repetition)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Times per day") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                    )
+                }
+            }
+
+            // Tags
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(text = "Tags", style = AppText.BodyBold)
+                    Row {
+                        TextButton(
+                            onClick = {
+                                if (uiState.selectedTags.size >= maxTagSelection) {
+                                    onMaxTagSelectionReached(maxTagSelection)
+                                } else {
+                                    onTagSelectorVisibilityChange(true)
+                                }
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.icon_plus),
+                                contentDescription = "Select tag",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Select", style = AppText.Body2Regular, color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                        TextButton(
+                            onClick = onCreateTagClick,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) {
+                            Text("New tag", style = AppText.Body2Regular, color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
+                }
+
+                if (uiState.selectedTags.isEmpty()) {
+                    Text(
+                        text = "No tags selected.",
+                        style = AppText.Body2Regular,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    )
+                } else {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(uiState.selectedTags) { tag ->
+                            TagChip(
+                                tag = TagChipUi(color = tag.color, name = tag.name),
+                                isSelected = true,
+                                enabled = true,
+                                onClick = { onToggleTag(tag) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Action buttons
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ButtonApp(
+                    onClick = { if (!isLoading) onCancel() },
+                    modifier = Modifier.weight(1f),
+                    type = ButtonType.OUTLINED
+                ) { Text("Cancel") }
+                ButtonApp(
+                    type = ButtonType.FILLED,
+                    modifier = Modifier.weight(1f),
+                    onClick = { if (!isLoading) onDone() }
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(confirmLabel)
+                    }
+                }
+            }
+        }
     }
 }
 
-@Composable
-private fun colorSelectedItem(isSelected: Boolean): Color {
-    if (isSelected)
-        return MaterialTheme.colorScheme.secondaryContainer
-    return MaterialTheme.colorScheme.surface
-}
+// ─── Task type selector ─────────────────────────────────────────────────────
 
 @Composable
-private fun DueDatePickerSection(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    LabelColumnContent(labelName = "Start: ", iconId = R.drawable.icon_time, content = content, modifier = modifier)
+private fun TaskTypeSelector(
+    selected: TaskType,
+    enabled: Boolean,
+    onSelect: (TaskType) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        TaskType.entries.forEach { type ->
+            val isSelected = type == selected
+            val label = type.name.lowercase().replaceFirstChar { it.uppercase() }
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(enabled = enabled && !isSelected) { onSelect(type) },
+                shape = RoundedCornerShape(8.dp),
+                color = if (isSelected) Blue40 else Blue90,
+                border = if (isSelected) BorderStroke(1.5.dp, Blue40) else BorderStroke(1.dp, BlueGrey80),
+            ) {
+                Text(
+                    text = label,
+                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                    style = AppText.BodySemiBold,
+                    color = if (isSelected) White else BlueGrey70,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
 }
+
+// ─── Priority selector (domain TaskPriority) ────────────────────────────────
+
+@Composable
+private fun DomainPrioritySelector(
+    selected: TaskPriority,
+    onSelect: (TaskPriority) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        TaskPriority.entries.forEach { priority ->
+            val isSelected = priority == selected
+            val (bgColor, contentColor, label) = when (priority) {
+                TaskPriority.LOW -> Triple(Blue90, Blue60, "Low")
+                TaskPriority.MEDIUM -> Triple(Blue80, Blue40, "Medium")
+                TaskPriority.HIGH -> Triple(Blue40, White, "High")
+            }
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onSelect(priority) },
+                shape = RoundedCornerShape(8.dp),
+                color = if (isSelected) bgColor else Blue90,
+                border = if (isSelected) BorderStroke(1.5.dp, bgColor.copy(alpha = 0.7f)) else BorderStroke(1.dp, BlueGrey80),
+            ) {
+                Text(
+                    text = label,
+                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                    style = AppText.BodySemiBold,
+                    color = if (isSelected) contentColor else BlueGrey70,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+// ─── Boxed dropdown field (project / assignee) ──────────────────────────────
+
+@Composable
+private fun <T> DropdownField(
+    valueText: String?,
+    placeholder: String,
+    items: List<MenuSelectionItem<T>>,
+    onItemSelected: (T) -> Unit,
+    itemLabel: @Composable (MenuSelectionItem<T>) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(Blue90)
+                .border(1.dp, BlueGrey80, RoundedCornerShape(8.dp))
+                .clickable { expanded = true }
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = valueText ?: placeholder,
+                style = AppText.BodySemiBold,
+                color = if (valueText != null) Color.Black else Color.DarkGray,
+                modifier = Modifier.weight(1f),
+            )
+            val rotation by animateFloatAsState(
+                targetValue = if (expanded) 0f else 180f,
+                label = "dropdown rotation"
+            )
+            Icon(
+                painter = painterResource(id = R.drawable.icon_arrow_down),
+                contentDescription = null,
+                modifier = Modifier.rotate(rotation).size(16.dp),
+                tint = BlueGrey80,
+            )
+        }
+        MenuDropDownApp(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+            items = items,
+            onDismiss = { expanded = false },
+            onItemClick = { item ->
+                onItemSelected(item.data)
+                expanded = false
+            },
+            itemLabel = itemLabel,
+        )
+    }
+}
+
+// ─── Tag selector popup (select / edit / delete) ────────────────────────────
+
+@Composable
+private fun TagSelectorPopUp(
+    availableTags: List<Tag>,
+    selectedTags: List<Tag>,
+    onToggleTag: (Tag) -> Unit,
+    onEditTagClick: (Tag) -> Unit,
+    onDeleteTagClick: (Tag) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val menuItems = availableTags.map { tag ->
+        MenuSelectionItem(
+            data = tag,
+            selected = selectedTags.any { it.uuid == tag.uuid },
+        )
+    }
+    MenuSelectionPopUp(
+        items = menuItems,
+        onDismiss = onDismiss,
+        onItemClick = { onToggleTag(it.data) },
+    ) { item ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(Color(item.data.color))
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(item.data.name, color = MaterialTheme.colorScheme.onSurface, style = AppText.BodyRegular)
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_edit_pencil),
+                    contentDescription = "Edit Tag",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                    modifier = Modifier.size(18.dp).clickable { onEditTagClick(item.data) }
+                )
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_garbage),
+                    contentDescription = "Delete Tag",
+                    tint = Color.Red.copy(alpha = 0.9f),
+                    modifier = Modifier.size(18.dp).clickable { onDeleteTagClick(item.data) }
+                )
+                AnimatedVisibility(visible = item.selected) {
+                    Icon(
+                        painter = painterResource(R.drawable.icon_done),
+                        tint = Blue40,
+                        contentDescription = "Selected",
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─── Mapping helpers ────────────────────────────────────────────────────────
 
 private fun toLocalDate(timestamp: Long): LocalDate {
     return Instant.ofEpochMilli(timestamp)
@@ -804,33 +744,6 @@ fun TaskDetailActionUiState.toDomainTask(
     )
 }
 
-
-/**
- * Preview showing local state hoisting pattern for this popup.
- *
- * Usage guide:
- * - In production, uiState should come from ViewModel state flow.
- * - onTitleChange/onToggleTag/onPriorityChange should dispatch to ViewModel intents.
- * - onDone/onCancel should be handled by Screen-level coordinator (navigation/popup host).
- * - open date picker should be handled by Screen via `LocalPopupController.current.push { ... }`.
- * - When save is clicked, Screen/ViewModel should map payload like:
- *   taskId <- task.uuid
- *   title <- uiState.title
- *   description <- uiState.description
- *   priority <- uiState.priority
- *   projectId <- uiState.selectedProjectId (for project tasks)
- *   assigneeId <- uiState.selectedAssigneeId (for project tasks)
- *   startDate <- uiState.selectedStartDateMillis?.let(::toLocalDate)
- *   dueDate <- uiState.selectedDueDateMillis?.let(::toLocalDate)
- *   tagIds <- uiState.selectedTags.map { it.uuid }
- *
- * PopupController usage for DateRangePickerPopUp (in Screen):
- * - `val popup = LocalPopupController.current`
- * - On `onOpenDateRangePicker`, call:
- *   `popup.push { onDismiss -> DateRangePickerPopUp(..., onDismiss = onDismiss) }`
- * - In `onDateRangeSelected`, update ViewModel state for
- *   `selectedStartDateMillis` and `selectedDueDateMillis`.
- */
 @Preview(showBackground = true, backgroundColor = 0xFFECF7FB)
 @Composable
 fun TaskDetailEditPopUpPreview() {
@@ -868,28 +781,28 @@ fun TaskDetailEditPopUpPreview() {
                 projectsInWorkspace = PreviewDomainEntityData.projects,
                 membersInWorkspace = PreviewDomainEntityData.workspaceMembers,
                 canChangeTaskType = true,
-                onTaskTypeChange = { newType -> uiState = uiState.copy(taskType = newType) },
-                onTitleChange = { newTitle -> uiState = uiState.copy(title = newTitle) },
-                onDescriptionChange = { newDescription -> uiState = uiState.copy(description = newDescription) },
-                onPriorityChange = { newPriority -> uiState = uiState.copy(priority = newPriority) },
+                onTaskTypeChange = { uiState = uiState.copy(taskType = it) },
+                onTitleChange = { uiState = uiState.copy(title = it) },
+                onDescriptionChange = { uiState = uiState.copy(description = it) },
+                onPriorityChange = { uiState = uiState.copy(priority = it) },
                 onToggleTag = { tag ->
-                    val isSelected = uiState.selectedTags.any { selectedTag -> selectedTag.uuid == tag.uuid }
+                    val isSelected = uiState.selectedTags.any { it.uuid == tag.uuid }
                     uiState = uiState.copy(
                         selectedTags = if (isSelected) {
-                            uiState.selectedTags.filter { selectedTag -> selectedTag.uuid != tag.uuid }
+                            uiState.selectedTags.filter { it.uuid != tag.uuid }
                         } else {
                             uiState.selectedTags + tag
                         },
                     )
                 },
-                onProjectSelected = { projectId -> uiState = uiState.copy(selectedProjectId = projectId) },
-                onAssigneeSelected = { assigneeId -> uiState = uiState.copy(selectedAssigneeId = assigneeId) },
-                onTagSelectorVisibilityChange = { visible -> uiState = uiState.copy(isTagSelectorVisible = visible) },
+                onProjectSelected = { uiState = uiState.copy(selectedProjectId = it) },
+                onAssigneeSelected = { uiState = uiState.copy(selectedAssigneeId = it) },
+                onTagSelectorVisibilityChange = { uiState = uiState.copy(isTagSelectorVisible = it) },
                 onCreateTagClick = {},
                 onOpenDateRangePicker = {},
                 onDone = {},
                 onCancel = {},
-                onRepetitionChange = { repetition -> uiState = uiState.copy(repetition = repetition) }
+                onRepetitionChange = { uiState = uiState.copy(repetition = it) }
             )
         }
     }

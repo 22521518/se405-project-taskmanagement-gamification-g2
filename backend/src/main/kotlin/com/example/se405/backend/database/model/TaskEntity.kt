@@ -70,31 +70,20 @@ data class TaskEntity(
     )
     val assignees: MutableList<TaskAssigneeEntity> = mutableListOf(),
 
-)
 ){
     override fun toString(): String {
         return "TaskEntity(uuid=$uuid, title='$title', status=$status, type=$type)"
     }
+    // Identity is based solely on the persistent key. Never reference lazy
+    // associations (e.g. tags/assignees) here: Hibernate invokes equals/hashCode
+    // internally during merge and collection reconciliation, and touching a lazy
+    // collection on a detached instance throws LazyInitializationException, which
+    // surfaces to GraphQL as an opaque INTERNAL_ERROR.
     override fun hashCode(): Int = uuid?.hashCode() ?: 0
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as TaskEntity
-
-        if (repetition != other.repetition) return false
-        if (uuid != other.uuid) return false
-        if (title != other.title) return false
-        if (description != other.description) return false
-        if (type != other.type) return false
-        if (status != other.status) return false
-        if (priority != other.priority) return false
-        if (creatorId != other.creatorId) return false
-        if (projectId != other.projectId) return false
-        if (startDate != other.startDate) return false
-        if (dueDate != other.dueDate) return false
-        if (tags != other.tags) return false
-
-        return true
+        if (other !is TaskEntity) return false
+        // Two unsaved (uuid == null) instances are only equal by reference.
+        return uuid != null && uuid == other.uuid
     }
 }

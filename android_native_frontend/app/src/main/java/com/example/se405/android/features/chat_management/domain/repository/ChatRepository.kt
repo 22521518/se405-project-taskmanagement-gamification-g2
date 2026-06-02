@@ -11,6 +11,10 @@ interface ChatRepository {
     // 1. Trạm trung chuyển: Lấy Conversation ID dựa trên Task ID
     suspend fun getConversationByTask(taskId: String, taskName: String): Result<String>
 
+    // 1b. Lấy (hoặc tạo) Conversation ID cho phòng chat Workspace / Project
+    suspend fun getConversationByWorkspace(workspaceId: String, name: String): Result<String>
+    suspend fun getConversationByProject(projectId: String, name: String): Result<String>
+
     // 2. Lấy danh sách tin nhắn cũ dựa trên Conversation ID
     suspend fun getMessagesByConversation(conversationId: String): Result<List<MessageEntity>>
 

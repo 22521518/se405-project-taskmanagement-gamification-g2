@@ -63,6 +63,24 @@ class ChatController(
     }
 
     @QueryMapping
+    @Transactional
+    fun getConversationByWorkspace(@Argument workspaceId: String, @Argument name: String): ConversationEntity {
+        val userUuid = getCurrentUserUuid()
+        val conversation = conversationService.getOrCreateWorkspaceConversation(UUID.fromString(workspaceId), name)
+        conversationService.addParticipantIfNotExists(conversation.uuid!!, userUuid)
+        return conversation
+    }
+
+    @QueryMapping
+    @Transactional
+    fun getConversationByProject(@Argument projectId: String, @Argument name: String): ConversationEntity {
+        val userUuid = getCurrentUserUuid()
+        val conversation = conversationService.getOrCreateProjectConversation(UUID.fromString(projectId), name)
+        conversationService.addParticipantIfNotExists(conversation.uuid!!, userUuid)
+        return conversation
+    }
+
+    @QueryMapping
     @Transactional(readOnly = true)
     fun getPinnedMessages(@Argument conversationId: String): List<MessageEntity> {
         return messageService.getPinnedMessages(UUID.fromString(conversationId))

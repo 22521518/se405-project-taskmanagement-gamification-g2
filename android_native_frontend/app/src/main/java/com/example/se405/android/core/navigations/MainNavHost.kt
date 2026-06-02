@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.se405.android.core.navigations
 
 import androidx.compose.foundation.layout.padding
@@ -26,15 +28,11 @@ import com.example.se405.android.features.chat_management.presentation.screen.Co
 import com.example.se405.android.features.chat_management.presentation.screen.NewMessageScreen
 import com.example.se405.android.features.chat_management.presentation.screen.SearchScreen
 import com.example.se405.android.features.chat_management.presentation.screen.TaskChatScreen
-import com.example.se405.android.features.tasks_management.presentation.screen.TaskManagementScreen
+import com.example.se405.android.features.tasks_management.presentation.TaskDetailNav
+import com.example.se405.android.features.tasks_management.presentation.screen.TaskManagementRoute
 import com.example.se405.android.features.tasks_management.presentation.taskNavGraph
-import com.example.se405.android.features.workspaces_management.presentation.WorkspaceGraphNav
 import com.example.se405.android.features.workspaces_management.presentation.WorkspaceHomeNav
 import com.example.se405.android.features.workspaces_management.presentation.workspaceNavGraph
-import com.example.se405.android.navigation.AuthSettingsNav
-import com.example.se405.android.navigation.BiometricAuthNav
-import com.example.se405.android.navigation.DeviceAuthSuccessNav
-import com.example.se405.android.navigation.TaskManagementNav
 import com.example.se405.android.features.users_management.presentation.screen.EditProfileScreen
 import com.example.se405.android.features.users_management.presentation.screen.PersonalScreen
 import org.koin.compose.koinInject
@@ -53,8 +51,13 @@ fun MainNavHost(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
+    // Bottom navigation is shown ONLY on the four root tab destinations.
+    // Detail/child screens (e.g. WorkspaceDetailNav, TaskDetailNav) are full-screen.
+    // Note: we match the Workspace *home* route, not the Workspace graph, so the
+    // bottom bar stays hidden on workspace detail/project screens.
     val isBottomNavVisible = currentDestination?.hierarchy?.any { destination ->
         destination.route?.contains("TaskManagementNav") == true ||
+                destination.route?.contains("WorkspaceHomeNav") == true ||
                 destination.route?.contains("ConversationListNav") == true ||
                 destination.route?.contains("PersonalNav") == true
     } == true
@@ -64,9 +67,9 @@ fun MainNavHost(
             if (isBottomNavVisible) {
                 NavigationBar {
                     bottomNavItems.forEach { item ->
-                        val isSelected = currentDestination?.hierarchy?.any {
+                        val isSelected = currentDestination.hierarchy.any {
                             it.route?.contains(item.route::class.simpleName ?: "") == true
-                        } == true
+                        }
 
                         NavigationBarItem(
                             icon = { Icon(item.icon, contentDescription = item.title) },
@@ -74,9 +77,7 @@ fun MainNavHost(
                             selected = isSelected,
                             onClick = {
                                 navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -90,7 +91,7 @@ fun MainNavHost(
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = modifier.padding(innerPadding),
+            modifier = modifier.padding(bottom = innerPadding.calculateBottomPadding()),
         ) {
 
             composable<BiometricAuthNav> {
@@ -136,9 +137,6 @@ fun MainNavHost(
                     onNavigateToSearch = {
                         navController.navigate(SearchNav)
                     },
-                    onBackClick = {
-                        navController.popBackStack()
-                    }
                 )
             }
 
@@ -201,7 +199,7 @@ fun MainNavHost(
                     return@composable
                 }
 
-                TaskManagementScreen(
+                TaskManagementRoute(
                     onSettingsClick = {
                         navController.navigate(AuthSettingsNav)
                     },
@@ -213,6 +211,9 @@ fun MainNavHost(
                                 isFromTask = true
                             )
                         )
+                    },
+                    navigateToTaskDetail = { taskId, projectId ->
+                        navController.navigate(TaskDetailNav(taskId = taskId, projectId = projectId))
                     },
                 )
             }

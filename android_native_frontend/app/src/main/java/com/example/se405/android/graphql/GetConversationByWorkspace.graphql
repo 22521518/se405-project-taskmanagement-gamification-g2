@@ -1,0 +1,13 @@
+query GetConversationByWorkspace($workspaceId: ID!, $name: String!) {
+    getConversationByWorkspace(workspaceId: $workspaceId, name: $name) {
+        uuid
+        type
+        name
+        workspaceUuid
+        participants {
+            uuid
+            displayName
+            avatarUrl
+        }
+    }
+}

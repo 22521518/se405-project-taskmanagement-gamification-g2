@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.OpenInFull
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +51,7 @@ fun TaskDetailPopUp(
     onDone: (Task) -> Unit,
     onWontDo: (Task) -> Unit,
     onDelete: (Task) -> Unit,
+    onViewDetailClick: (Task) -> Unit = {},
 ) {
     val taskStatusDescription = extractTaskStatusDescription(task)
 
@@ -83,17 +85,35 @@ fun TaskDetailPopUp(
                 )
             }
 
-            // NÚT CHAT MỚI ĐƯỢC THÊM VÀO ĐÂY
-            IconButton(
-                onClick = onChatClick,
-                modifier = Modifier.size(40.dp)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.ChatBubbleOutline,
-                    contentDescription = "Mở Chat cho Task này",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(24.dp)
-                )
+                // Opens the full-screen TaskDetailScreen for this task.
+                IconButton(
+                    onClick = { onViewDetailClick(task) },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.OpenInFull,
+                        contentDescription = "Open full task details",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                // NÚT CHAT MỚI ĐƯỢC THÊM VÀO ĐÂY
+                IconButton(
+                    onClick = onChatClick,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChatBubbleOutline,
+                        contentDescription = "Mở Chat cho Task này",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
 

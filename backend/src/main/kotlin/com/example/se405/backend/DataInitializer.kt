@@ -25,8 +25,20 @@ class DataInitializer(
 ) : ApplicationRunner {
 
     override fun run(args: ApplicationArguments) {
+        backfillUserPresence()
         seedHabitLabels()
         seedFakeUser()
+    }
+
+    /**
+     * Fixes legacy `users.is_online` NULLs introduced when the column was added
+     * via ddl-auto=update. Must run before any code hydrates UserEntity, since a
+     * NULL would crash the non-nullable Kotlin `Boolean` property (root cause of
+     * the HTTP 400 on login). Runs first via a native UPDATE so it never loads
+     * the broken rows.
+     */
+    private fun backfillUserPresence() {
+        userRepository.backfillNullIsOnline()
     }
 
     private fun seedHabitLabels() {

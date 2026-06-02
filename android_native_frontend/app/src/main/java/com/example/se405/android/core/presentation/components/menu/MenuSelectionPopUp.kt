@@ -43,7 +43,7 @@ fun <T> MenuSelectionPopUp(
                 .widthIn(min = 280.dp, max = 340.dp)
                 .wrapContentHeight()
                 .background(
-                    color = MaterialTheme.colorScheme.surface,
+                    color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(16.dp)
                 )
                 .padding(vertical = 16.dp, horizontal = 12.dp),
@@ -70,13 +70,14 @@ fun <T> MenuSelectionPopUp(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                color = if (item.selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                color = if (item.selected) MaterialTheme.colorScheme.surface else Color.Transparent,
                                 shape = RoundedCornerShape(10.dp)
                             )
                             .clickable { onItemClick(item) }
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+
                     ) {
                         itemLabel(item)
                     }

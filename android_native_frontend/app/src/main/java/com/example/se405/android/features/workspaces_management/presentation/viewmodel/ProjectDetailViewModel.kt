@@ -208,9 +208,11 @@ class ProjectDetailViewModel(
         viewModelScope.launch(exceptionHandler) {
             val project = _rawProjectDetail.value ?: return@launch
             val wsId = runCatching { Uuid.parse(project.workspaceId) }.getOrNull() ?: return@launch
+            val userId = authPreferences.userId.firstOrNull().toUuidOrNull()
             workspaceUseCase.createTag(
                 Tag(
                     uuid = Uuid.random(), // server sẽ override
+                    createdBy = userId,
                     name = name,
                     color = color,
                     ownershipType = ownershipType,

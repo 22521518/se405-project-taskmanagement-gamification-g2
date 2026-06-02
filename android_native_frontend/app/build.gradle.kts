@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -9,11 +11,13 @@ plugins {
 
 android {
     namespace = "com.example.se405.android"
+    //noinspection GradleDependency
     compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.se405.android"
         minSdk = 30
+        //noinspection OldTargetApi
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -78,7 +82,6 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
     implementation(libs.navigation.compose)
@@ -92,6 +95,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.concurrent.futures)
     testImplementation(libs.androidx.navigation.testing)
     implementation(libs.compose.v100beta01)
     implementation(libs.transport.runtime)

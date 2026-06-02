@@ -50,10 +50,9 @@ fun TaskCard(
     ) {
         val taskStatusDescription = extractTaskStatusDescription(task)
         Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
+            Column (
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Box {
                     Text(task.title, color = MaterialTheme.colorScheme.tertiary, style = AppText.BodyBold)
@@ -72,15 +71,13 @@ fun TaskCard(
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
-            task.description.let {
-                Text(
-                    text = it,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = AppText.CaptionRegular,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            Text(
+                text = task.description,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = AppText.CaptionRegular,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically)  {

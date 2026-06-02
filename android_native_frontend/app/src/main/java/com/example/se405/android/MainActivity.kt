@@ -38,14 +38,12 @@ class MainActivity : FragmentActivity() {
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> {
-                    // Người dùng vào App -> Sáng đèn
                     lifecycleScope.launch {
                         userRepository.updateUserPresence(true)
                     }
                 }
 
                 Lifecycle.Event.ON_STOP -> {
-                    // Người dùng ẩn App -> Tắt đèn
                     lifecycleScope.launch {
                         userRepository.updateUserPresence(false)
                     }

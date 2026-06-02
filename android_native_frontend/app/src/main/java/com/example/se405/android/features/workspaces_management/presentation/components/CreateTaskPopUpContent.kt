@@ -35,6 +35,8 @@ import com.example.se405.android.features.tasks_management.__test_data__.preview
 import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData.tags
 import com.example.se405.android.features.tasks_management.domain.entity.Tag
 import com.example.se405.android.features.tasks_management.domain.entity.TagOwnershipType
+import com.example.se405.android.features.workspaces_management.presentation.validation.CreateTaskInputError
+import com.example.se405.android.features.workspaces_management.presentation.validation.CreateTaskInputValidator
 import com.example.se405.android.graphql.type.TaskPriority
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -47,6 +49,7 @@ import kotlin.uuid.Uuid
 fun CreateTaskProjectPopUpContent(
     availableTags: List<Tag> = emptyList(),
     projectMembers: List<AddableMember> = emptyList(),
+    isProjectSelected: Boolean = true,
     onCreate: (
         title: String,
         description: String,
@@ -149,6 +152,13 @@ fun CreateTaskProjectPopUpContent(
                     }
 
                     projectSelector()
+                    AnimatedVisibility(visible = state.isProjectError) {
+                        Text(
+                            text = "Please select a project",
+                            color = MaterialTheme.colorScheme.error,
+                            style = AppText.Body2Regular
+                        )
+                    }
 
                     // Title
                     Column {
@@ -295,7 +305,7 @@ fun CreateTaskProjectPopUpContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            Text(text = "Tags (max $DEFAULT_MAX_TAGS)", style = AppText.BodyBold)
+                            Text(text = "Tags", style = AppText.BodyBold)
                             TextButton(
                                 onClick = { tagSheetState = CreateTagSheetState.Editing() },
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
@@ -342,15 +352,27 @@ fun CreateTaskProjectPopUpContent(
                             type = ButtonType.FILLED,
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                val trimmedTitle = state.title.trim()
-                                val dateError = state.startDate != null && state.dueDate != null && state.dueDate.isBefore(state.startDate)
-
-                                when {
-                                    trimmedTitle.isBlank() -> uiState = state.copy(isTitleError = true)
-                                    dateError -> uiState = state.copy(isDateRangeError = true)
-                                    else -> {
-                                        uiState = CreateTaskUiState.Loading
-                                        onCreate(trimmedTitle, state.description.trim(), state.priority, state.startDate, state.dueDate, state.selectedTagIds, state.selectedAssigneeId)
+                                val result = CreateTaskInputValidator.validate(
+                                    title = state.title,
+                                    description = state.description,
+                                    projectSelected = isProjectSelected,
+                                    startDate = state.startDate,
+                                    dueDate = state.dueDate,
+                                    tagIds = state.selectedTagIds,
+                                )
+                                uiState = when (result) {
+                                    is CreateTaskInputValidator.Result.Valid -> {
+                                        onCreate(result.title, result.description, state.priority, state.startDate, state.dueDate, state.selectedTagIds, state.selectedAssigneeId)
+                                        CreateTaskUiState.Loading
+                                    }
+                                    is CreateTaskInputValidator.Result.Invalid -> when (result.error) {
+                                        CreateTaskInputError.BlankTitle -> state.copy(isTitleError = true, isProjectError = false, isDateRangeError = false)
+                                        CreateTaskInputError.ProjectRequired -> state.copy(isProjectError = true, isTitleError = false, isDateRangeError = false)
+                                        CreateTaskInputError.InvalidDateRange -> state.copy(isDateRangeError = true, isTitleError = false, isProjectError = false)
+                                        // Tag count/duplication is already prevented by the chip selector;
+                                        // surface it on the title row as a defensive fallback.
+                                        CreateTaskInputError.TooManyTags,
+                                        CreateTaskInputError.DuplicateTags -> state
                                     }
                                 }
                             }

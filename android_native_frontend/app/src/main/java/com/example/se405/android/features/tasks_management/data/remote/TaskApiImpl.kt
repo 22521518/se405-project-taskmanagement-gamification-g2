@@ -49,6 +49,7 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
                 Optional.of(tasks.map(::toDomainTask))
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             android.util.Log.e("TaskApiImpl", "getTasks exception", e)
             Optional.empty()
         }

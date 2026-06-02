@@ -78,12 +78,15 @@ fun AddMembersPopUpContent(
 ) {
     var uiState by remember { mutableStateOf<AddMembersUiState>(AddMembersUiState.Editing()) }
     var searchQuery by remember { mutableStateOf("") }
+    var isAdding by remember { mutableStateOf(false) }
 
     // Sync loading flag từ bên ngoài vào local state
     LaunchedEffect(isLoading) {
-        if (isLoading) uiState = AddMembersUiState.Loading
-        // Khi isLoading = false và vẫn còn ở Loading thì không tự flip về Editing
-        // – caller sẽ dismiss popup sau khi hoàn thành
+        if (isLoading) {
+            uiState = AddMembersUiState.Loading
+        } else if (!isAdding) {
+            uiState = AddMembersUiState.Editing()
+        }
     }
 
     val filteredCandidates = remember(candidates, searchQuery) {
@@ -121,7 +124,7 @@ fun AddMembersPopUpContent(
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(text = title, style = AppText.DisplayBold)
+                        Text(text = title, style = AppText.HeadBold)
                         Text(
                             text = subtitle,
                             style = AppText.Body2Regular,
@@ -133,8 +136,8 @@ fun AddMembersPopUpContent(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Search by name or username") },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                        placeholder = { Text("Van an...", style = AppText.Body2Regular,) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
@@ -228,6 +231,7 @@ fun AddMembersPopUpContent(
                             modifier = Modifier.weight(1f),
                             enabled = state.selectedIds.isNotEmpty(),
                             onClick = {
+                                isAdding = true
                                 uiState = AddMembersUiState.Loading
                                 onAdd(state.selectedIds.toList())
                             },

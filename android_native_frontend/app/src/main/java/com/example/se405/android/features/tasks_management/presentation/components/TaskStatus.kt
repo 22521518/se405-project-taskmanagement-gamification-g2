@@ -39,7 +39,7 @@ fun TaskStatus(
 
     val completedCount = task.taskCompletionLog.count { it.date == selectedDate && it.status == TaskStatus.DONE }
     val taskDueDescription = when(task.type) {
-        TaskType.HABIT -> "$completedCount / ${task.repetition}"
+        TaskType.HABIT -> "${completedCount.coerceAtMost(task.repetition)} / ${task.repetition}"
         TaskType.PROJECT -> task.dueDate?.toString() ?: ""
     }
 

@@ -97,3 +97,11 @@ fun SearchScreen(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun SearchScreenPreview() {
+    com.example.se405.android.core.presentation.theme.Android_Theme {
+        SearchScreen(onBackClick = {})
+    }
+}

@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,12 +31,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.se405.android.R
+import com.example.se405.android.core.presentation.components.AppHeader
 import com.example.se405.android.core.presentation.components.BuiltinLabels
 import com.example.se405.android.core.presentation.components.HabitLabel
 import com.example.se405.android.core.presentation.popup.LocalPopupController
 import com.example.se405.android.core.presentation.popup.PopupController
 import com.example.se405.android.core.presentation.theme.Android_Theme
 import com.example.se405.android.core.presentation.theme.AppText
+import com.example.se405.android.features.chat_management.presentation.screen.ProjectChatRoom
 import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData.projects
 import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData.tags
 import com.example.se405.android.features.tasks_management.domain.entity.Project
@@ -50,7 +53,6 @@ import com.example.se405.android.features.workspaces_management.presentation.com
 import com.example.se405.android.features.workspaces_management.presentation.components.ProjectDetailMemberSection
 import com.example.se405.android.features.workspaces_management.presentation.components.ProjectDetailTaskSection
 import com.example.se405.android.features.workspaces_management.presentation.components.SimpleProgressBar
-import com.example.se405.android.features.workspaces_management.presentation.components.SubScreenHeader
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.ProjectDetailViewModel
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceUiEvent
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceUiState
@@ -92,8 +94,8 @@ fun ProjectDetailRoute(
             ProjectDetailScreen(
                 project = state.data,
                 availableTags = availableTags,
-                addableMembersForProject = addableMembersForProject,
-                isActionLoading = state.isActionLoading,
+                addableMembersForProject = { addableMembersForProject },
+                isActionLoading = { (uiState as? WorkspaceUiState.Success)?.isActionLoading == true },
                 isRefreshing = isRefreshing,
                 onRefresh = { viewModel.refresh() },
                 onCreateTask = { title, desc, priority, start, due, tagIds, assigneeId ->
@@ -110,7 +112,7 @@ fun ProjectDetailRoute(
         }
         WorkspaceUiState.NotFound -> {
             LaunchedEffect(Unit) {
-                Toast.makeText(context, "Workspace not found", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Project not found", Toast.LENGTH_SHORT).show()
                 onBackClick()
             }
         }
@@ -118,15 +120,15 @@ fun ProjectDetailRoute(
 }
 
 private enum class ProjectTab {
-    TASKS, MEMBERS, KANBAN
+    TASKS, MEMBERS, KANBAN, CHAT
 }
 
 @Composable
 fun ProjectDetailScreen(
     project: GetProjectQuery.GetProject? = null,
     availableTags: List<Tag> = emptyList(),
-    addableMembersForProject: List<AddableMember> = emptyList(),
-    isActionLoading: Boolean = false,
+    addableMembersForProject: () -> List<AddableMember> = { emptyList() },
+    isActionLoading: () -> Boolean = { false },
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     onCreateTask: (
@@ -150,28 +152,14 @@ fun ProjectDetailScreen(
     onNavigateToTask: (Uuid, Uuid?) -> Unit = { _, _ -> }
 ) {
     var activeTab by remember { mutableStateOf(ProjectTab.KANBAN) }
+    val availableTagsState = rememberUpdatedState(availableTags)
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SubScreenHeader {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(modifier = Modifier.clickable { onBackClick() }) {
-                        Icon(
-                            painter = painterResource(R.drawable.icon_arrow_left),
-                            modifier = Modifier.size(18.dp),
-                            contentDescription = "Go Back"
-                        )
-                    }
-                    Text(
-                        project?.let { "Project: ${it.name}" } ?: "Error project now found",
-                        style = AppText.HeadBold,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
+            AppHeader(
+                title = project?.let { "Project: ${it.name}" } ?: "Error project now found",
+                showBackButton = true,
+                onBackClick = onBackClick,
+            )
 
             Column(modifier = Modifier
                 .fillMaxSize()
@@ -198,7 +186,7 @@ fun ProjectDetailScreen(
                     SimpleProgressBar(progress = progress, modifier = Modifier.height(12.dp))
                 }
 
-                val tabs = listOf(ProjectTab.TASKS to "Tasks", ProjectTab.KANBAN to "Kanban", ProjectTab.MEMBERS to "Members")
+                val tabs = listOf(ProjectTab.TASKS to "Tasks", ProjectTab.KANBAN to "Kanban", ProjectTab.MEMBERS to "Members", ProjectTab.CHAT to "Chat")
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -215,22 +203,32 @@ fun ProjectDetailScreen(
                     }
                 }
 
-                PullToRefreshBox(
-                    isRefreshing = isRefreshing,
-                    onRefresh = onRefresh,
-                    modifier = Modifier.weight(1f).fillMaxWidth()
-                ) {
-                    when (activeTab) {
-                        ProjectTab.KANBAN -> ProjectDetailKanbanSection(orgTasks = project.tasks)
-                        ProjectTab.TASKS -> ProjectDetailTaskSection(tasks = project.tasks,
-                            onTaskClick = {task -> onNavigateToTask(Uuid.parse(task.uuid), task.projectId?.let { Uuid.parse(it) })})
-                        ProjectTab.MEMBERS -> ProjectDetailMemberSection(project.members)
+                if (activeTab == ProjectTab.CHAT) {
+                    ProjectChatRoom(
+                        projectId = project.uuid,
+                        projectName = project.name,
+                        modifier = Modifier.weight(1f).fillMaxWidth()
+                    )
+                } else {
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = onRefresh,
+                        modifier = Modifier.weight(1f).fillMaxWidth()
+                    ) {
+                        when (activeTab) {
+                            ProjectTab.KANBAN -> ProjectDetailKanbanSection(orgTasks = project.tasks)
+                            ProjectTab.TASKS -> ProjectDetailTaskSection(tasks = project.tasks,
+                                onTaskClick = {task -> onNavigateToTask(Uuid.parse(task.uuid), task.projectId?.let { Uuid.parse(it) })})
+                            ProjectTab.MEMBERS -> ProjectDetailMemberSection(project.members)
+                            ProjectTab.CHAT -> Unit
+                        }
                     }
                 }
             }
         }
 
         val popupController = LocalPopupController.current
+        if (activeTab != ProjectTab.CHAT) {
         FloatingActionButton(
             onClick = {
                 popupController.push { onDismiss ->
@@ -248,7 +246,7 @@ fun ProjectDetailScreen(
                                     )
                                 }
                             } ?: emptyList(),
-                            availableTags = availableTags,
+                            availableTags = availableTagsState.value,
                             onCreate = { title, desc, priority, start, due, tagIds, assigneeId ->
                                 onCreateTask(title, desc, when(priority) {
                                     com.example.se405.android.graphql.type.TaskPriority.HIGH -> TaskPriority.HIGH
@@ -266,8 +264,8 @@ fun ProjectDetailScreen(
                             LaunchedEffect(Unit) { loadAddableMembersForProject() }
                             AddProjectMembersPopUp(
                                 projectName = project?.name ?: "",
-                                candidates = addableMembersForProject,
-                                isLoading = isActionLoading,   // uiState.isActionLoading
+                                candidates = addableMembersForProject(),
+                                isLoading = isActionLoading(),   // uiState.isActionLoading
                                 onAdd = { selectedIds ->
                                     addMembersToProject(selectedIds)
                                     onDismiss()
@@ -275,6 +273,7 @@ fun ProjectDetailScreen(
                                 onCancel = onDismiss,
                             )
                         }
+                        ProjectTab.CHAT -> Unit
                     }
                 }
             },
@@ -288,6 +287,7 @@ fun ProjectDetailScreen(
                 modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
+        }
         }
     }
 }
@@ -397,9 +397,9 @@ private fun ProjectTabItem(
     }
 
     val textStyle = if (isActive) {
-        AppText.BodyBold
+        AppText.Body2Light
     } else {
-        AppText.BodySemiBold
+        AppText.Body2SemiBold
     }
 
     Column(

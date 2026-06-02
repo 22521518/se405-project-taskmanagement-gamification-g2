@@ -189,13 +189,11 @@ fun CreateTagBottomSheet(
                                 if (state.name.trim().isBlank()) {
                                     onStateChange(state.copy(isNameError = true))
                                 } else {
-                                    state.selectedLabel?.let {
-                                        onConfirm(
-                                            state.name.trim(),
-                                            state.color.toArgb(),
-                                            it,
-                                        )
-                                    }
+                                    onConfirm(
+                                        state.name.trim(),
+                                        state.color.toArgb(),
+                                        state.selectedLabel ?: BuiltinLabels.first(),
+                                    )
                                 }
                             }
                         ) { Text("Create tag") }

@@ -243,13 +243,17 @@ class WorkspaceDetailViewModel(
     ) {
         viewModelScope.launch {
             val wsId = workspaceId
+            val userId = authPreferences.userId.firstOrNull().toUuidOrNull()
             workspaceUseCase.createTag(
                 Tag(
                     uuid = Uuid.random(),
+                    createdBy = userId,
                     name = name,
                     color = color,
                     ownershipType = ownershipType,
-                    workspaceId = wsId,
+                    // Keep the ownership ↔ workspaceId invariant the Tag entity enforces:
+                    // only WORKSPACE tags may carry a workspaceId.
+                    workspaceId = if (ownershipType == TagOwnershipType.WORKSPACE) wsId else null,
                     label = label,
                 )
             )

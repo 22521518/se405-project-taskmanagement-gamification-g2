@@ -5,8 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -30,44 +33,48 @@ import com.example.se405.android.graphql.GetProjectQuery
 
 @Composable
 fun ProjectDetailMemberSection(members: List<GetProjectQuery.Member>) {
-    Column(
+    LazyColumn(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Bottom) {
-            Text(text = "${members.size} Members", style = AppText.HeadBold, color = Color.Gray)
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(text = "${members.size} Members", style = AppText.HeadBold, color = Color.Gray)
+            }
         }
 
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (member in members.filter { it.user != null }) {
-                Box(
+        items(members.filter { it.user != null }) { member ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(
+                        elevation = 1.dp,
+                        shape = RoundedCornerShape(12.dp),
+                        ambientColor = Color.Black.copy(alpha = 0.8f),
+                        spotColor = Color.Black.copy(alpha = 0.16f),
+                        clip = false
+                    )
+                    .background(
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+            ) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .shadow(
-                            elevation = 1.dp,
-                            shape = RoundedCornerShape(12.dp),
-                            ambientColor = Color.Black.copy(alpha = 0.8f),
-                            spotColor = Color.Black.copy(alpha = 0.16f),
-                            clip = false
-                        )
-                        .background(
-                            color = Color.Transparent,
-                            shape = RoundedCornerShape(12.dp)
-                        )
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(text = member.user?.displayName ?: member.user?.username ?: "Unknown", style = AppText.HeadSemiBold)
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(painter = painterResource(R.drawable.icon_email), contentDescription = "email: ", tint = Color.DarkGray)
-                            Text(text = member.user?.email ?: "Unknown", style = AppText.Body2Regular, color = Color.DarkGray)
-                        }
+                    Text(text = member.user?.displayName ?: member.user?.username ?: "Unknown", style = AppText.HeadSemiBold)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(painter = painterResource(R.drawable.icon_email), contentDescription = "email: ", tint = Color.DarkGray)
+                        Text(text = member.user?.email ?: "Unknown", style = AppText.Body2Regular, color = Color.DarkGray)
                     }
                 }
             }

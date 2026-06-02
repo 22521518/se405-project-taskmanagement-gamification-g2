@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.FolderZip
@@ -248,7 +249,7 @@ fun MessageBubble(
                                         "doc", "docx" -> Icons.Rounded.Description
                                         "xls", "xlsx" -> Icons.Rounded.TableChart
                                         "zip", "rar" -> Icons.Rounded.FolderZip
-                                        else -> Icons.Rounded.InsertDriveFile
+                                        else -> Icons.AutoMirrored.Rounded.InsertDriveFile
                                     }
                                     val iconColor = if (extension == "pdf") Color(0xFFEF4444) else Color(0xFF3B82F6)
 

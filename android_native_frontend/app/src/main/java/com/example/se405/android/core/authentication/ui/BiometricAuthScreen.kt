@@ -54,30 +54,47 @@ fun BiometricAuthScreen(
         }
     }
 
+    BiometricAuthScreenContent(
+        error = viewModel.error,
+        isAuthenticating = viewModel.isAuthenticating,
+        onLogin = viewModel::loginWithAccount,
+        onRegister = viewModel::register,
+        onBiometricClick = { isAccountMode ->
+            activity?.let {
+                if (isAccountMode) {
+                    viewModel.loginWithBiometric(it)
+                } else {
+                    viewModel.authAsGuest(it)
+                }
+            } ?: run {
+                Log.e(TAG, "[onBiometricClick] FragmentActivity not found")
+                Toast.makeText(context, "FragmentActivity not found", Toast.LENGTH_LONG).show()
+            }
+        }
+    )
+}
+
+@Composable
+fun BiometricAuthScreenContent(
+    error: String?,
+    isAuthenticating: Boolean,
+    onLogin: (String, String) -> Unit,
+    onRegister: (String, String, String, String) -> Unit,
+    onBiometricClick: (Boolean) -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         BiometricAuth(
-            onLogin = viewModel::loginWithAccount,
-            onRegister = viewModel::register,
-            onBiometricClick = { isAccountMode ->
-                activity?.let {
-                    if (isAccountMode) {
-                        viewModel.loginWithBiometric(it)
-                    } else {
-                        viewModel.authAsGuest(it)
-                    }
-                } ?: run {
-                    Log.e(TAG, "[onBiometricClick] FragmentActivity not found")
-                    Toast.makeText(context, "FragmentActivity not found", Toast.LENGTH_LONG).show()
-                }
-            }
+            onLogin = onLogin,
+            onRegister = onRegister,
+            onBiometricClick = onBiometricClick
         )
 
         // Enhanced UX: Show error message directly in UI with animation
-        AnimatedVisibility(visible = viewModel.error != null) {
-            viewModel.error?.let {
+        AnimatedVisibility(visible = error != null) {
+            error?.let {
                 Text(
                     text = it,
                     style = AppText.Body2Regular,
@@ -90,7 +107,7 @@ fun BiometricAuthScreen(
             }
         }
         
-        if (viewModel.isAuthenticating) {
+        if (isAuthenticating) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Authenticating...",
@@ -98,5 +115,19 @@ fun BiometricAuthScreen(
                 color = MaterialTheme.colorScheme.primary
             )
         }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun BiometricAuthScreenPreview() {
+    com.example.se405.android.core.presentation.theme.Android_Theme {
+        BiometricAuthScreenContent(
+            error = null,
+            isAuthenticating = false,
+            onLogin = { _, _ -> },
+            onRegister = { _, _, _, _ -> },
+            onBiometricClick = {}
+        )
     }
 }

@@ -68,9 +68,12 @@ class TagController(
             name = input.name,
             color = input.color,
             ownershipType = input.ownershipType,
-            workspaceId = input.workspaceId,
+            // Enforce the ownership ↔ workspaceId invariant at the source of truth so
+            // queries (e.g. getTagsByWorkspace / getTagsByUser) can never return a
+            // WORKSPACE tag without a workspaceId or a PERSONAL tag carrying one.
+            workspaceId = normalizeWorkspaceId(input.ownershipType, input.workspaceId),
             createdBy = finalCreatedBy,
-            labelId = input.labelId,
+            labelId = requireExistingLabel(input.labelId),
         )
         return tagRepository.save(tag)
     }
@@ -80,15 +83,47 @@ class TagController(
         val existing = tagRepository.findById(input.uuid)
             .orElseThrow { RuntimeException("Tag not found") }
 
+        val resolvedOwnership = input.ownershipType ?: existing.ownershipType
+        val resolvedWorkspaceId = input.workspaceId ?: existing.workspaceId
+
         val updated = existing.copy(
             name = input.name ?: existing.name,
             color = input.color ?: existing.color,
-            ownershipType = input.ownershipType ?: existing.ownershipType,
-            workspaceId = input.workspaceId ?: existing.workspaceId,
-            labelId = input.labelId ?: existing.labelId,
+            ownershipType = resolvedOwnership,
+            // Re-apply the invariant on update: a tag that becomes PERSONAL drops its
+            // workspaceId, and a WORKSPACE tag must keep one.
+            workspaceId = normalizeWorkspaceId(resolvedOwnership, resolvedWorkspaceId),
+            labelId = requireExistingLabel(input.labelId ?: existing.labelId),
             updatedAt = LocalDateTime.now(),
         )
         return tagRepository.save(updated)
+    }
+
+    /**
+     * Guarantees the ownership ↔ workspaceId invariant that the domain model relies on:
+     *  - WORKSPACE tags must have a workspaceId (rejected otherwise).
+     *  - PERSONAL tags must never carry a workspaceId.
+     */
+    private fun normalizeWorkspaceId(ownershipType: TagOwnershipType, workspaceId: UUID?): UUID? =
+        when (ownershipType) {
+            TagOwnershipType.WORKSPACE -> workspaceId
+                ?: throw IllegalArgumentException("Workspace tag must have a workspaceId")
+            TagOwnershipType.PERSONAL -> null
+        }
+
+    /**
+     * Enforces the Tag.label invariant at the source of truth: the schema exposes
+     * `label: HabitLabel!` (non-null), so a tag must always reference a label that
+     * actually exists. Without this, a null or dangling labelId resolves to null in
+     * the `label` field, and that null bubbles up through tags -> task -> tasks ->
+     * project -> projects, nulling the whole getWorkspace result ("workspace not found").
+     */
+    private fun requireExistingLabel(labelId: UUID?): UUID {
+        val id = labelId ?: throw IllegalArgumentException("Tag must have a label")
+        if (!habitLabelRepository.existsById(id)) {
+            throw IllegalArgumentException("Label $id does not exist")
+        }
+        return id
     }
 
     @MutationMapping

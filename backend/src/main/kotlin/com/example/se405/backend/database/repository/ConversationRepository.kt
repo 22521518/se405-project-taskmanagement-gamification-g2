@@ -8,4 +8,6 @@ import java.util.*
 @Repository
 interface ConversationRepository : JpaRepository<ConversationEntity, UUID> {
     fun findByTaskUuid(taskUuid: UUID): Optional<ConversationEntity>
+    fun findByWorkspaceUuid(workspaceUuid: UUID): Optional<ConversationEntity>
+    fun findByProjectUuid(projectUuid: UUID): Optional<ConversationEntity>
 }

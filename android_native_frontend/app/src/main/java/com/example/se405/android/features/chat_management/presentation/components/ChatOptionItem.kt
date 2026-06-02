@@ -44,6 +44,6 @@ fun ChatOptionItem(
             Icon(icon, contentDescription = null, tint = baseColor, modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+        Text(text = title, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.Black)
     }
 }

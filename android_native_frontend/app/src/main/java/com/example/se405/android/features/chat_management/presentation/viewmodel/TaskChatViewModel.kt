@@ -104,6 +104,36 @@ class TaskChatViewModel(
         }
     }
 
+    // INIT cho phòng chat Workspace (get-or-create theo workspaceId)
+    fun initWorkspaceChat(workspaceId: String, name: String) {
+        initRoomChat(name) { chatRepository.getConversationByWorkspace(workspaceId, name) }
+    }
+
+    // INIT cho phòng chat Project (get-or-create theo projectId)
+    fun initProjectChat(projectId: String, name: String) {
+        initRoomChat(name) { chatRepository.getConversationByProject(projectId, name) }
+    }
+
+    private fun initRoomChat(name: String, resolveConversationId: suspend () -> Result<String>) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _chatNameState.value = name
+
+            resolveConversationId()
+                .onSuccess { convId ->
+                    realConversationId = convId
+                    loadMessages(convId)
+                    loadMembers(convId)
+                }
+                .onFailure { exception ->
+                    _uiState.value = _uiState.value.copy(
+                        error = "Lỗi tải phòng chat: ${exception.message}",
+                        isLoading = false
+                    )
+                }
+        }
+    }
+
     private fun loadMembers(conversationId: String) {
         viewModelScope.launch {
             Log.d("MentionDebug", "Đang tải danh sách thành viên cho phòng: $conversationId")
@@ -363,7 +393,7 @@ class TaskChatViewModel(
             if (!query.contains(" ")) {
                 val currentMembers = _membersState.value
                 val filtered = currentMembers.filter {
-                    it.displayName.contains(query, ignoreCase = true)
+                    it.displayName != null && it.displayName.contains(query, ignoreCase = true)
                 }.toMutableList() // 💡 Chuyển thành MutableList để thêm phần tử
 
                 // 💡 THÊM LOGIC TÌM KIẾM "MỌI NGƯỜI"

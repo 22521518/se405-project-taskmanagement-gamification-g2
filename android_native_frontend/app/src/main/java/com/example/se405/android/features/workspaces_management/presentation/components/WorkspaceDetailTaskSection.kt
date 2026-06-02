@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,7 +42,7 @@ import kotlin.uuid.Uuid
 @Composable
 fun WorkspaceDetailTaskSection(recentActivities: List<TaskCompletionLog>, projects: List<Project>) {
     val scrollState = rememberScrollState()
-    Column(modifier = Modifier.verticalScroll(scrollState)) {
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

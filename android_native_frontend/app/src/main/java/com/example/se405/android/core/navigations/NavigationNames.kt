@@ -2,9 +2,11 @@ package com.example.se405.android.core.navigations
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.PersonOutline
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.se405.android.features.workspaces_management.presentation.WorkspaceHomeNav
 import kotlinx.serialization.Serializable
 
 /**
@@ -29,9 +31,10 @@ data class BottomNavItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem("Home", Icons.Rounded.Home, TaskManagementNav),
-    BottomNavItem("Chat", Icons.Rounded.ChatBubbleOutline, ConversationListNav),
-    BottomNavItem("Personal", Icons.Rounded.PersonOutline, PersonalNav)
+    BottomNavItem("Task", Icons.Rounded.Home, TaskManagementNav),
+    BottomNavItem("Workspace", Icons.Rounded.Folder, WorkspaceHomeNav),
+    BottomNavItem("Message", Icons.Rounded.ChatBubbleOutline, ConversationListNav),
+    BottomNavItem("Profile", Icons.Rounded.PersonOutline, PersonalNav)
 )
 
 @Serializable

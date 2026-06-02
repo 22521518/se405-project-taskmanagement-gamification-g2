@@ -3,13 +3,13 @@
 package com.example.se405.android.features.chat_management.presentation.screen
 
 import androidx.compose.foundation.background
+import java.time.LocalDateTime
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.Group
@@ -32,10 +32,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.se405.android.core.presentation.components.AppHeader
 import com.example.se405.android.core.utils.formatTimeAgo
 import com.example.se405.android.features.chat_management.presentation.viewmodel.ConversationListViewModel
 import org.koin.androidx.compose.koinViewModel
 import kotlin.uuid.ExperimentalUuidApi
+
+import com.example.se405.android.features.chat_management.presentation.viewmodel.ConversationListUiState
+import com.example.se405.android.features.chat_management.domain.entity.Conversation
+import com.example.se405.android.features.chat_management.domain.entity.MessageEntity
+import com.example.se405.android.features.users_management.domain.entity.User
+import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
 @Composable
@@ -44,28 +51,31 @@ fun ConversationListScreen(
     onNavigateToChat: (conversationId: String, conversationName: String, avatarUrl: String?) -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToNewMessage: () -> Unit,
-    onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    ConversationListScreenContent(
+        uiState = uiState,
+        onNavigateToChat = onNavigateToChat,
+        onNavigateToSearch = onNavigateToSearch,
+        onNavigateToNewMessage = onNavigateToNewMessage
+    )
+}
+
+@OptIn(ExperimentalUuidApi::class)
+@Composable
+fun ConversationListScreenContent(
+    uiState: ConversationListUiState,
+    onNavigateToChat: (conversationId: String, conversationName: String, avatarUrl: String?) -> Unit,
+    onNavigateToSearch: () -> Unit,
+    onNavigateToNewMessage: () -> Unit,
+) {
     val myUserId = uiState.myUserId ?: ""
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Messages",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 22.sp,
-                        letterSpacing = (-0.5).sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(imageVector = Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Quay lại")
-                    }
-                },
+            AppHeader(
+                title = "Messages",
                 actions = {
                     IconButton(onClick = onNavigateToSearch) {
                         Icon(
@@ -84,9 +94,6 @@ fun ConversationListScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
             )
         },
         floatingActionButton = {
@@ -210,6 +217,49 @@ fun ConversationListScreen(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class)
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun ConversationListScreenPreview() {
+    com.example.se405.android.core.presentation.theme.Android_Theme {
+        ConversationListScreenContent(
+            uiState = ConversationListUiState(
+                conversations = listOf(
+                    Conversation(
+                        uuid = "1",
+                        type = "DIRECT",
+                        name = null,
+                        taskUuid = null,
+                        participants = listOf(
+                            User(uuid = Uuid.parse("00000000-0000-0000-0000-000000000001"), email = "test@example.com", username = "user1", displayName = "John Doe", avatarUrl = null)
+                        ),
+                        lastMessage = com.example.se405.android.features.chat_management.domain.entity.LastMessageInfo(
+                            content = "Hello there!",
+                            createdAt = LocalDateTime.now().minusMinutes(5),
+                            senderId = "00000000-0000-0000-0000-000000000001",
+                            senderName = "John Doe"
+                        )
+                    ),
+                    Conversation(
+                        uuid = "2",
+                        type = "GROUP",
+                        name = "Project Team",
+                        taskUuid = null,
+                        participants = emptyList(),
+                        lastMessage = null
+                    )
+                ),
+                isLoading = false,
+                error = null,
+                myUserId = "myId"
+            ),
+            onNavigateToChat = { _, _, _ -> },
+            onNavigateToSearch = {},
+            onNavigateToNewMessage = {}
+        )
     }
 }
 

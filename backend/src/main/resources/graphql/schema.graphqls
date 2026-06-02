@@ -18,6 +18,8 @@ enum ConversationType {
     DIRECT
     GROUP
     TASK
+    WORKSPACE
+    PROJECT
 }
 
 enum MessageType {
@@ -64,6 +66,8 @@ type Query {
     # Lấy tin nhắn theo phòng chat thay vì theo Task
     getMessagesByConversation(conversationId: ID!): [Message!]!
     getConversationByTask(taskId: ID!, taskName: String!): Conversation!
+    getConversationByWorkspace(workspaceId: ID!, name: String!): Conversation!
+    getConversationByProject(projectId: ID!, name: String!): Conversation!
     getPinnedMessages(conversationId: ID!): [Message!]!
     getSharedMedia(conversationId: ID!): [Message!]!
 
@@ -281,6 +285,8 @@ type Conversation {
     type: ConversationType!
     name: String
     taskUuid: ID
+    workspaceUuid: ID
+    projectUuid: ID
     participants: [User!]!
     lastMessage: Message
 }

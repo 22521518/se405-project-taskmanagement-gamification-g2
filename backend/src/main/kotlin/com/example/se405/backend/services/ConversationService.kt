@@ -10,7 +10,9 @@ import java.util.*
 class ConversationService(
     private val conversationRepository: ConversationRepository,
     private val participantRepository: ConversationParticipantRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val workspaceMemberRepository: WorkspaceMemberRepository,
+    private val projectMemberRepository: ProjectMemberRepository
 ) {
 
     // Lấy tất cả phòng chat của một User để hiện màn hình Inbox
@@ -31,6 +33,46 @@ class ConversationService(
                 )
             )
             newConversation
+        }
+    }
+
+    // Tạo hoặc lấy phòng chat cho Workspace (seed sẵn toàn bộ thành viên workspace)
+    @Transactional
+    fun getOrCreateWorkspaceConversation(workspaceUuid: UUID, name: String): ConversationEntity {
+        return conversationRepository.findByWorkspaceUuid(workspaceUuid).orElseGet {
+            val conversation = conversationRepository.save(
+                ConversationEntity(
+                    type = ConversationType.WORKSPACE,
+                    workspaceUuid = workspaceUuid,
+                    name = name
+                )
+            )
+            workspaceMemberRepository.findByIdWorkspaceId(workspaceUuid).forEach { member ->
+                participantRepository.save(
+                    ConversationParticipantEntity(conversation = conversation, user = member.user)
+                )
+            }
+            conversation
+        }
+    }
+
+    // Tạo hoặc lấy phòng chat cho Project (seed sẵn toàn bộ thành viên project)
+    @Transactional
+    fun getOrCreateProjectConversation(projectUuid: UUID, name: String): ConversationEntity {
+        return conversationRepository.findByProjectUuid(projectUuid).orElseGet {
+            val conversation = conversationRepository.save(
+                ConversationEntity(
+                    type = ConversationType.PROJECT,
+                    projectUuid = projectUuid,
+                    name = name
+                )
+            )
+            projectMemberRepository.findByIdProjectId(projectUuid).forEach { member ->
+                participantRepository.save(
+                    ConversationParticipantEntity(conversation = conversation, user = member.user)
+                )
+            }
+            conversation
         }
     }
 

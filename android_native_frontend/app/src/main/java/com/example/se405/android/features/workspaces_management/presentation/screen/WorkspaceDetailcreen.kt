@@ -28,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.se405.android.R
 import com.example.se405.android.core.presentation.components.BuiltinLabels
 import com.example.se405.android.core.presentation.components.HabitLabel
+import com.example.se405.android.core.presentation.components.AppHeader
 import com.example.se405.android.core.presentation.popup.LocalPopupController
 import com.example.se405.android.core.presentation.popup.PopupController
 import com.example.se405.android.core.presentation.theme.Android_Theme
@@ -58,10 +60,10 @@ import com.example.se405.android.features.workspaces_management.presentation.com
 import com.example.se405.android.features.workspaces_management.presentation.components.AddableMember
 import com.example.se405.android.features.workspaces_management.presentation.components.WorkspaceDetailCreateProjectPopUp
 import com.example.se405.android.features.workspaces_management.presentation.components.SimpleProgressBar
-import com.example.se405.android.features.workspaces_management.presentation.components.SubScreenHeader
 import com.example.se405.android.features.workspaces_management.presentation.components.WorkspaceDetailCreateWorkspaceTaskPopUp
 import com.example.se405.android.features.workspaces_management.presentation.components.WorkspaceDetailMemberSection
 import com.example.se405.android.features.workspaces_management.presentation.components.WorkspaceDetailTaskSection
+import com.example.se405.android.features.chat_management.presentation.screen.WorkspaceChatRoom
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceDetailViewModel
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceUiEvent
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceUiState
@@ -100,8 +102,8 @@ fun WorkspaceDetailRoute(
             WorkspaceDetailScreen(
                 workspace = state.data.workspace,
                 recentActivities = state.data.recentActivities,
-                addableMembersForWorkspace = addableMembersForWorkspace,
-                isActionLoading = state.isActionLoading,
+                addableMembersForWorkspace = { addableMembersForWorkspace },
+                isActionLoading = { (uiState as? WorkspaceUiState.Success)?.isActionLoading == true },
                 isRefreshing = isRefreshing,
                 onRefresh = { viewModel.refresh() },
                 onBackClick = onBackClick,
@@ -128,7 +130,7 @@ fun WorkspaceDetailRoute(
 }
 
 private enum class WorkspaceTab {
-    PROJECTS, TASKS, MEMBERS
+    PROJECTS, TASKS, MEMBERS, CHAT
 }
 
 @Composable
@@ -136,8 +138,8 @@ fun WorkspaceDetailScreen(
     workspace: Workspace,
     recentActivities: List<TaskCompletionLog> = emptyList(),
     availableTags: List<Tag>,
-    addableMembersForWorkspace: List<AddableMember> = emptyList(),
-    isActionLoading: Boolean = false,
+    addableMembersForWorkspace: () -> List<AddableMember> = { emptyList() },
+    isActionLoading: () -> Boolean = { false },
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     onCreateTask: (
@@ -163,30 +165,14 @@ fun WorkspaceDetailScreen(
     onNewProjectCreate: (String) -> Unit = {},
 ) {
     var activeTab by remember { mutableStateOf(WorkspaceTab.MEMBERS) }
+    val availableTagsState = rememberUpdatedState(availableTags)
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SubScreenHeader {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .clickable { onBackClick() }) {
-                        Icon(
-                            painter = painterResource(R.drawable.icon_arrow_left),
-                            modifier = Modifier.size(18.dp),
-                            contentDescription = "Go Back"
-                        )
-                    }
-                    Text(
-                        text = workspace.name,
-                        style = AppText.HeadBold,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
+            AppHeader(
+                title = workspace.name,
+                showBackButton = true,
+                onBackClick = onBackClick,
+            )
 
             Row(
                 modifier = Modifier
@@ -210,7 +196,7 @@ fun WorkspaceDetailScreen(
                 ) {
                     val textColor =
                         if (isProjectsActive) MaterialTheme.colorScheme.onPrimary else Color.Gray
-                    val textStyle = if (isProjectsActive) AppText.BodyBold else AppText.BodySemiBold
+                    val textStyle = if (isProjectsActive) AppText.Body2SemiBold else AppText.Body2Light
 
                     Text("${workspace.projects.size}", color = textColor, style = textStyle)
                     Text(
@@ -282,26 +268,70 @@ fun WorkspaceDetailScreen(
                         color = textColor
                     )
                 }
+
+                val isChatActive = activeTab == WorkspaceTab.CHAT
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (isChatActive) MaterialTheme.colorScheme.onPrimary.copy(
+                                alpha = 0.15f
+                            ) else Color.Transparent
+                        )
+                        .clickable { activeTab = WorkspaceTab.CHAT }
+                        .padding(vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val textColor =
+                        if (isChatActive) MaterialTheme.colorScheme.onPrimary else Color.Gray.copy(
+                            alpha = 0.6f
+                        )
+                    val textStyle = if (isChatActive) AppText.BodyBold else AppText.BodySemiBold
+
+                    Icon(
+                        painter = painterResource(R.drawable.icon_chat),
+                        contentDescription = "Chat",
+                        modifier = Modifier.size(20.dp),
+                        tint = textColor
+                    )
+                    Text(
+                        "Chat",
+                        style = textStyle,
+                        textAlign = TextAlign.Center,
+                        color = textColor
+                    )
+                }
             }
 
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh,
-                modifier = Modifier.weight(1f).fillMaxWidth()
-            ) {
-                when (activeTab) {
-                    WorkspaceTab.PROJECTS -> WorkspaceDetailProjectsSection(
-                        projects = workspace.projects,
-                        onNavigateToProject = onNavigateToProject
-                    )
+            if (activeTab == WorkspaceTab.CHAT) {
+                WorkspaceChatRoom(
+                    workspaceId = workspace.id.toString(),
+                    workspaceName = workspace.name,
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                )
+            } else {
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh,
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                ) {
+                    when (activeTab) {
+                        WorkspaceTab.PROJECTS -> WorkspaceDetailProjectsSection(
+                            projects = workspace.projects,
+                            onNavigateToProject = onNavigateToProject
+                        )
 
-                    WorkspaceTab.TASKS -> WorkspaceDetailTaskSection(recentActivities, workspace.projects)
-                    WorkspaceTab.MEMBERS -> WorkspaceDetailMemberSection(workspace.members)
+                        WorkspaceTab.TASKS -> WorkspaceDetailTaskSection(recentActivities, workspace.projects)
+                        WorkspaceTab.MEMBERS -> WorkspaceDetailMemberSection(workspace.members)
+                        WorkspaceTab.CHAT -> Unit
+                    }
                 }
             }
         }
 
         val popupController = LocalPopupController.current
+        if (activeTab != WorkspaceTab.CHAT) {
         FloatingActionButton(
             onClick = {
                 popupController.push { onDismiss ->
@@ -316,8 +346,8 @@ fun WorkspaceDetailScreen(
                              LaunchedEffect(Unit) { loadAddableMembersForWorkspace() }
                              AddWorkspaceMembersPopUp(
                                  workspaceName = workspace.name,
-                                 candidates = addableMembersForWorkspace,
-                                 isLoading = isActionLoading,
+                                 candidates = addableMembersForWorkspace(),
+                                 isLoading = isActionLoading(),
                                  onAdd = { selectedIds ->
                                      addMembersToWorkspace(selectedIds)
                                      onDismiss()
@@ -327,7 +357,7 @@ fun WorkspaceDetailScreen(
                          }
                          WorkspaceTab.TASKS -> WorkspaceDetailCreateWorkspaceTaskPopUp(
                             availableProjects = workspace.projects,
-                            availableTags = availableTags,
+                            availableTags = availableTagsState.value,
                             onCreate = { projectId, title, desc, priority, start, due, tagIds, assigneeId ->
                                 onCreateTask(projectId, title, desc, when(priority) {
                                     com.example.se405.android.graphql.type.TaskPriority.HIGH -> TaskPriority.HIGH
@@ -341,6 +371,7 @@ fun WorkspaceDetailScreen(
                             },
                             onCancel = onDismiss
                         )
+                        WorkspaceTab.CHAT -> Unit
                     }
                 }
             },
@@ -356,6 +387,7 @@ fun WorkspaceDetailScreen(
                 modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
+        }
         }
     }
 }

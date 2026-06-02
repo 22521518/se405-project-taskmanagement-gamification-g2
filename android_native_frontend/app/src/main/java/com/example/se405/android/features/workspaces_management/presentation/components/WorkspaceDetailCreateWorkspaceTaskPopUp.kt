@@ -55,6 +55,7 @@ fun WorkspaceDetailCreateWorkspaceTaskPopUp(
     CreateTaskProjectPopUpContent(
         availableTags = availableTags,
         projectMembers = projectMembers,
+        isProjectSelected = selectedProject != null,
         onCreate = { title, desc, priority, start, due, tags, assigneeId ->
             selectedProject?.let { project ->
                 onCreate(project.id, title, desc, priority, start, due, tags, assigneeId)

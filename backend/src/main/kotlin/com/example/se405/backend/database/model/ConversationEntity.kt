@@ -4,7 +4,7 @@ import jakarta.persistence.*
 import java.util.UUID
 
 enum class ConversationType {
-    DIRECT, GROUP, TASK
+    DIRECT, GROUP, TASK, WORKSPACE, PROJECT
 }
 
 @Entity
@@ -24,6 +24,14 @@ data class ConversationEntity(
     // Trỏ về Task nếu type = TASK (Nullable)
     @Column(name = "task_uuid", nullable = true)
     val taskUuid: UUID? = null,
+
+    // Trỏ về Workspace nếu type = WORKSPACE (Nullable)
+    @Column(name = "workspace_uuid", nullable = true)
+    val workspaceUuid: UUID? = null,
+
+    // Trỏ về Project nếu type = PROJECT (Nullable)
+    @Column(name = "project_uuid", nullable = true)
+    val projectUuid: UUID? = null,
 
     @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     @JoinColumn(name = "conversation_uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
@@ -52,6 +60,8 @@ data class ConversationEntity(
         if (type != other.type) return false
         if (name != other.name) return false
         if (taskUuid != other.taskUuid) return false
+        if (workspaceUuid != other.workspaceUuid) return false
+        if (projectUuid != other.projectUuid) return false
         if (messages != other.messages) return false
         if (participantLinks != other.participantLinks) return false
         if (participants != other.participants) return false

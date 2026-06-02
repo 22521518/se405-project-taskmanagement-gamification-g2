@@ -22,6 +22,7 @@ import com.example.se405.android.features.tasks_management.domain.use_case.Works
 import com.example.se405.android.features.tasks_management.domain.use_case.crud.MarkTaskDone
 import com.example.se405.android.features.tasks_management.domain.use_case.crud.MarkTaskWontDo
 import com.example.se405.android.features.tasks_management.domain.use_case.PersonalTaskUsecase
+import com.example.se405.android.features.tasks_management.domain.validation.TaskFormRules
 import com.example.se405.android.features.workspaces_management.domain.use_case.ExtWorkspaceWithGetCreateUseCases
 import com.example.se405.android.features.tasks_management.presentation.components.CreateTagUiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,6 +63,10 @@ class TaskManagementViewModel(
     private val _allWorkspaces = MutableStateFlow<List<Workspace>>(emptyList())
     private val _workspaces = MutableStateFlow<List<Workspace>>(emptyList())
     val workspaces: StateFlow<List<Workspace>> = _workspaces.asStateFlow()
+    // Raw workspace list (workspace → projects → members) exposed for the
+    // create/edit form so it can scope assignees and tags per business rules.
+    private val _workspacesRaw = MutableStateFlow<List<Workspace>>(emptyList())
+    val workspacesRaw: StateFlow<List<Workspace>> = _workspacesRaw.asStateFlow()
     private val _availableTags = MutableStateFlow<List<Tag>>(emptyList())
     val availableTags: StateFlow<List<Tag>> = _availableTags.asStateFlow()
     private val _projects = MutableStateFlow<List<Project>>(emptyList())
@@ -144,6 +149,8 @@ class TaskManagementViewModel(
     private fun clearSessionState() {
         _workspaces.value = emptyList()
         _allWorkspaces.value = emptyList()
+        _workspacesRaw.value = emptyList()
+        _rawWorkspacesList = emptyList()
         _availableTags.value = emptyList()
         _projects.value = emptyList()
         _members.value = emptyList()
@@ -162,6 +169,7 @@ class TaskManagementViewModel(
 
         val workspacesList = extWorkspaceUseCase.getWorkspaceListByUserId(userId)
         _rawWorkspacesList = workspacesList
+        _workspacesRaw.value = workspacesList
 
         val tagsByUser = tagUseCases.getTagsByUser(userId)
         val tagsFromWorkspaces = workspacesList.flatMap { tagUseCases.getTagsByWorkspace(it.id) }
@@ -210,13 +218,37 @@ class TaskManagementViewModel(
         )
     }
 
+    /**
+     * Enforces the create/edit/update business rules in ViewModel state. Returns the
+     * normalized task ready for submission, or `null` (after emitting a toast) when a
+     * hard rule is violated. Used by both [createTask] and [updateTask] so the rules
+     * can never diverge between the two flows.
+     */
+    private suspend fun enforceRulesOrNull(task: Task): Task? {
+        val workspaceId = TaskFormRules.workspaceIdForProject(_rawWorkspacesList, task.projectId)
+        val validMembers = TaskFormRules.membersForWorkspace(_rawWorkspacesList, workspaceId)
+        val knownProjectIds = _rawWorkspacesList.flatMap { it.projects }.map { it.id }.toSet()
+
+        val error = TaskFormRules.validateForSubmit(task, knownProjectIds, validMembers)
+        if (error != null) {
+            _uiEvent.send(TaskUiEvent.ShowToast(error))
+            return null
+        }
+        return TaskFormRules.normalizeForSubmit(task, workspaceId, validMembers)
+    }
+
     fun createTask(task: Task, onCompleted: (Boolean) -> Unit = {}) {
         android.util.Log.d("TaskManagementVM", "createTask init: task title='${task.title}'")
         viewModelScope.launch {
+            val normalized = enforceRulesOrNull(task)
+            if (normalized == null) {
+                onCompleted(false)
+                return@launch
+            }
             _isLoading.value = true
             try {
                 val currentId = _currentUserId.value
-                val created = taskUseCases.createTask(task, currentId)
+                val created = taskUseCases.createTask(normalized, currentId)
                 if (created.isPresent) {
                     refreshSilently()
                     val createdTask = created.get()
@@ -243,9 +275,14 @@ class TaskManagementViewModel(
     fun updateTask(task: Task, onCompleted: (Boolean) -> Unit = {}) {
         android.util.Log.d("TaskManagementVM", "updateTask init: task uuid=${task.uuid}, title='${task.title}'")
         viewModelScope.launch {
+            val normalized = enforceRulesOrNull(task)
+            if (normalized == null) {
+                onCompleted(false)
+                return@launch
+            }
             _isLoading.value = true
             try {
-                val updated = taskUseCases.updateTask(task)
+                val updated = taskUseCases.updateTask(normalized)
                 if (updated.isPresent) {
 
                     refreshSilently()
@@ -525,6 +562,7 @@ class TaskManagementViewModel(
                 if (userId != null) {
                     val workspacesList = extWorkspaceUseCase.getWorkspaceListByUserId(userId)
                     _rawWorkspacesList = workspacesList
+                    _workspacesRaw.value = workspacesList
                     _projects.value = workspacesList.flatMap { it.projects }
                     _members.value = workspacesList.flatMap { it.members }.distinctBy { it.userId }
                 }

@@ -14,6 +14,7 @@ import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.graphql.data.method.annotation.SchemaMapping
 import org.springframework.stereotype.Controller
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -89,18 +90,36 @@ class TaskController(
     @SchemaMapping(typeName = "TaskAssignee", field = "user")
     fun taskAssigneeUser(taskAssignee: TaskAssigneeEntity) = taskAssignee.user
 
+    // taskId/userId live in the embedded composite key (TaskAssigneeId), not as
+    // direct properties, so the default property fetcher can't find them and returns
+    // null on these non-null ID! fields. That null bubbles up through assignees ->
+    // task -> tasks -> project -> projects, nulling the whole getWorkspace result
+    // ("workspace not found"), and breaks createTask's returned assignees. Resolve
+    // them explicitly, mirroring the WorkspaceMember/ProjectMember id-field mappings.
+    @SchemaMapping(typeName = "TaskAssignee", field = "taskId")
+    fun taskAssigneeTaskId(taskAssignee: TaskAssigneeEntity): UUID = taskAssignee.id.taskId
+
+    @SchemaMapping(typeName = "TaskAssignee", field = "userId")
+    fun taskAssigneeUserId(taskAssignee: TaskAssigneeEntity): UUID = taskAssignee.id.userId
+
     // ── Mutations ─────────────────────────────────────────────────────────────
 
     @MutationMapping
+    @Transactional
     fun createTask(@Argument input: CreateTaskInput): com.example.se405.backend.database.model.TaskEntity {
         val username = org.springframework.security.core.context.SecurityContextHolder.getContext().authentication?.principal as? String
         val creatorUser = username?.let { userRepository.findByUsername(it) }
         val finalCreatorId = creatorUser?.uuid ?: input.creatorId
 
+        // Resolve only the tags that actually exist for this workspace/user; unknown
+        // ids are silently skipped so a stale tag id can't fail the whole mutation.
         val tags = input.tagIds
             ?.mapNotNull { tagRepository.findById(it).orElse(null) }
             ?.toMutableList() ?: mutableListOf()
 
+        // First save assigns the generated uuid, which the assignee composite id needs.
+        // Running inside a single @Transactional keeps `saved` managed, so adding
+        // assignees afterwards flushes via dirty-checking — no detached re-merge.
         val saved = taskRepository.save(
             com.example.se405.backend.database.model.TaskEntity(
                 title = input.title,
@@ -118,7 +137,9 @@ class TaskController(
         )
 
         if (!input.assigneeIds.isNullOrEmpty()) {
-            input.assigneeIds.forEach { userId ->
+            // Distinct guards against a duplicate assignee id producing a duplicate
+            // composite primary key in task_assignee.
+            input.assigneeIds.distinct().forEach { userId ->
                 val user = userRepository.findById(userId).orElse(null)
                 if (user != null) {
                     saved.assignees.add(
@@ -130,13 +151,13 @@ class TaskController(
                     )
                 }
             }
-            return taskRepository.save(saved)
         }
 
         return saved
     }
 
     @MutationMapping
+    @Transactional
     fun updateTask(@Argument input: UpdateTaskInput): com.example.se405.backend.database.model.TaskEntity {
         val existing = taskRepository.findById(input.uuid)
             .orElseThrow { RuntimeException("Task not found") }

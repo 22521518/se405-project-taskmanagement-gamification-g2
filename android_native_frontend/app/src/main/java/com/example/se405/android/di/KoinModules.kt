@@ -34,7 +34,7 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.android.ext.koin.androidApplication
 
 object NetworkConfig {
-    const val BASE_IP = "192.168.1.56"
+    const val BASE_IP = "192.168.1.227"
 //    const val BASE_IP = "localhost"
     const val GRAPHQL_URL = "http://$BASE_IP:8080/graphql"
     const val AUTH_URL = "http://$BASE_IP:8080/api/auth"

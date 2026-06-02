@@ -52,25 +52,15 @@ data class TagEntity(
         return "TagEntity(uuid=$uuid, name='$name', color=$color)"
     }
 
+    // Identity is based solely on the persistent key. Never reference the lazy
+    // `tasks` association here: Hibernate invokes equals/hashCode during merge and
+    // collection reconciliation, and touching a lazy collection on a detached
+    // instance throws LazyInitializationException (opaque INTERNAL_ERROR to GraphQL).
     override fun hashCode(): Int = uuid?.hashCode() ?: 0
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as TagEntity
-
-        if (color != other.color) return false
-        if (uuid != other.uuid) return false
-        if (name != other.name) return false
-        if (ownershipType != other.ownershipType) return false
-        if (workspaceId != other.workspaceId) return false
-        if (createdBy != other.createdBy) return false
-        if (labelId != other.labelId) return false
-        if (createdAt != other.createdAt) return false
-        if (updatedAt != other.updatedAt) return false
-        if (tasks != other.tasks) return false
-
-        return true
+        if (other !is TagEntity) return false
+        return uuid != null && uuid == other.uuid
     }
 }
 

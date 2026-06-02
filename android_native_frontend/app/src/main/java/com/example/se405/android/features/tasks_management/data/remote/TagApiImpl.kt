@@ -47,11 +47,15 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
                     return Optional.empty()
                 }
                 android.util.Log.i("TagApiImpl", "getTagsByWorkspace success: returned ${tags.size} tags")
-                Optional.of(tags.map { graphTag ->
-                    graphTag.toDomainTag(
-                        fallbackWorkspaceId = workspaceId,
-                        fallbackCreatedBy = ZERO_UUID,
-                    )
+                Optional.of(tags.mapNotNull { graphTag ->
+                    runCatching {
+                        graphTag.toDomainTag(
+                            fallbackWorkspaceId = workspaceId,
+                            fallbackCreatedBy = ZERO_UUID,
+                        )
+                    }.onFailure {
+                        android.util.Log.e("TagApiImpl", "Skipping invalid workspace tag ${graphTag.uuid}", it)
+                    }.getOrNull()
                 })
             }
         } catch (e: Exception) {
@@ -73,11 +77,15 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
                     return Optional.empty()
                 }
                 android.util.Log.i("TagApiImpl", "getTagsByUser success: returned ${tags.size} tags")
-                Optional.of(tags.map { graphTag ->
-                    graphTag.toDomainTag(
-                        fallbackWorkspaceId = null,
-                        fallbackCreatedBy = userId,
-                    )
+                Optional.of(tags.mapNotNull { graphTag ->
+                    runCatching {
+                        graphTag.toDomainTag(
+                            fallbackWorkspaceId = null,
+                            fallbackCreatedBy = userId,
+                        )
+                    }.onFailure {
+                        android.util.Log.e("TagApiImpl", "Skipping invalid user tag ${graphTag.uuid}", it)
+                    }.getOrNull()
                 })
             }
         } catch (e: Exception) {
@@ -99,11 +107,15 @@ class TagApiImpl(private val apolloClient: ApolloClient) : TagApi {
                     return Optional.empty()
                 }
                 android.util.Log.i("TagApiImpl", "getTagsForTaskOwnership success: returned ${tags.size} tags")
-                Optional.of(tags.map { graphTag ->
-                    graphTag.toDomainTag(
-                        fallbackWorkspaceId = null,
-                        fallbackCreatedBy = ZERO_UUID,
-                    )
+                Optional.of(tags.mapNotNull { graphTag ->
+                    runCatching {
+                        graphTag.toDomainTag(
+                            fallbackWorkspaceId = null,
+                            fallbackCreatedBy = ZERO_UUID,
+                        )
+                    }.onFailure {
+                        android.util.Log.e("TagApiImpl", "Skipping invalid task tag ${graphTag.uuid}", it)
+                    }.getOrNull()
                 })
             }
         } catch (e: Exception) {

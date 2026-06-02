@@ -28,6 +28,7 @@ class WorkspaceApiImpl(private val apolloClient: ApolloClient) : WorkspaceApi {
             Project(
                 id = Uuid.parse(project.uuid),
                 name = project.name,
+                workspaceId = workspaceId,
                 tasks = emptyList(),
             )
         })

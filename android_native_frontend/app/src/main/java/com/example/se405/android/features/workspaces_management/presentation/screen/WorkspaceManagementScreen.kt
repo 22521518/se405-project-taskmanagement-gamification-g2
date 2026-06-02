@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.se405.android.R
 import com.example.se405.android.core.presentation.components.ButtonApp
 import com.example.se405.android.core.presentation.components.ButtonType
+import com.example.se405.android.core.presentation.components.AppHeader
 import com.example.se405.android.core.presentation.components.PopUpLayout
 import com.example.se405.android.core.presentation.popup.LocalPopupController
 import com.example.se405.android.core.presentation.popup.PopupController
@@ -56,7 +57,6 @@ import com.example.se405.android.core.presentation.theme.AppText
 import com.example.se405.android.features.tasks_management.__test_data__.preview.PreviewDomainEntityData
 import com.example.se405.android.features.workspaces_management.domain.entity.Workspace
 import com.example.se405.android.features.workspaces_management.presentation.components.IconSearchBar
-import com.example.se405.android.features.workspaces_management.presentation.components.SubScreenHeader
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceManagementViewModel
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceUiEvent
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceUiState
@@ -126,26 +126,7 @@ fun WorkspaceManagementScreen(
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SubScreenHeader {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(modifier = Modifier.clickable { onBackClick() }) {
-                        Icon(
-                            painter = painterResource(R.drawable.icon_arrow_left),
-                            modifier = Modifier.size(18.dp),
-                            contentDescription = "Go Back"
-                        )
-                    }
-                    Text(
-                        text = "Your workspaces",
-                        style = AppText.HeadBold,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
+            AppHeader(title = "Your workspaces")
             IconSearchBar(
                 query = searchQuery,
                 onQueryChange = onSearchQueryChange,
@@ -223,6 +204,7 @@ private fun WorkspaceCard(
                 Text(
                     text = workspace.name,
                     style = AppText.HeadSemiBold,
+                    color = Color.Black,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 val yourRole = workspace.members.find { it.userId == workspace.members[0].userId }?.role
@@ -253,6 +235,7 @@ private fun WorkspaceCard(
                     )
                     Text(
                         text = " ${workspace.members.size} Members",
+                        color = Color.Black,
                         style = AppText.Body2SemiBold,
                         modifier = Modifier.padding(bottom = 4.dp, start = 4.dp, end = 4.dp)
                     )
@@ -266,12 +249,13 @@ private fun WorkspaceCard(
                     )
                     Text(
                         text = "${workspace.projects.size} projects",
+                        color = Color.Black,
                         style = AppText.Body2SemiBold,
                         modifier = Modifier.padding(bottom = 4.dp, start = 4.dp, end = 4.dp)
                     )
                 }
             }
-            Text("Recents projects")
+            Text("Recents projects", style = AppText.Body2Regular, color = Color.Black)
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
             ) {

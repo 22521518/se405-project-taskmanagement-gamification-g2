@@ -12,7 +12,9 @@ import com.example.se405.android.features.chat_management.domain.entity.ReplyMes
 import com.example.se405.android.features.chat_management.domain.repository.ChatRepository
 import com.example.se405.android.features.users_management.domain.entity.User
 import com.example.se405.android.graphql.CreateConversationMutation
+import com.example.se405.android.graphql.GetConversationByProjectQuery
 import com.example.se405.android.graphql.GetConversationByTaskQuery
+import com.example.se405.android.graphql.GetConversationByWorkspaceQuery
 import com.example.se405.android.graphql.GetConversationMembersQuery
 import com.example.se405.android.graphql.GetMessagesByConversationQuery
 import com.example.se405.android.graphql.GetMyConversationsQuery
@@ -65,6 +67,32 @@ class ChatRepositoryImpl(
             } else {
                 val conversationId = response.data?.getConversationByTask?.uuid.toString()
                 Result.success(conversationId)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getConversationByWorkspace(workspaceId: String, name: String): Result<String> {
+        return try {
+            val response = apolloClient.query(GetConversationByWorkspaceQuery(workspaceId = workspaceId, name = name)).execute()
+            if (response.hasErrors()) {
+                Result.failure(Exception(response.errors?.first()?.message))
+            } else {
+                Result.success(response.data?.getConversationByWorkspace?.uuid.toString())
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getConversationByProject(projectId: String, name: String): Result<String> {
+        return try {
+            val response = apolloClient.query(GetConversationByProjectQuery(projectId = projectId, name = name)).execute()
+            if (response.hasErrors()) {
+                Result.failure(Exception(response.errors?.first()?.message))
+            } else {
+                Result.success(response.data?.getConversationByProject?.uuid.toString())
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -153,18 +181,18 @@ class ChatRepositoryImpl(
                 uuid = Uuid.parse(dto.sender.uuid),
                 email = dto.sender.email,
                 username = "unknown",
-                displayName = dto.sender.displayName ?: "Người dùng ẩn danh",
+                displayName = dto.sender.displayName,
                 avatarUrl = dto.sender.avatarUrl ?: "",
                 passwordHash = null,
                 createdAt = LocalDateTime.now(),
                 updatedAt = LocalDateTime.now(),
-                isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                isOnline = dto.sender.isOnline // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
             ),
             createdAt = parseIsoDate(dto.createdAt),
             isOwnMessage = isMine,
             isRevoked = isMsgRevoked,
             isPinned = dto.isPinned,
-            replyTo = dto.replyTo?.let { ReplyMessageInfo(Uuid.parse(it.uuid), it.content, it.sender.displayName ?: "") }
+            replyTo = dto.replyTo?.let { ReplyMessageInfo(Uuid.parse(it.uuid), it.content, it.sender.displayName) }
         )
     }
 
@@ -228,18 +256,18 @@ class ChatRepositoryImpl(
                         uuid = Uuid.parse(dto.sender.uuid),
                         email = dto.sender.email,
                         username = "unknown",
-                        displayName = dto.sender.displayName ?: "Tôi",
+                        displayName = dto.sender.displayName,
                         avatarUrl = dto.sender.avatarUrl,
                         passwordHash = null,
                         createdAt = LocalDateTime.now(),
                         updatedAt = LocalDateTime.now(),
-                        isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                        isOnline = dto.sender.isOnline // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                     ),
                     createdAt = parseIsoDate(dto.createdAt),
                     isOwnMessage = true,
                     isRevoked = dto.isRevoked,
                     isPinned = dto.isPinned,
-                    replyTo = dto.replyTo?.let { ReplyMessageInfo(Uuid.parse(it.uuid), it.content, it.sender.displayName ?: "") }
+                    replyTo = dto.replyTo?.let { ReplyMessageInfo(Uuid.parse(it.uuid), it.content, it.sender.displayName) }
                 )
             )
         } catch (e: Exception) {
@@ -260,7 +288,7 @@ class ChatRepositoryImpl(
                     content = msgDto.content,
                     createdAt = parseIsoDate(msgDto.createdAt),
                     senderId = msgDto.sender.uuid,
-                    senderName = msgDto.sender.displayName ?: "Người dùng"
+                    senderName = msgDto.sender.displayName
                 )
             }
             Conversation(
@@ -271,14 +299,14 @@ class ChatRepositoryImpl(
                 participants = dto.participants.map { p ->
                     User(
                         uuid = Uuid.parse(p.uuid),
-                        displayName = p.displayName ?: "Người dùng",
+                        displayName = p.displayName,
                         avatarUrl = p.avatarUrl,
                         email = p.email,
                         username = p.username,
                         passwordHash = null,
                         createdAt = LocalDateTime.now(),
                         updatedAt = LocalDateTime.now(),
-                        isOnline = p.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                        isOnline = p.isOnline // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                     )
                 }, lastMessage = lastMsg
             )
@@ -332,7 +360,7 @@ class ChatRepositoryImpl(
                         ReplyMessageInfo(
                             uuid = Uuid.parse(replyDto.uuid),
                             content = replyDto.content,
-                            senderName = replyDto.sender.displayName ?: "Người dùng"
+                            senderName = replyDto.sender.displayName
                         )
                     }
 
@@ -345,12 +373,12 @@ class ChatRepositoryImpl(
                             uuid = Uuid.parse(msgDto.sender.uuid),
                             email = msgDto.sender.email,
                             username = "unknown",
-                            displayName = msgDto.sender.displayName ?: "Người dùng",
+                            displayName = msgDto.sender.displayName,
                             avatarUrl = msgDto.sender.avatarUrl,
                             passwordHash = null,
                             createdAt = LocalDateTime.now(),
                             updatedAt = LocalDateTime.now(),
-                            isOnline = msgDto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                            isOnline = msgDto.sender.isOnline // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                         ),
                         fileUrl = msgDto.fileUrl,
                         fileName = msgDto.fileName,
@@ -420,12 +448,12 @@ class ChatRepositoryImpl(
                     uuid = Uuid.parse(dto.sender.uuid),
                     email = dto.sender.email,
                     username = "unknown",
-                    displayName = dto.sender.displayName ?: "Người dùng",
+                    displayName = dto.sender.displayName,
                     avatarUrl = dto.sender.avatarUrl,
                     passwordHash = null,
                     createdAt = LocalDateTime.now(),
                     updatedAt = LocalDateTime.now(),
-                    isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                    isOnline = dto.sender.isOnline // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                 ),
                 replyTo = null
             )
@@ -453,12 +481,12 @@ class ChatRepositoryImpl(
                     uuid = Uuid.parse(dto.sender.uuid),
                     email = dto.sender.email,
                     username = "unknown",
-                    displayName = dto.sender.displayName ?: "Người dùng",
+                    displayName = dto.sender.displayName,
                     avatarUrl = dto.sender.avatarUrl,
                     passwordHash = null,
                     createdAt = LocalDateTime.now(),
                     updatedAt = LocalDateTime.now(),
-                    isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                    isOnline = dto.sender.isOnline // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                 ),
                 replyTo = null
             )
@@ -484,12 +512,12 @@ class ChatRepositoryImpl(
                     uuid = Uuid.parse(dto.sender.uuid),
                     email=dto.sender.email,
                     username=dto.sender.username,
-                    displayName=dto.sender.displayName ?: "",
+                    displayName=dto.sender.displayName,
                     avatarUrl=dto.sender.avatarUrl,
                     passwordHash = "",
                     createdAt=LocalDateTime.now(),
                     updatedAt=LocalDateTime.now(),
-                    isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                    isOnline = dto.sender.isOnline // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                 ),
                 replyTo = null
             )
@@ -517,12 +545,12 @@ class ChatRepositoryImpl(
                     uuid = Uuid.parse(dto.sender.uuid),
                     email=dto.sender.email,
                     username=dto.sender.username,
-                    displayName=dto.sender.displayName ?: "",
+                    displayName=dto.sender.displayName,
                     avatarUrl=dto.sender.avatarUrl,
                     passwordHash = "",
                     createdAt=LocalDateTime.now(),
                     updatedAt=LocalDateTime.now(),
-                    isOnline = dto.sender.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                    isOnline = dto.sender.isOnline // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
                 ),
                 replyTo = null
             )
@@ -546,12 +574,12 @@ class ChatRepositoryImpl(
                 uuid = kotlin.uuid.Uuid.parse(userDto.uuid),
                 email = userDto.email,
                 username = userDto.username,
-                displayName = userDto.displayName ?: "Người dùng",
+                displayName = userDto.displayName,
                 avatarUrl = userDto.avatarUrl,
                 passwordHash = null,
                 createdAt = java.time.LocalDateTime.now(),
                 updatedAt = java.time.LocalDateTime.now(),
-                isOnline = userDto.isOnline ?: false // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
+                isOnline = userDto.isOnline // 💡 ÁNH XẠ TRẠNG THÁI ONLINE
             )
         } ?: emptyList()
     }

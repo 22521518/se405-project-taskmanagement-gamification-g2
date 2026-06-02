@@ -47,10 +47,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.se405.android.core.presentation.components.AppHeader
 import com.example.se405.android.features.users_management.presentation.components.SettingRowClickable
 import com.example.se405.android.features.users_management.presentation.components.SettingRowSwitch
 import com.example.se405.android.features.users_management.presentation.viewmodel.PersonalViewModel
 import org.koin.androidx.compose.koinViewModel
+
+import com.example.se405.android.core.authentication.data.UserProfileResponse
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
 @Composable
@@ -63,9 +66,6 @@ fun PersonalScreen(
     val userProfile by viewModel.userProfile.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-
-    var isOnline by remember { mutableStateOf(true) }
-    val activeColor = Color(0xFF2563EB)
 
     // TỰ ĐỘNG CẬP NHẬT: Lắng nghe sự kiện vòng đời của màn hình
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -80,13 +80,33 @@ fun PersonalScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    PersonalScreenContent(
+        userProfile = userProfile,
+        isLoading = isLoading,
+        error = error,
+        onLogoutClick = { viewModel.logout(onSuccess = onLogoutClick) },
+        onEditClick = onEditClick,
+        onRetryClick = { viewModel.loadUserProfile() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
+@Composable
+fun PersonalScreenContent(
+    userProfile: UserProfileResponse?,
+    isLoading: Boolean,
+    error: String?,
+    onLogoutClick: () -> Unit,
+    onEditClick: (displayName: String, email: String, avatarUrl: String?) -> Unit,
+    onRetryClick: () -> Unit
+) {
+    var isOnline by remember { mutableStateOf(true) }
+    val activeColor = Color(0xFF2563EB)
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Profile", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
+            AppHeader(title = "Profile")
         }
     ) { paddingValues ->
         when {
@@ -106,7 +126,7 @@ fun PersonalScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(text = error ?: "", color = Color.Red, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = { viewModel.loadUserProfile() }) { Text("Thử lại") }
+                    Button(onClick = onRetryClick) { Text("Thử lại") }
                 }
             }
 
@@ -198,7 +218,7 @@ fun PersonalScreen(
                     Spacer(modifier = Modifier.weight(1f))
 
                     Button(
-                        onClick = { viewModel.logout(onSuccess = onLogoutClick) },
+                        onClick = onLogoutClick,
                         modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp).height(56.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -213,6 +233,27 @@ fun PersonalScreen(
                 }
             }
         }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun PersonalScreenPreview() {
+    com.example.se405.android.core.presentation.theme.Android_Theme {
+        PersonalScreenContent(
+            userProfile = UserProfileResponse(
+                uuid = "user1",
+                email = "test@example.com",
+                username = "testuser",
+                displayName = "Test User",
+                avatarUrl = null
+            ),
+            isLoading = false,
+            error = null,
+            onLogoutClick = {},
+            onEditClick = { _, _, _ -> },
+            onRetryClick = {}
+        )
     }
 }
 

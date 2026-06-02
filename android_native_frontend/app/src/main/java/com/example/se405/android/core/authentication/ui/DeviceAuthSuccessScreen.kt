@@ -23,6 +23,18 @@ fun DeviceAuthSuccessScreen(
     onLogout: () -> Unit,
     viewModel: BiometricViewmodel = koinViewModel()
 ) {
+    DeviceAuthSuccessScreenContent(
+        onLogout = {
+            viewModel.logout()
+            onLogout()
+        }
+    )
+}
+
+@Composable
+fun DeviceAuthSuccessScreenContent(
+    onLogout: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -48,14 +60,19 @@ fun DeviceAuthSuccessScreen(
         Spacer(modifier = Modifier.height(48.dp))
         
         ButtonApp(
-            onClick = {
-                viewModel.logout()
-                onLogout()
-            },
+            onClick = onLogout,
             type = ButtonType.FILLED,
             modifier = Modifier.padding(horizontal = 32.dp)
         ) {
             Text(text = "Logout", style = AppText.BodyBold)
         }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun DeviceAuthSuccessScreenPreview() {
+    com.example.se405.android.core.presentation.theme.Android_Theme {
+        DeviceAuthSuccessScreenContent(onLogout = {})
     }
 }

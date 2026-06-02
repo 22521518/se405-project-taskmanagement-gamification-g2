@@ -22,6 +22,8 @@ class UserController(
     @QueryMapping
     fun getUsersExcluding(@Argument excludeUserId: UUID): List<UserEntity> {
         return userRepository.findByUuidNot(excludeUserId)
+    }
+
     @MutationMapping
     fun updateFcmToken(@Argument token: String): Boolean {
         val auth = SecurityContextHolder.getContext().authentication

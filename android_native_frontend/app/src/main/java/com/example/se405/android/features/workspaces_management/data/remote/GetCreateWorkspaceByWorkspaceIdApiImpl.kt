@@ -162,6 +162,7 @@ class GetCreateWorkspaceByWorkspaceIdApiImpl(private val apolloClient: ApolloCli
                 projects = ws.projects.map { project -> Project(
                     id = Uuid.parse(project.uuid),
                     name = project.name,
+                    workspaceId = Uuid.parse(ws.uuid),
                     tasks = emptyList(),
                     member = emptyList()) },
                 members = ws.members.map {
@@ -394,7 +395,20 @@ class GetCreateWorkspaceByWorkspaceIdApiImpl(private val apolloClient: ApolloCli
                         else -> TaskPriority.MEDIUM
                     },
                     creator = null,
-                    tags = task.tags.map { it.toDomainTag(task.uuid) },
+                    // A workspace task may carry both WORKSPACE and PERSONAL tags. Map each
+                    // tag's real ownership and skip any tag that violates the Tag invariant
+                    // so one malformed tag can't blank out the whole workspace screen.
+                    tags = task.tags.mapNotNull { tag ->
+                        runCatching { tag.toDomainTag(task.uuid) }
+                            .onFailure {
+                                android.util.Log.e(
+                                    "WS_DETAIL_LOAD",
+                                    "Skipping invalid tag ${tag.uuid} on task ${task.uuid}",
+                                    it,
+                                )
+                            }
+                            .getOrNull()
+                    },
                     assignees = task.assignees.map { assignee ->
                         User(
                             uuid = Uuid.parse(assignee.user.uuid),
@@ -433,10 +447,19 @@ class GetCreateWorkspaceByWorkspaceIdApiImpl(private val apolloClient: ApolloCli
             builtin.id.toString() == targetLabelUuid
         } ?: BuiltinLabels.first()
 
+        // Respect the tag's real ownership instead of assuming WORKSPACE: a workspace
+        // task can also have PERSONAL tags attached, which must not carry a workspaceId.
+        val resolvedOwnership = when (ownershipType) {
+            com.example.se405.android.graphql.type.TagOwnershipType.WORKSPACE -> TagOwnershipType.WORKSPACE
+            else -> TagOwnershipType.PERSONAL
+        }
+        val resolvedWorkspaceId =
+            if (resolvedOwnership == TagOwnershipType.WORKSPACE) workspaceId.toUuidOrNull() else null
+
         return Tag(
             createdBy = null,
-            ownershipType = TagOwnershipType.WORKSPACE,
-            workspaceId = workspaceId.toUuidOrNull(),
+            ownershipType = resolvedOwnership,
+            workspaceId = resolvedWorkspaceId,
             taskIds = listOfNotNull(parentTaskUuid.toUuidOrNull()),
             uuid = Uuid.parse(uuid),
             name = name,

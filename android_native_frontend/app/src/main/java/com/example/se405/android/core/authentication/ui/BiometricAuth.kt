@@ -36,20 +36,20 @@ fun BiometricAuth(
     onRegister: (String, String, String, String) -> Unit,
     onBiometricClick: (Boolean) -> Unit,
 ) {
-    var loginWithAccount by remember { mutableStateOf(false) }
+    var loginWithAccount by remember { mutableStateOf(true) }
     var isRegisterMode by remember { mutableStateOf(false) }
     
     val textForBiometricBtn = if(loginWithAccount) "Login With Biometric" else "Authenticate for using phone"
 
     ColumnCenter(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
         ColumnCenter {
-            ColumnCenter(vertical = Arrangement.SpaceBetween) {
-                Text("Use as guest?")
-                Switch(
-                    checked = loginWithAccount,
-                    onCheckedChange = { loginWithAccount = it}
-                )
-            }
+//            ColumnCenter(vertical = Arrangement.SpaceBetween) {
+//                Text("Use as guest?")
+//                Switch(
+//                    checked = loginWithAccount,
+//                    onCheckedChange = { loginWithAccount = it}
+//                )
+//            }
             if (loginWithAccount) {
                 if (isRegisterMode) {
                     AccountRegisterAuth(

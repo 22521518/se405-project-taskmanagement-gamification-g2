@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Email
@@ -25,8 +26,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.se405.android.core.presentation.components.AppHeader
 import com.example.se405.android.features.users_management.presentation.viewmodel.EditProfileViewModel
 import org.koin.androidx.compose.koinViewModel
+
+import android.net.Uri
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
 @Composable
@@ -39,19 +43,51 @@ fun EditProfileScreen(
 ) {
     val context = LocalContext.current
 
+    // Khởi tạo dữ liệu cũ vào form
+    LaunchedEffect(Unit) {
+        viewModel.initData(currentName, currentEmail, currentAvatarUrl)
+    }
+
+    EditProfileScreenContent(
+        currentName = currentName,
+        displayName = viewModel.displayName,
+        onDisplayNameChange = { viewModel.displayName = it },
+        email = viewModel.email,
+        onEmailChange = { viewModel.email = it },
+        avatarUrl = viewModel.avatarUrl,
+        selectedImageUri = viewModel.selectedImageUri,
+        onImageSelected = { viewModel.selectedImageUri = it },
+        isLoading = viewModel.isLoading,
+        error = viewModel.error,
+        onSave = { viewModel.update(context, onBack) },
+        onBack = onBack
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
+@Composable
+fun EditProfileScreenContent(
+    currentName: String,
+    displayName: String,
+    onDisplayNameChange: (String) -> Unit,
+    email: String,
+    onEmailChange: (String) -> Unit,
+    avatarUrl: String?,
+    selectedImageUri: Uri?,
+    onImageSelected: (Uri?) -> Unit,
+    isLoading: Boolean,
+    error: String?,
+    onSave: () -> Unit,
+    onBack: () -> Unit
+) {
     // Khởi tạo trình chọn ảnh (Photo Picker) của Android
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         // User chọn ảnh xong -> nhét vào ViewModel
         if (uri != null) {
-            viewModel.selectedImageUri = uri
+            onImageSelected(uri)
         }
-    }
-
-    // Khởi tạo dữ liệu cũ vào form
-    LaunchedEffect(Unit) {
-        viewModel.initData(currentName, currentEmail, currentAvatarUrl)
     }
 
     val activeColor = Color(0xFF2563EB)
@@ -59,15 +95,12 @@ fun EditProfileScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Edit Profile", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
+            AppHeader(
+                title = "Edit Profile",
+                showBackButton = true,
+                onBackClick = onBack,
                 actions = {
-                    if (viewModel.isLoading) {
+                    if (isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier
                                 .padding(end = 16.dp)
@@ -77,15 +110,11 @@ fun EditProfileScreen(
                         )
                     } else {
                         // Truyền context vào hàm update để phục vụ cho việc nén ảnh
-                        TextButton(onClick = { viewModel.update(context, onBack) }) {
+                        TextButton(onClick = onSave) {
                             Text("Save", color = activeColor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = Color.Unspecified
-                )
             )
         }
     ) { paddingValues ->
@@ -108,18 +137,18 @@ fun EditProfileScreen(
                         .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (viewModel.selectedImageUri != null) {
+                    if (selectedImageUri != null) {
                         // Dùng GlideImage hiển thị ảnh vừa chọn từ máy
                         GlideImage(
-                            model = viewModel.selectedImageUri,
+                            model = selectedImageUri,
                             contentDescription = "New Avatar",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
-                    } else if (!viewModel.avatarUrl.isNullOrBlank()) {
+                    } else if (!avatarUrl.isNullOrBlank()) {
                         // Dùng GlideImage hiển thị ảnh đang có từ trên mạng (nếu có)
                         GlideImage(
-                            model = viewModel.avatarUrl,
+                            model = avatarUrl,
                             contentDescription = "Current Avatar",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
@@ -164,18 +193,18 @@ fun EditProfileScreen(
             // Input Fields
             EditField(
                 label = "Full Name",
-                value = viewModel.displayName,
+                value = displayName,
                 icon = Icons.Rounded.Person,
-                onValueChange = { viewModel.displayName = it }
+                onValueChange = onDisplayNameChange
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
             EditField(
                 label = "Email Address",
-                value = viewModel.email,
+                value = email,
                 icon = Icons.Rounded.Email,
-                onValueChange = { viewModel.email = it }
+                onValueChange = onEmailChange
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -187,15 +216,36 @@ fun EditProfileScreen(
             )
 
             // Hiển thị lỗi nếu có
-            if (viewModel.error != null) {
+            if (error != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = viewModel.error!!,
+                    text = error,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error
                 )
             }
         }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun EditProfileScreenPreview() {
+    com.example.se405.android.core.presentation.theme.Android_Theme {
+        EditProfileScreenContent(
+            currentName = "John Doe",
+            displayName = "John Doe",
+            onDisplayNameChange = {},
+            email = "john.doe@example.com",
+            onEmailChange = {},
+            avatarUrl = null,
+            selectedImageUri = null,
+            onImageSelected = {},
+            isLoading = false,
+            error = null,
+            onSave = {},
+            onBack = {}
+        )
     }
 }
 

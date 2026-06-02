@@ -39,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.se405.android.R
+import com.example.se405.android.core.presentation.components.AppHeader
 import com.example.se405.android.core.presentation.components.ButtonApp
 import com.example.se405.android.core.presentation.components.ButtonType
 import com.example.se405.android.core.presentation.popup.LocalPopupController
@@ -52,7 +53,6 @@ import com.example.se405.android.features.tasks_management.domain.entity.TaskTyp
 import com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskDetailViewModel
 import com.example.se405.android.features.workspaces_management.presentation.components.AvatarItem
 import com.example.se405.android.features.workspaces_management.presentation.components.AvatarRow
-import com.example.se405.android.features.workspaces_management.presentation.components.SubScreenHeader
 import com.example.se405.android.features.workspaces_management.presentation.components.TagChip
 import com.example.se405.android.features.workspaces_management.presentation.components.TagChipUi
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceUiEvent
@@ -134,26 +134,11 @@ fun TaskDetailScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SubScreenHeader {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(modifier = Modifier.clickable { onBackClick() }) {
-                        Icon(
-                            painter = painterResource(R.drawable.icon_arrow_left),
-                            modifier = Modifier.size(18.dp),
-                            contentDescription = "Go Back"
-                        )
-                    }
-                    Text(
-                        text = "Task Detail",
-                        style = AppText.HeadBold,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
+            AppHeader(
+                title = "Task Detail",
+                showBackButton = true,
+                onBackClick = onBackClick,
+            )
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh = onRefresh,
