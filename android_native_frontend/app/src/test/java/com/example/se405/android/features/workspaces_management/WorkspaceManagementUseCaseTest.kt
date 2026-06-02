@@ -92,7 +92,7 @@ class WorkspaceManagementUseCaseTest {
             println("[-] Không tìm thấy workspace nào")
             return@baseTestLayout
         }
-        val firstProject = firstWS.projects?.firstOrNull()
+        val firstProject = firstWS.projects.firstOrNull()
         if (firstProject == null) {
             println("[-] Workspace '${firstWS.name}' không có project nào")
             return@baseTestLayout

@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalUuidApi::class)
+@file:OptIn(ExperimentalUuidApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.example.se405.android.features.workspaces_management.presentation.screen
 
@@ -12,6 +12,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -65,12 +66,13 @@ import kotlin.uuid.Uuid
 fun ProjectDetailRoute(
     viewModel: ProjectDetailViewModel = koinViewModel(),
     onBackClick: () -> Unit,
-    onNavigateToTask: (Uuid) -> Unit = {}
+    onNavigateToTask: (Uuid, Uuid?) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val availableTags by viewModel.availableTags.collectAsStateWithLifecycle()
     val addableMembersForProject by viewModel.addableMembersForProject.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->
@@ -92,6 +94,8 @@ fun ProjectDetailRoute(
                 availableTags = availableTags,
                 addableMembersForProject = addableMembersForProject,
                 isActionLoading = state.isActionLoading,
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
                 onCreateTask = { title, desc, priority, start, due, tagIds, assigneeId ->
                     viewModel.createTask(title, desc, priority, start, due, tagIds, assigneeId)
                 },
@@ -123,6 +127,8 @@ fun ProjectDetailScreen(
     availableTags: List<Tag> = emptyList(),
     addableMembersForProject: List<AddableMember> = emptyList(),
     isActionLoading: Boolean = false,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
     onCreateTask: (
         title: String,
         description: String,
@@ -141,7 +147,7 @@ fun ProjectDetailScreen(
     onBackClick: () -> Unit = {},
     loadAddableMembersForProject: () -> Unit = {},
     addMembersToProject: (List<Uuid>) -> Unit = {_ ->},
-    onNavigateToTask: (Uuid) -> Unit = {}
+    onNavigateToTask: (Uuid, Uuid?) -> Unit = { _, _ -> }
 ) {
     var activeTab by remember { mutableStateOf(ProjectTab.KANBAN) }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -209,11 +215,17 @@ fun ProjectDetailScreen(
                     }
                 }
 
-                when (activeTab) {
-                    ProjectTab.KANBAN -> ProjectDetailKanbanSection(orgTasks = project.tasks)
-                    ProjectTab.TASKS -> ProjectDetailTaskSection(tasks = project.tasks,
-                        onTaskClick = {task -> onNavigateToTask(Uuid.parse(task.uuid))})
-                    ProjectTab.MEMBERS -> ProjectDetailMemberSection(project.members)
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh,
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                ) {
+                    when (activeTab) {
+                        ProjectTab.KANBAN -> ProjectDetailKanbanSection(orgTasks = project.tasks)
+                        ProjectTab.TASKS -> ProjectDetailTaskSection(tasks = project.tasks,
+                            onTaskClick = {task -> onNavigateToTask(Uuid.parse(task.uuid), task.projectId?.let { Uuid.parse(it) })})
+                        ProjectTab.MEMBERS -> ProjectDetailMemberSection(project.members)
+                    }
                 }
             }
         }
@@ -361,6 +373,7 @@ fun Project.toGetProjectQueryTask(): GetProjectQuery.GetProject {
                         taskCompletionId = log.taskCompletionId.toString(),
                         status = log.status.toString(),
                         completedAt = log.completedAt.toString(),
+                        date = log.date.toString()
                     )
                 },
                 assignees = emptyList(),
@@ -409,7 +422,7 @@ private fun ProjectTabItem(
 private fun ProjectDetailScreenPreview() {
     CompositionLocalProvider(LocalPopupController provides PopupController()){
         Android_Theme {
-            ProjectDetailScreen(project = projects.first().toGetProjectQueryTask(), availableTags = tags, onCreateTask = { _, _, _, _, _, _, _ -> },  onCreateTag = { _, _, _, _ -> },  onNavigateToTask = {}, onBackClick =  {})
+            ProjectDetailScreen(project = projects.first().toGetProjectQueryTask(), availableTags = tags, onCreateTask = { _, _, _, _, _, _, _ -> },  onCreateTag = { _, _, _, _ -> },  onNavigateToTask = { _, _ -> }, onBackClick =  {})
         }
     }
 }

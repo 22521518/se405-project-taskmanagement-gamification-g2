@@ -73,6 +73,9 @@ class ProjectDetailViewModel(
     private val _addableMembersForProject = MutableStateFlow<List<AddableMember>>(emptyList())
     val addableMembersForProject: StateFlow<List<AddableMember>> = _addableMembersForProject.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
         _isActionLoading.value = false
         val errMsg = exception.localizedMessage ?: "An unexpected error occurred"
@@ -88,31 +91,48 @@ class ProjectDetailViewModel(
     }
 
     private fun loadData() {
-        viewModelScope.launch {
-            _isActionLoading.value = true
-            _error.value = null
-            try {
-                val userId = authPreferences.userId.firstOrNull().toUuidOrNull()
-                if (userId == null) {
-                    clearSessionState()
-                    _isActionLoading.value = false
-                    return@launch
-                }
-                val project = workspaceUseCase.getProjectByProjectId(projectId).getOrNull()
-                _rawProjectDetail.value = project
+        viewModelScope.launch { loadDataInternal() }
+    }
 
-                project?.workspaceId?.let { wsIdStr ->
-                    runCatching { Uuid.parse(wsIdStr) }.getOrNull()?.let { wsId ->
-                        _availableTags.value = workspaceUseCase.getTagsByWorkspace(wsId)
-                    }
-                }
-            } catch (e: Exception) {
-                _error.value = e.localizedMessage ?: "Failed to load project"
-                _uiEvent.send(WorkspaceUiEvent.ShowToast("Failed to load project"))
-                Log.e("WSMAN_LOAD_WS", e.toString())
+    /**
+     * User-initiated pull-to-refresh: re-fetch the project from the API. Drives the
+     * pull indicator so a manual retry recovers from transient network errors.
+     */
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                loadDataInternal()
             } finally {
-                _isActionLoading.value = false
+                _isRefreshing.value = false
             }
+        }
+    }
+
+    private suspend fun loadDataInternal() {
+        _isActionLoading.value = true
+        _error.value = null
+        try {
+            val userId = authPreferences.userId.firstOrNull().toUuidOrNull()
+            if (userId == null) {
+                clearSessionState()
+                _isActionLoading.value = false
+                return
+            }
+            val project = workspaceUseCase.getProjectByProjectId(projectId).getOrNull()
+            _rawProjectDetail.value = project
+
+            project?.workspaceId?.let { wsIdStr ->
+                runCatching { Uuid.parse(wsIdStr) }.getOrNull()?.let { wsId ->
+                    _availableTags.value = workspaceUseCase.getTagsByWorkspace(wsId)
+                }
+            }
+        } catch (e: Exception) {
+            _error.value = e.localizedMessage ?: "Failed to load project"
+            _uiEvent.send(WorkspaceUiEvent.ShowToast("Failed to load project"))
+            Log.e("WSMAN_LOAD_WS", e.toString())
+        } finally {
+            _isActionLoading.value = false
         }
     }
 

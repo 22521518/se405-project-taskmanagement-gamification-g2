@@ -21,6 +21,8 @@ import com.example.se405.android.features.tasks_management.domain.use_case.TaskU
 import com.example.se405.android.features.tasks_management.domain.use_case.WorkspaceUseCases
 import com.example.se405.android.features.tasks_management.domain.use_case.crud.MarkTaskDone
 import com.example.se405.android.features.tasks_management.domain.use_case.crud.MarkTaskWontDo
+import com.example.se405.android.features.tasks_management.domain.use_case.PersonalTaskUsecase
+import com.example.se405.android.features.workspaces_management.domain.use_case.ExtWorkspaceWithGetCreateUseCases
 import com.example.se405.android.features.tasks_management.presentation.components.CreateTagUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,8 +54,11 @@ class TaskManagementViewModel(
     private val authPreferences: AuthPreferences,
     private val markTaskDoneUseCase: MarkTaskDone,
     private val markTaskWontDoUseCase: MarkTaskWontDo,
+    private val personalTaskUsecase: PersonalTaskUsecase,
+    private val extWorkspaceUseCase: ExtWorkspaceWithGetCreateUseCases,
 ) : ViewModel() {
 
+    private var _rawWorkspacesList: List<Workspace> = emptyList()
     private val _allWorkspaces = MutableStateFlow<List<Workspace>>(emptyList())
     private val _workspaces = MutableStateFlow<List<Workspace>>(emptyList())
     val workspaces: StateFlow<List<Workspace>> = _workspaces.asStateFlow()
@@ -74,6 +79,8 @@ class TaskManagementViewModel(
     val currentWorkspaceId: StateFlow<Uuid?> = _currentWorkspaceId.asStateFlow()
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
     private val _uiEvent = kotlinx.coroutines.channels.Channel<TaskUiEvent>(kotlinx.coroutines.channels.Channel.BUFFERED)
@@ -105,15 +112,22 @@ class TaskManagementViewModel(
         }
     }
 
-    fun refresh() {
+    /**
+     * Re-fetch all data from the API. Used both for programmatic refresh (e.g. after a
+     * date change) and for user-initiated pull-to-refresh. When [viaPull] is true the
+     * pull-to-refresh indicator is driven instead of the full-screen loading state, so a
+     * manual reattempt after a network error reuses the same fetch path.
+     */
+    fun refresh(viaPull: Boolean = false) {
         viewModelScope.launch {
             val userId = _currentUserId.value ?: authPreferences.userId.firstOrNull().toUuidOrNull()
             if (userId == null) {
                 clearSessionState()
+                if (viaPull) _isRefreshing.value = false
                 return@launch
             }
             _currentUserId.value = userId
-            _isLoading.value = true
+            if (viaPull) _isRefreshing.value = true else _isLoading.value = true
             _error.value = null
             try {
                 refreshAll(userId)
@@ -122,6 +136,7 @@ class TaskManagementViewModel(
                 _uiEvent.send(TaskUiEvent.ShowToast("Refresh failed: please check connection"))
             } finally {
                 _isLoading.value = false
+                _isRefreshing.value = false
             }
         }
     }
@@ -139,18 +154,23 @@ class TaskManagementViewModel(
     }
 
     private suspend fun refreshAll(userId: Uuid) {
-        val fetchedTasks = taskUseCases.getTask(userId)
+        // Always fetch the full personal task list. The "Date" tab derives its
+        // per-day view client-side (buildAndApplyWorkspaces + applyDateFilter), while
+        // the "All" tab consumes the full list directly.
+        val fetchedTasks = personalTaskUsecase.getAllTasks(userId)
         _tasks.value = fetchedTasks
 
+        val workspacesList = extWorkspaceUseCase.getWorkspaceListByUserId(userId)
+        _rawWorkspacesList = workspacesList
+
         val tagsByUser = tagUseCases.getTagsByUser(userId)
-        val workspaceId = resolveWorkspaceId(tagsByUser)
-        _currentWorkspaceId.value = workspaceId
+        val tagsFromWorkspaces = workspacesList.flatMap { tagUseCases.getTagsByWorkspace(it.id) }
+        _availableTags.value = mergeTags(tagsByUser, tagsFromWorkspaces)
 
-        val tagsByWorkspace = workspaceId?.let { tagUseCases.getTagsByWorkspace(it) }.orEmpty()
-        _availableTags.value = mergeTags(tagsByUser, tagsByWorkspace)
+        _projects.value = workspacesList.flatMap { it.projects }
+        _members.value = workspacesList.flatMap { it.members }.distinctBy { it.userId }
 
-        _projects.value = workspaceId?.let { workspaceUseCases.getProjectsByWorkspace(it) }.orEmpty()
-        _members.value = workspaceId?.let { workspaceUseCases.getMembersByWorkspace(it) }.orEmpty()
+        _currentWorkspaceId.value = workspacesList.firstOrNull()?.id ?: resolveWorkspaceId(tagsByUser)
 
         rebuildWorkspaces()
     }
@@ -501,10 +521,12 @@ class TaskManagementViewModel(
     private fun rebuildWorkspaces(forceRefreshFromRemote: Boolean = false) {
         if (forceRefreshFromRemote) {
             viewModelScope.launch {
-                val workspaceId = _currentWorkspaceId.value
-                if (workspaceId != null) {
-                    _projects.value = workspaceUseCases.getProjectsByWorkspace(workspaceId)
-                    _members.value = workspaceUseCases.getMembersByWorkspace(workspaceId)
+                val userId = _currentUserId.value
+                if (userId != null) {
+                    val workspacesList = extWorkspaceUseCase.getWorkspaceListByUserId(userId)
+                    _rawWorkspacesList = workspacesList
+                    _projects.value = workspacesList.flatMap { it.projects }
+                    _members.value = workspacesList.flatMap { it.members }.distinctBy { it.userId }
                 }
                 buildAndApplyWorkspaces()
             }
@@ -514,16 +536,40 @@ class TaskManagementViewModel(
     }
 
     private fun buildAndApplyWorkspaces() {
-        val workspaceId = _currentWorkspaceId.value ?: FALLBACK_WORKSPACE_ID
-        val workspaceName = _allWorkspaces.value.firstOrNull()?.name ?: "Workspace"
-        val mergedProjects = mergeProjectsWithTasks(_projects.value, _tasks.value)
-        val workspace = Workspace(
-            id = workspaceId,
-            name = workspaceName,
-            projects = mergedProjects,
-            members = _members.value,
-        )
-        _allWorkspaces.value = listOf(workspace)
+        val targetDate = _selectedDate.value.toLocalDate()
+        val tasks = _tasks.value
+        val tasksByProjectId = tasks.groupBy { it.projectId }
+
+        val populatedWorkspaces = _rawWorkspacesList.map { workspace ->
+            val updatedProjects = workspace.projects.map { project ->
+                val projectTasks = tasksByProjectId[project.id].orEmpty().map { task ->
+                    getTaskStatus(task, targetDate)
+                }
+                project.copy(tasks = projectTasks)
+            }
+            workspace.copy(projects = updatedProjects)
+        }.toMutableList()
+
+        // Gather all tasks that don't belong to any project in the user's workspaces
+        val allProjectIds = _rawWorkspacesList.flatMap { it.projects }.map { it.id }.toSet()
+        val unassignedTasks = tasks.filter { it.projectId == null || it.projectId !in allProjectIds }
+            .map { getTaskStatus(it, targetDate) }
+
+        if (unassignedTasks.isNotEmpty()) {
+            val personalProject = Project(
+                id = UNASSIGNED_PROJECT_ID,
+                name = "Personal",
+                tasks = unassignedTasks,
+            )
+            val personalWorkspace = Workspace(
+                id = FALLBACK_WORKSPACE_ID,
+                name = "Personal Workspace",
+                projects = listOf(personalProject)
+            )
+            populatedWorkspaces.add(0, personalWorkspace)
+        }
+
+        _allWorkspaces.value = populatedWorkspaces
         applyDateFilter(_selectedDate.value)
     }
 

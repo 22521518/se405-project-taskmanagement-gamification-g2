@@ -48,10 +48,7 @@ class PersonalTaskService(
                 allLogs.filter { log -> !log.date.isBefore(range.first) && !log.date.isAfter(range.second) }
             } ?: allLogs
             val computedStatus = computeStatus(task, filteredLogs, targetDate)
-            task.copy(
-                status = computedStatus,
-                taskCompletionLogs = filteredLogs.toMutableList(),
-            )
+            task.copy(status = computedStatus)
         }
     }
 

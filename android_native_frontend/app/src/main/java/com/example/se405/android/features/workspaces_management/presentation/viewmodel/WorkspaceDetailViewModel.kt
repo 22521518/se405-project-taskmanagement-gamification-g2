@@ -93,8 +93,26 @@ class WorkspaceDetailViewModel(
     private val _addableMembersForWorkspace = MutableStateFlow<List<AddableMember>>(emptyList())
     val addableMembersForWorkspace: StateFlow<List<AddableMember>> = _addableMembersForWorkspace.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
         viewModelScope.launch { loadWorkspaceDetail() }
+    }
+
+    /**
+     * User-initiated pull-to-refresh: re-fetch the workspace from the API. Drives the
+     * pull indicator so a manual retry recovers from transient network errors.
+     */
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                loadWorkspaceDetail()
+            } finally {
+                _isRefreshing.value = false
+            }
+        }
     }
 
     private suspend fun loadWorkspaceDetail() {

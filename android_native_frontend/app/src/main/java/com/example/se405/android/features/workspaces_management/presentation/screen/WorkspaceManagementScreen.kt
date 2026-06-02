@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalUuidApi::class)
+@file:OptIn(ExperimentalUuidApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.example.se405.android.features.workspaces_management.presentation.screen
 
@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -26,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -71,6 +74,7 @@ fun WorkspaceManagementRoute(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->
@@ -90,6 +94,8 @@ fun WorkspaceManagementRoute(
             WorkspaceManagementScreen(
                 workspaces = state.data,
                 searchQuery = searchQuery,
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
                 onSearchQueryChange = { viewModel.onSearchQueryChanged(it) },
                 onNewWorkspaceCreate = { workspaceName ->
                     viewModel.createWorkspace(workspaceName)
@@ -112,6 +118,8 @@ fun WorkspaceManagementScreen(
     workspaces: List<Workspace>,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
     onNewWorkspaceCreate: (String) -> Unit = {},
     onBackClick: () -> Unit = {},
     onNavigateToWorkspace: (Uuid) -> Unit = {}
@@ -144,13 +152,21 @@ fun WorkspaceManagementScreen(
                 modifier = Modifier
                     .fillMaxWidth()
             )
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.fillMaxSize()
             ) {
-                for (workspace in workspaces) {
-                    WorkspaceCard(workspace = workspace, modifier = Modifier.clickable(onClick = { onNavigateToWorkspace(workspace.id) }))
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    for (workspace in workspaces) {
+                        WorkspaceCard(workspace = workspace, modifier = Modifier.clickable(onClick = { onNavigateToWorkspace(workspace.id) }))
+                    }
                 }
             }
         }
@@ -191,13 +207,7 @@ private fun WorkspaceCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 1.dp,
-                shape = RoundedCornerShape(24.dp),
-                ambientColor = Color.Black.copy(alpha = 0.8f),
-                spotColor = Color.Black.copy(alpha = 0.16f),
-                clip = false
-            )
+            .border(1.dp, Color.Gray, shape = RoundedCornerShape(12.dp))
             .background(
                 color = Color.Transparent,
                 shape = RoundedCornerShape(24.dp)
@@ -209,7 +219,7 @@ private fun WorkspaceCard(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Column (modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.SpaceBetween, horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = workspace.name,
                     style = AppText.HeadSemiBold,

@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalUuidApi::class)
+@file:OptIn(ExperimentalUuidApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.example.se405.android.features.workspaces_management.presentation.screen
 
@@ -21,6 +21,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -79,6 +80,7 @@ fun WorkspaceDetailRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val availableTags by viewModel.availableTags.collectAsStateWithLifecycle()
     val addableMembersForWorkspace by viewModel.addableMembersForWorkspace.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
@@ -100,6 +102,8 @@ fun WorkspaceDetailRoute(
                 recentActivities = state.data.recentActivities,
                 addableMembersForWorkspace = addableMembersForWorkspace,
                 isActionLoading = state.isActionLoading,
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
                 onBackClick = onBackClick,
                 onNavigateToProject = onNavigateToProject,
                 onNewProjectCreate = { projectName -> viewModel.createProject(projectName) },
@@ -134,6 +138,8 @@ fun WorkspaceDetailScreen(
     availableTags: List<Tag>,
     addableMembersForWorkspace: List<AddableMember> = emptyList(),
     isActionLoading: Boolean = false,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
     onCreateTask: (
         projectId: Uuid,
         title: String,
@@ -156,7 +162,7 @@ fun WorkspaceDetailScreen(
     onNavigateToProject: (Uuid) -> Unit = {},
     onNewProjectCreate: (String) -> Unit = {},
 ) {
-    var activeTab by remember { mutableStateOf(WorkspaceTab.TASKS) }
+    var activeTab by remember { mutableStateOf(WorkspaceTab.MEMBERS) }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             SubScreenHeader {
@@ -278,14 +284,20 @@ fun WorkspaceDetailScreen(
                 }
             }
 
-            when (activeTab) {
-                WorkspaceTab.PROJECTS -> WorkspaceDetailProjectsSection(
-                    projects = workspace.projects,
-                    onNavigateToProject = onNavigateToProject
-                )
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.weight(1f).fillMaxWidth()
+            ) {
+                when (activeTab) {
+                    WorkspaceTab.PROJECTS -> WorkspaceDetailProjectsSection(
+                        projects = workspace.projects,
+                        onNavigateToProject = onNavigateToProject
+                    )
 
-                WorkspaceTab.TASKS -> WorkspaceDetailTaskSection(recentActivities, workspace.projects)
-                WorkspaceTab.MEMBERS -> WorkspaceDetailMemberSection(workspace.members)
+                    WorkspaceTab.TASKS -> WorkspaceDetailTaskSection(recentActivities, workspace.projects)
+                    WorkspaceTab.MEMBERS -> WorkspaceDetailMemberSection(workspace.members)
+                }
             }
         }
 

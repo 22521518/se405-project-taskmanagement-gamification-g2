@@ -64,7 +64,7 @@ class TaskController(
     fun taskCompletionLogs(
         task: com.example.se405.backend.database.model.TaskEntity,
     ): List<TaskCompletionLogEntity> {
-        return task.taskCompletionLogs
+        return taskCompletionLogRepository.findByTaskId(task.uuid!!)
     }
 
     /** Resolve assignees list for a Task */
@@ -101,36 +101,39 @@ class TaskController(
             ?.mapNotNull { tagRepository.findById(it).orElse(null) }
             ?.toMutableList() ?: mutableListOf()
 
-        val taskUuid = UUID.randomUUID()
-        val task = com.example.se405.backend.database.model.TaskEntity(
-            uuid = taskUuid,
-            title = input.title,
-            description = input.description,
-            type = input.type,
-            status = input.status,
-            priority = input.priority,
-            creatorId = finalCreatorId,
-            projectId = input.projectId,
-            startDate = input.startDate?.let { LocalDate.parse(it) },
-            dueDate = input.dueDate?.let { LocalDate.parse(it) },
-            repetition = input.repetition,
-            tags = tags,
+        val saved = taskRepository.save(
+            com.example.se405.backend.database.model.TaskEntity(
+                title = input.title,
+                description = input.description,
+                type = input.type,
+                status = input.status,
+                priority = input.priority,
+                creatorId = finalCreatorId,
+                projectId = input.projectId,
+                startDate = input.startDate?.let { LocalDate.parse(it) },
+                dueDate = input.dueDate?.let { LocalDate.parse(it) },
+                repetition = input.repetition,
+                tags = tags,
+            )
         )
 
-        input.assigneeIds?.forEach { userId ->
-            val user = userRepository.findById(userId).orElse(null)
-            if (user != null) {
-                task.assignees.add(
-                    com.example.se405.backend.database.model.TaskAssigneeEntity(
-                        id = com.example.se405.backend.database.model.TaskAssigneeId(taskId = taskUuid, userId = userId),
-                        task = task,
-                        user = user
+        if (!input.assigneeIds.isNullOrEmpty()) {
+            input.assigneeIds.forEach { userId ->
+                val user = userRepository.findById(userId).orElse(null)
+                if (user != null) {
+                    saved.assignees.add(
+                        com.example.se405.backend.database.model.TaskAssigneeEntity(
+                            id = com.example.se405.backend.database.model.TaskAssigneeId(taskId = saved.uuid!!, userId = userId),
+                            task = saved,
+                            user = user
+                        )
                     )
-                )
+                }
             }
+            return taskRepository.save(saved)
         }
 
-        return taskRepository.save(task)
+        return saved
     }
 
     @MutationMapping

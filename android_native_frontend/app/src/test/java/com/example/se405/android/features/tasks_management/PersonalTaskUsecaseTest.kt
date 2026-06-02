@@ -29,7 +29,7 @@ private fun String?.toUuidOrNull(): Uuid? {
 }
 
 @RunWith(RobolectricTestRunner::class)
-class PersonalTaskUsecaseTest {
+class PersonalTaskUseCaseTest {
 
     private fun baseTestLayout(name: String, block: suspend (Koin, Uuid) -> Unit) {
         println("=== test_$name ===")

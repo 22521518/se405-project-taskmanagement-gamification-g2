@@ -14,8 +14,8 @@ constructor(
     val avatarUrl: String?,
     val isOnline: Boolean = false,
 
-    val createdAt: LocalDateTime?,
-    val updatedAt: LocalDateTime?,
+    val createdAt: LocalDateTime? = null,
+    val updatedAt: LocalDateTime? = null,
 ) {
     init {
         if (email != null) {

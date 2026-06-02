@@ -31,10 +31,12 @@ interface TaskRepository : JpaRepository<TaskEntity, UUID> {
 
     @Query("""
     SELECT DISTINCT t FROM TaskEntity t
-    LEFT JOIN FETCH t.tags
     LEFT JOIN FETCH t.assignees ta
-    LEFT JOIN FETCH ta.user
-    WHERE t.type = 'HABIT' AND t.creatorId = :userId
+    LEFT JOIN FETCH ta.user u
+    WHERE
+        (t.type = 'HABIT' AND t.creatorId = :userId)
+        OR
+        (t.type = 'PROJECT' AND u.uuid = :userId)
 """)
     fun findPersonalTasksByUserIdWithDetails(userId: UUID): List<TaskEntity>
 

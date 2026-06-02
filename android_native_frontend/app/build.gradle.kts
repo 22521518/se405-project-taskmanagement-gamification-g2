@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.compose.foundation)
     testImplementation(libs.androidx.navigation.testing)
     implementation(libs.compose.v100beta01)
     implementation(libs.transport.runtime)

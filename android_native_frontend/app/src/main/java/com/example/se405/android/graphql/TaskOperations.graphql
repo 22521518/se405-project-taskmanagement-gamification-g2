@@ -129,7 +129,11 @@ query PersonalTasks($userId: UUID!) {
   }
 }
 
-query PersonalTasksByDateRange($userId: UUID!, $from: LocalDate!, $to: LocalDate!) {
+query PersonalTasksByDateRange(
+  $userId: UUID!
+  $from: LocalDate!
+  $to: LocalDate!
+) {
   personalTasksByDateRange(userId: $userId, from: $from, to: $to) {
     uuid
     title

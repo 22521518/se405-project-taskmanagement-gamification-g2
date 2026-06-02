@@ -6,6 +6,7 @@ import com.example.se405.android.features.workspaces_management.data.repository.
 import com.example.se405.android.features.workspaces_management.domain.repository.ExtWorkspaceRepositoryWithGet
 import com.example.se405.android.features.workspaces_management.domain.use_case.ExtWorkspaceWithGetCreateUseCases
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.ProjectDetailViewModel
+import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceDetailViewModel
 import com.example.se405.android.features.workspaces_management.presentation.viewmodel.WorkspaceManagementViewModel
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
@@ -28,6 +29,7 @@ val workspaceDomainModule = module {
 val wsViewModelModule = module {
     viewModelOf(::WorkspaceManagementViewModel)
     viewModelOf(::ProjectDetailViewModel)
+    viewModelOf(::WorkspaceDetailViewModel)
 }
 
 val workspaceManagementModule = listOf(workspaceDataModule, workspaceDomainModule, wsViewModelModule)

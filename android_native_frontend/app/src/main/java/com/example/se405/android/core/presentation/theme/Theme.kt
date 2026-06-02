@@ -3,6 +3,7 @@ package com.example.se405.android.core.presentation.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
     // primary group
@@ -20,7 +21,7 @@ private val LightColorScheme = lightColorScheme(
     onTertiary = White,
 
     // background / surface
-    background = Blue90,
+    background = Color.White,   //Blue90,
     surface = BlueGrey80,       // pallet2-grey
     onBackground = Blue40,
     onSurface = Blue40,

@@ -26,9 +26,21 @@ enum MessageType {
     FILE
 }
 
-# ───────────────────────────────────────────────────────────────
-# Root operations
-# ───────────────────────────────────────────────────────────────
+"""
+ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ Input types
+ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+"""
+input CreateTaskInput {
+  title: String!
+
+  description: String
+
+  repetition: Int
+
+  type: TaskType!
+
+  status: TaskStatus!
 
 type Query {
     #User
@@ -45,13 +57,10 @@ type Query {
     getTagsForTaskOwnership(taskId: ID!): [Tag!]!
     getHabitLabels: [HabitLabel!]!
 
-    # Workspace
-    getWorkspaceListByUserId(userId: ID!): [Workspace!]!
-    getWorkspace(uuid: ID!): Workspace
-    getProject(uuid: ID!): Project!
-    getProjectsByWorkspace(workspaceId: ID!): [Project!]!
-    getMembersByWorkspace(workspaceId: ID!): [WorkspaceMember!]!
-    getMembersByProject(projectId: ID!): [ProjectMember!]!
+  """
+   projectId required if type = PROJECT; startDate/dueDate only set when projectId != null
+  """
+  projectId: ID
 
     getWorkspaceActivities(uuid: ID!, pagination: PaginationInput): WorkspaceActivityPage!
 
@@ -67,72 +76,95 @@ type Query {
     getPinnedMessages(conversationId: ID!): [Message!]!
     getSharedMedia(conversationId: ID!): [Message!]!
 
-    getSharedLinks(conversationId: ID!): [Message!]!
-    searchMessages(conversationId: ID!, keyword: String!): [Message!]!
-    getConversationMembers(conversationId: ID!): [User!]!
+  assigneeIds: [ID!]
+}
+
+input CreateWorkspaceInput {
+  name: String!
+
+  ownerId: ID!
+}
+
+type HabitLabel {
+  uuid: ID!
+
+  name: String!
+
+  description: String!
+}
+
+"""
+Built-in ID
+"""
+scalar ID
+
+"""
+Built-in Int
+"""
+scalar Int
+
+input MarkTaskDoneInput {
+  taskId: ID!
+
+  userId: ID!
+
+  """
+   ISO date string (yyyy-MM-dd) of the day being tracked
+  """
+  date: String!
 }
 
 type Mutation {
-    #User
-    updateFcmToken(token: String!): Boolean
-    updateUserPresence(isOnline: Boolean!): Boolean!
-    # Task CRUD
-    createTask(input: CreateTaskInput!): Task!
-    updateTask(input: UpdateTaskInput!): Task!
-    deleteTask(uuid: ID!): Task!
+  """
+   Task CRUD
+  """
+  createTask(input: CreateTaskInput!): Task!
 
-    # Task completion
-    markTaskDone(input: MarkTaskDoneInput!): TaskCompletionLog!
-    markTaskWontDo(input: MarkTaskDoneInput!): TaskCompletionLog!
+  updateTask(input: UpdateTaskInput!): Task!
 
-    # Tag CRUD
-    createTag(input: CreateTagInput!): Tag!
-    updateTag(input: UpdateTagInput!): Tag!
-    deleteTag(uuid: ID!): Tag!
+  deleteTask(uuid: ID!): Task!
 
-    # Workspace / Project
-    createWorkspace(input: CreateWorkspaceInput!): Workspace!
-    deleteWorkspace(uuid: ID!): Workspace!
-    createProject(input: CreateProjectInput!): Project!
-    deleteProject(uuid: ID!): Project!
+  """
+   Task completion
+  """
+  markTaskDone(input: MarkTaskDoneInput!): TaskCompletionLog!
 
-    ## Members Workspace / Project
-    addMemberToWorkspace(workspaceId: ID!, userId: ID!, role: WorkspaceRole!): WorkspaceMember!
-    addMemberToProject(projectId: ID!, userId: ID!): ProjectMember!
-    addMembersToWorkspace(workspaceId: ID!, userIds: [ID!]!, role: WorkspaceRole!): [WorkspaceMember!]!
-    addMembersToProject(projectId: ID!, userIds: [ID!]!): [ProjectMember!]!
-    removeMemberFromProject(projectId: ID!, userId: ID!): Boolean!
-    removeMemberFromWorkspace(workspaceId: ID!, userId: ID!): Boolean!
+  markTaskWontDo(input: MarkTaskDoneInput!): TaskCompletionLog!
 
-    # Chat / Message
-    # Tạo phòng chat mới (Đơn hoặc Nhóm)
-    createConversation(type: ConversationType!, name: String, participantIds: [ID!]!): Conversation!
-    # Gửi tin nhắn vào phòng chat
-    sendMessage(
-        conversationId: ID!,
-        content: String!,
-        replyToId: ID,
-        type: MessageType!,
-        fileUrl: String,
-        fileName: String,
-        fileSize: String,
-        mentionedUserIds: [ID!]): Message!
+  """
+   Tag CRUD
+  """
+  createTag(input: CreateTagInput!): Tag!
 
+  updateTag(input: UpdateTagInput!): Tag!
 
-    renameConversation(conversationId: ID!, newName: String!): Conversation!
-    revokeMessage(messageId: ID!): Message!
-    togglePinMessage(messageId: ID!): Message!
-}
+  deleteTag(uuid: ID!): Tag!
 
-# ───────────────────────────────────────────────────────────────
-# Core types — full objects for all FK relations
-# ───────────────────────────────────────────────────────────────
+  """
+   Workspace / Project
+  """
+  createWorkspace(input: CreateWorkspaceInput!): Workspace!
 
-# ── Pagination types ──────────────────────────────────────────
+  deleteWorkspace(uuid: ID!): Workspace!
 
-input PaginationInput {
-    page: Int   # 0-based page index
-    size: Int   # number of items per page
+  createProject(input: CreateProjectInput!): Project!
+
+  deleteProject(uuid: ID!): Project!
+
+  """
+  # Members Workspace / Project
+  """
+  addMemberToWorkspace(workspaceId: ID!, userId: ID!, role: WorkspaceRole!): WorkspaceMember!
+
+  addMemberToProject(projectId: ID!, userId: ID!): ProjectMember!
+
+  addMembersToWorkspace(workspaceId: ID!, userIds: [ID!]!, role: WorkspaceRole!): [WorkspaceMember!]!
+
+  addMembersToProject(projectId: ID!, userIds: [ID!]!): [ProjectMember!]!
+
+  removeMemberFromProject(projectId: ID!, userId: ID!): Boolean!
+
+  removeMemberFromWorkspace(workspaceId: ID!, userId: ID!): Boolean!
 }
 
 type PageInfo {
@@ -144,76 +176,40 @@ type PageInfo {
     hasPrevious: Boolean!
 }
 
-type WorkspaceActivityPage {
-    content: [TaskCompletionLog!]!
-    pageInfo: PageInfo!
-}
+"""
+ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ Core types â€” full objects for all FK relations
+ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ â”€â”€ Pagination types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+"""
+input PaginationInput {
+  page: Int
 
-type Task {
-    uuid: ID!
-    title: String!
-    description: String
-    repetition: Int
-    type: TaskType!
-    status: TaskStatus!
-    priority: TaskPriority!
-    # Only set when type = PROJECT
-    projectId: ID
-    startDate: String
-    dueDate: String
-    # Resolved full objects
-    creator: User
-    tags: [Tag!]!
-    taskCompletionLogs: [TaskCompletionLog!]!
-    assignees: [TaskAssignee!]!
-}
-
-type Tag {
-    uuid: ID!
-    name: String!
-    color: Int!
-    ownershipType: TagOwnershipType!
-    workspaceId: ID
-    createdBy: ID!
-    createdAt: String!
-    updatedAt: String!
-    # Resolved full objects
-    creator: User
-    label: HabitLabel!
-    tasks: [Task!]!
-}
-
-type TaskCompletionLog {
-    taskCompletionId: ID!
-    taskId: ID!
-    userId: ID!
-    date: String!
-    completedAt: String!
-    status: String!
-    # Resolved full objects
-    task: Task!
-    user: User!
-}
-
-type Workspace {
-    uuid: ID!
-    name: String!
-    # Resolved full objects
-    projects: [Project!]!
-    members: [WorkspaceMember!]!
-    owner: User!
+  """
+   0-based page index
+  """
+  size: Int
 }
 
 type Project {
-    uuid: ID!
-    name: String!
-    workspaceId: ID!
-    updatedAt: String!
-    createdAt: String!
-    # Resolved full object
-    workspace: Workspace
-    members: [ProjectMember!]!
-    tasks: [Task!]!
+  uuid: ID!
+
+  name: String!
+
+  workspaceId: ID!
+
+  updatedAt: String!
+
+  createdAt: String!
+
+  """
+   Resolved full object
+  """
+  workspace: Workspace
+
+  members: [ProjectMember!]!
+
+  tasks: [Task!]!
 }
 
 type ProjectMember {
@@ -224,21 +220,55 @@ type ProjectMember {
     user: User
 }
 
-type TaskAssignee {
-    taskId: ID!
-    userId: ID!
+"""
+ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ Root operations
+ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+"""
+type Query {
+  """
+   Task
+  """
+  getTasks(userId: ID!): [Task!]!
 
-    user: User!
-    task: Task!
-}
+  personalTasks(userId: UUID!): [Task!]!
 
-type WorkspaceMember {
-    workspaceId: ID!
-    userId: ID!
-    role: WorkspaceRole!
-    joinedAt: String!
-    # Resolved full object
-    user: User
+  personalTasksByDateRange(userId: UUID!, from: LocalDate!, to: LocalDate!): [Task!]!
+
+  getTaskCompletionLogs(taskId: ID!): [TaskCompletionLog!]!
+
+  """
+   Tag / Label
+  """
+  getTagsByUser(userId: ID!): [Tag!]!
+
+  getTagsByWorkspace(workspaceId: ID!): [Tag!]!
+
+  getTagsForTaskOwnership(taskId: ID!): [Tag!]!
+
+  getHabitLabels: [HabitLabel!]!
+
+  """
+   Workspace
+  """
+  getWorkspaceListByUserId(userId: ID!): [Workspace!]!
+
+  getWorkspace(uuid: ID!): Workspace
+
+  getProject(uuid: ID!): Project!
+
+  getProjectsByWorkspace(workspaceId: ID!): [Project!]!
+
+  getMembersByWorkspace(workspaceId: ID!): [WorkspaceMember!]!
+
+  getMembersByProject(projectId: ID!): [ProjectMember!]!
+
+  getWorkspaceActivities(uuid: ID!, pagination: PaginationInput): WorkspaceActivityPage!
+
+  """
+   User
+  """
+  getUsersExcluding(excludeUserId: ID!): [User!]!
 }
 
 type HabitLabel {
@@ -247,16 +277,20 @@ type HabitLabel {
     description: String!
 }
 
-type User {
-    uuid: ID!
-    email: String!
-    username: String!
-    displayName: String!
-    avatarUrl: String
-    createdAt: String!
-    updatedAt: String!
-    isOnline: Boolean!
-    lastSeen: String
+  createdBy: ID!
+
+  createdAt: String!
+
+  updatedAt: String!
+
+  """
+   Resolved full objects
+  """
+  creator: User
+
+  label: HabitLabel!
+
+  tasks: [Task!]!
 }
 
 type Message {
@@ -290,28 +324,113 @@ type Subscription {
     messageEvents(conversationId: ID!): MessagePayload!
 }
 
-type MessagePayload {
-    eventType: String!
-    message: Message!
-}
-# ═══════════════════════════════════════════════════════════════
-# Input types
-# ───────────────────────────────────────────────────────────────
+  title: String!
 
-input CreateTaskInput {
-    title: String!
-    description: String
-    repetition: Int
-    type: TaskType!
-    status: TaskStatus!
-    priority: TaskPriority!
-    creatorId: ID
-    # projectId required if type = PROJECT; startDate/dueDate only set when projectId != null
-    projectId: ID
-    startDate: String
-    dueDate: String
-    tagIds: [ID!]
-    assigneeIds: [ID!]
+  description: String
+
+  repetition: Int
+
+  type: TaskType!
+
+  status: TaskStatus!
+
+  priority: TaskPriority!
+
+  """
+   Only set when type = PROJECT
+  """
+  projectId: ID
+
+  startDate: String
+
+  dueDate: String
+
+  """
+   Resolved full objects
+  """
+  creator: User
+
+  tags: [Tag!]!
+
+  taskCompletionLogs: [TaskCompletionLog!]!
+
+  assignees: [TaskAssignee!]!
+}
+
+type TaskAssignee {
+  taskId: ID!
+
+  userId: ID!
+
+  user: User!
+
+  task: Task!
+}
+
+type TaskCompletionLog {
+  taskCompletionId: ID!
+
+  taskId: ID!
+
+  userId: ID!
+
+  date: String!
+
+  completedAt: String!
+
+  status: String!
+
+  """
+   Resolved full objects
+  """
+  task: Task!
+
+  user: User!
+}
+
+enum TaskPriority {
+  LOW
+
+  MEDIUM
+
+  HIGH
+}
+
+enum TaskStatus {
+  TODO
+
+  IN_PROGRESS
+
+  DONE
+
+  CANCELLED
+
+  FAILED
+}
+
+"""
+ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ Enums â€” mirror frontend Kotlin enums exactly
+ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+"""
+enum TaskType {
+  PROJECT
+
+  HABIT
+}
+
+input UpdateTagInput {
+  uuid: ID!
+
+  name: String
+
+  color: Int
+
+  ownershipType: TagOwnershipType
+
+  workspaceId: ID
+
+  labelId: ID
 }
 
 input UpdateTaskInput {
@@ -329,11 +448,56 @@ input UpdateTaskInput {
     assigneeIds: [ID!]
 }
 
-input MarkTaskDoneInput {
-    taskId: ID!
-    userId: ID!
-    # ISO date string (yyyy-MM-dd) of the day being tracked
-    date: String!
+type User {
+  uuid: ID!
+
+  email: String!
+
+  username: String!
+
+  displayName: String!
+
+  avatarUrl: String
+
+  createdAt: String!
+
+  updatedAt: String!
+}
+
+type Workspace {
+  uuid: ID!
+
+  name: String!
+
+  """
+   Resolved full objects
+  """
+  projects: [Project!]!
+
+  members: [WorkspaceMember!]!
+
+  owner: User!
+}
+
+type WorkspaceActivityPage {
+  content: [TaskCompletionLog!]!
+
+  pageInfo: PageInfo!
+}
+
+type WorkspaceMember {
+  workspaceId: ID!
+
+  userId: ID!
+
+  role: WorkspaceRole!
+
+  joinedAt: String!
+
+  """
+   Resolved full object
+  """
+  user: User
 }
 
 input CreateTagInput {
@@ -359,8 +523,152 @@ input CreateWorkspaceInput {
     ownerId: ID!
 }
 
-input CreateProjectInput {
-    name: String!
-    creatorId: ID!
-    workspaceId: ID!
+type __InputValue {
+  name: String!
+
+  description: String
+
+  type: __Type!
+
+  defaultValue: String
+
+  isDeprecated: Boolean
+
+  deprecationReason: String
+}
+
+"""
+A GraphQL Introspection defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, the entry points for query, mutation, and subscription operations.
+"""
+type __Schema {
+  description: String
+
+  """
+  A list of all types supported by this server.
+  """
+  types: [__Type!]!
+
+  """
+  The type that query operations will be rooted at.
+  """
+  queryType: __Type!
+
+  """
+  If this server supports mutation, the type that mutation operations will be rooted at.
+  """
+  mutationType: __Type
+
+  """
+  'A list of all directives supported by this server.
+  """
+  directives: [__Directive!]!
+
+  """
+  'If this server support subscription, the type that subscription operations will be rooted at.
+  """
+  subscriptionType: __Type
+}
+
+type __Type {
+  kind: __TypeKind!
+
+  name: String
+
+  description: String
+
+  fields(includeDeprecated: Boolean = false): [__Field!]
+
+  interfaces: [__Type!]
+
+  possibleTypes: [__Type!]
+
+  enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
+
+  inputFields(includeDeprecated: Boolean = false): [__InputValue!]
+
+  ofType: __Type
+
+  """
+  This field is considered experimental because it has not yet been ratified in the graphql specification
+  """
+  isOneOf: Boolean
+
+  specifiedByURL: String
+
+  specifiedByUrl: String @deprecated(reason: "This legacy name has been replaced by `specifiedByURL`")
+}
+
+"""
+An enum describing what kind of type a given __Type is
+"""
+enum __TypeKind {
+  """
+  Indicates this type is a scalar. 'specifiedByURL' is a valid field
+  """
+  SCALAR
+
+  """
+  Indicates this type is an object. `fields` and `interfaces` are valid fields.
+  """
+  OBJECT
+
+  """
+  Indicates this type is an interface. `fields` and `possibleTypes` are valid fields.
+  """
+  INTERFACE
+
+  """
+  Indicates this type is a union. `possibleTypes` is a valid field.
+  """
+  UNION
+
+  """
+  Indicates this type is an enum. `enumValues` is a valid field.
+  """
+  ENUM
+
+  """
+  Indicates this type is an input object. `inputFields` is a valid field.
+  """
+  INPUT_OBJECT
+
+  """
+  Indicates this type is a list. `ofType` is a valid field.
+  """
+  LIST
+
+  """
+  Indicates this type is a non-null. `ofType` is a valid field.
+  """
+  NON_NULL
+}
+
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true
+"""
+directive @include ("Included when true." if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
+directive @skip ("Skipped when true." if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+"""
+Marks the field, argument, input field or enum value as deprecated
+"""
+directive @deprecated ("The reason for the deprecation" reason: String = "No longer supported") on FIELD_DEFINITION|ARGUMENT_DEFINITION|ENUM_VALUE|INPUT_FIELD_DEFINITION
+
+"""
+Exposes a URL that specifies the behaviour of this scalar.
+"""
+directive @specifiedBy ("The URL that specifies the behaviour of this scalar." url: String!) on SCALAR
+
+"""
+Indicates an Input Object is a OneOf Input Object.
+"""
+directive @oneOf on INPUT_OBJECT
+
+schema {
+  query: Query
+  mutation: Mutation
 }

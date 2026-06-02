@@ -114,7 +114,7 @@ class AuthenticationTest {
     fun testRegisterAndLoginFlowRepeatedly() {
         println("Run repeated register and login authentication testing (50 times)")
 
-        for (i in 1..50) {
+        for (i in 1..500) {
             println("\n--- Vòng lặp thứ $i ---")
 
             // 1. Thực hiện Đăng ký

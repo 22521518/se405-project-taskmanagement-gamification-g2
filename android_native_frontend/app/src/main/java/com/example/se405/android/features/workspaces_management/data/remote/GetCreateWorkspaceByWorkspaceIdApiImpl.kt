@@ -170,7 +170,18 @@ class GetCreateWorkspaceByWorkspaceIdApiImpl(private val apolloClient: ApolloCli
                         role = it.role.toWorkspaceRole(),
                         joinedAt = it.joinedAt.toLocalDateTimeOrNow(),
                         workspaceId = Uuid.parse(ws.uuid),
-                        user = null)
+                        user = it.user?.let { u ->
+                            User(
+                                uuid = Uuid.parse(it.userId),
+                                email = u.email,
+                                username = u.username,
+                                displayName = u.displayName,
+                                avatarUrl = u.avatarUrl,
+                                passwordHash = null,
+                                createdAt = null,
+                                updatedAt = null
+                            )
+                        })
                 })
         }
     }
@@ -261,13 +272,21 @@ class GetCreateWorkspaceByWorkspaceIdApiImpl(private val apolloClient: ApolloCli
            id = Uuid.parse(workspace.uuid),
            name = workspace.name,
            projects = workspace.projects.map { it.toProject()},
-           members = workspace.members.map { WorkspaceMember(
-               workspaceId = Uuid.parse(it.workspaceId),
-               userId = Uuid.parse(it.userId),
-               role = it.role.toWorkspaceRole(),
-               joinedAt = it.joinedAt.toLocalDateTimeOrNow(),
-               user = null
-           ) }
+           members = workspace.members.map { mem ->
+               WorkspaceMember(
+                   workspaceId = Uuid.parse(mem.workspaceId),
+                   userId = Uuid.parse(mem.userId),
+                   role = mem.role.toWorkspaceRole(),
+                   joinedAt = mem.joinedAt.toLocalDateTimeOrNow(),
+                   user = if(mem.user != null) User(
+                       uuid = Uuid.parse(mem.user.uuid), // Now guaranteed non-null
+                       username = mem.user.username,
+                       displayName = mem.user.displayName,
+                       email = mem.user.email,
+                       avatarUrl = mem.user.avatarUrl
+                   ) else null
+               )
+           }
        ))
    }
 

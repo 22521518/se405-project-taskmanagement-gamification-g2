@@ -63,7 +63,7 @@ fun ProjectDetailMemberSection(members: List<GetProjectQuery.Member>) {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(text = member.user?.displayName ?: member.user?.username ?: "Unknown", style = AppText.HeadBold)
+                        Text(text = member.user?.displayName ?: member.user?.username ?: "Unknown", style = AppText.HeadSemiBold)
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Icon(painter = painterResource(R.drawable.icon_email), contentDescription = "email: ", tint = Color.DarkGray)
                             Text(text = member.user?.email ?: "Unknown", style = AppText.Body2Regular, color = Color.DarkGray)

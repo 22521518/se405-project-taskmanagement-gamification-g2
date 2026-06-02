@@ -48,7 +48,7 @@ fun NavGraphBuilder.workspaceNavGraph(navController: NavHostController) {
             ProjectDetailRoute(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
-                onNavigateToTask = { id -> navController.navigate(TaskDetailNav(id)) }
+                onNavigateToTask = { id, projId -> navController.navigate(TaskDetailNav(taskId = id, projectId = projId)) }
             )
         }
     }

@@ -1,6 +1,7 @@
 package com.example.se405.android.features.workspaces_management.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +38,7 @@ fun WorkspaceDetailMemberSection(members: List<WorkspaceMember>) {
             .fillMaxWidth()
             .padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Bottom) {
-            Text(text = "${members.size} Members", style = AppText.HeadBold, color = Color.Gray)
+            Text(text = "${members.size} Members", style = AppText.HeadRegular, color = Color.Gray)
         }
 
         Column(modifier = Modifier
@@ -47,12 +48,10 @@ fun WorkspaceDetailMemberSection(members: List<WorkspaceMember>) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .shadow(
-                            elevation = 1.dp,
+                        .border(
+                            width = 1.dp,
+                            color = Color.Gray,
                             shape = RoundedCornerShape(12.dp),
-                            ambientColor = Color.Black.copy(alpha = 0.8f),
-                            spotColor = Color.Black.copy(alpha = 0.16f),
-                            clip = false
                         )
                         .background(
                             color = Color.Transparent,
@@ -65,12 +64,11 @@ fun WorkspaceDetailMemberSection(members: List<WorkspaceMember>) {
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (member.role == WorkspaceRole.OWNER)
                                 Text(
                                     text = member.role.toString(),
                                     style = AppText.CaptionBold,
-                                    color = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier
                                         .background(
                                             color = MaterialTheme.colorScheme.primaryContainer,
@@ -80,7 +78,7 @@ fun WorkspaceDetailMemberSection(members: List<WorkspaceMember>) {
                                 )
                             Text(
                                 text = member.user?.displayName ?: member.user?.username
-                                ?: "Unknown", style = AppText.HeadBold
+                                ?: "Unknown", style = AppText.HeadRegular
                             )
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {

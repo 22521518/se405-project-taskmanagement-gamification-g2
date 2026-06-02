@@ -70,13 +70,6 @@ data class TaskEntity(
     )
     val assignees: MutableList<TaskAssigneeEntity> = mutableListOf(),
 
-    @OneToMany(
-        cascade = [CascadeType.ALL],
-        orphanRemoval = true,
-        fetch = FetchType.EAGER
-    )
-    @JoinColumn(name = "task_id", referencedColumnName = "uuid", insertable = false, updatable = false)
-    val taskCompletionLogs: MutableList<TaskCompletionLogEntity> = mutableListOf()
 )
 ){
     override fun toString(): String {

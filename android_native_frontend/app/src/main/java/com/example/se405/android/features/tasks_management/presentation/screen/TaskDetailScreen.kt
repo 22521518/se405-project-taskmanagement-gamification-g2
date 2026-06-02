@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalUuidApi::class)
+@file:OptIn(ExperimentalUuidApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.example.se405.android.features.tasks_management.presentation.screen
 
@@ -25,6 +25,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +69,7 @@ fun TaskDetailRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val projectName by viewModel.projectName.collectAsStateWithLifecycle()
     val workspaceName by viewModel.workspaceName.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->
@@ -95,6 +97,8 @@ fun TaskDetailRoute(
                 workspaceName = workspaceName,
                 canDelete = state.data.canDelete,
                 canCompleteOrFail = state.data.canCompleteOrFail,
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() },
                 onDoneClick = { viewModel.markTaskDone() },
                 onCancelClick = { viewModel.markTaskWontDo() },
                 onDeleteClick = {
@@ -119,6 +123,8 @@ fun TaskDetailScreen(
     workspaceName: String?,
     canDelete: Boolean,
     canCompleteOrFail: Boolean,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
     onDoneClick: () -> Unit = {},
     onCancelClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
@@ -148,10 +154,14 @@ fun TaskDetailScreen(
                     )
                 }
             }
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.weight(1f).fillMaxWidth()
+            ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                    .fillMaxSize()
                     .verticalScroll(scrollState)
                     .padding(vertical = 8.dp, horizontal = 16.dp)
             ) {
@@ -322,6 +332,7 @@ fun TaskDetailScreen(
                         }
                     }
                 }
+            }
             }
         }
     }

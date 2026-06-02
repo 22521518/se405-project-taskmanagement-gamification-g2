@@ -32,4 +32,4 @@ fun NavGraphBuilder.taskNavGraph(navController: NavHostController) {
 object TaskGraphNav
 
 @Serializable
-data class TaskDetailNav(val taskId: Uuid)
+data class TaskDetailNav(val taskId: Uuid, val projectId: Uuid? = null)

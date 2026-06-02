@@ -38,7 +38,7 @@ data class DayItem(
 @Composable
 fun CalendarHeader(
     focusDate: Calendar = Calendar.getInstance(),
-    onAddTask: () -> Unit = {},
+    onAddTask: (() -> Unit)? = null,
     onDateClick: (Calendar) -> Unit = {}
 ) {
 
@@ -75,9 +75,9 @@ fun CalendarHeader(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
 
         Column(
@@ -108,19 +108,21 @@ fun CalendarHeader(
                     )
                 }
 
-                ButtonApp(
-                    onClick = onAddTask,
-                    type = ButtonType.FILLED,
-                    contentPadding = PaddingValues(
-                        horizontal = 12.dp,
-                        vertical = 0.dp
-                    )
-                ) {
-                    Text(
-                        "Add Task",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = AppText.CaptionBold
-                    )
+                if (onAddTask != null) {
+                    ButtonApp(
+                        onClick = onAddTask,
+                        type = ButtonType.FILLED,
+                        contentPadding = PaddingValues(
+                            horizontal = 12.dp,
+                            vertical = 0.dp
+                        )
+                    ) {
+                        Text(
+                            "Add Task",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = AppText.CaptionBold
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))

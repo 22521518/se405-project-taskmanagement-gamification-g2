@@ -95,6 +95,7 @@ class TagController(
     fun deleteTag(@Argument uuid: UUID): TagEntity {
         val existing = tagRepository.findById(uuid)
             .orElseThrow { RuntimeException("Tag not found") }
+        tagRepository.deleteTaskTagsByTagId(uuid)
         tagRepository.delete(existing)
         return existing
     }

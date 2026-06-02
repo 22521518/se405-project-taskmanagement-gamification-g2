@@ -45,6 +45,8 @@ class WorkspaceManagementViewModel(
     val error: StateFlow<String?> = _error.asStateFlow()
     private val _uiEvent = kotlinx.coroutines.channels.Channel< WorkspaceUiEvent>(kotlinx.coroutines.channels.Channel.BUFFERED)
     private val _isActionLoading = MutableStateFlow(false)
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
     val uiEvent: Flow<WorkspaceUiEvent> = _uiEvent.receiveAsFlow()
     val uiState: StateFlow<WorkspaceListUiState> = combine(_rawWorkspaces, _searchQuery, _isActionLoading) { workspaces, query, isActionLoading ->
         val state: WorkspaceListUiState = when {
@@ -75,6 +77,21 @@ class WorkspaceManagementViewModel(
             Log.e("WSMAN_LOAD_WS", e.toString())
         } finally {
             _isActionLoading.value = false
+        }
+    }
+
+    /**
+     * User-initiated pull-to-refresh: re-fetch the workspace list from the API. Drives
+     * the pull indicator so a manual retry recovers from transient network errors.
+     */
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                loadWorkspace()
+            } finally {
+                _isRefreshing.value = false
+            }
         }
     }
 

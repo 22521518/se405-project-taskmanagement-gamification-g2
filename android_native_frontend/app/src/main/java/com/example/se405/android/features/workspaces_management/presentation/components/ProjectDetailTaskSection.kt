@@ -43,7 +43,7 @@ fun ProjectDetailTaskSection(
 ) {
     Column(modifier = modifier.fillMaxWidth()
         .padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = "Task (${tasks.size})", style = AppText.HeadBold)
+        Text(text = "Task (${tasks.size})", style = AppText.HeadSemiBold)
         val sortedTasks = remember(tasks) {
             tasks.sortedWith(
                 compareBy { task ->
@@ -85,7 +85,7 @@ fun ProjectDetailTaskSection(
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 if (task.status == TaskStatus.DONE)
                                     Icon(painter = painterResource(R.drawable.icon_done), contentDescription = "Done", tint = Color.Green)
-                                Text(text = task.title, style = AppText.HeadBold)
+                                Text(text = task.title, style = AppText.HeadSemiBold)
                             }
                             val priorityColor = when (task.priority) {
                                 TaskPriority.HIGH -> Color.Red
@@ -93,7 +93,7 @@ fun ProjectDetailTaskSection(
                                 else -> Color.DarkGray
                             }
                             Text(text = task.priority.toString(),
-                                style = AppText.CaptionBold,
+                                style = AppText.CaptionRegular,
                                 color = priorityColor,
                                 modifier = Modifier
                                     .padding(vertical = 4.dp)
@@ -105,7 +105,7 @@ fun ProjectDetailTaskSection(
                             )
                         }
                         Text(text = dateString, modifier = Modifier.padding(horizontal = 8.dp), style = AppText.BodyRegular, color = color)
-                        task.description?.let { Text(text = it, style = AppText.BodySemiBold, modifier = Modifier.padding(12.dp), maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                        task.description?.let { Text(text = it, style = AppText.Body2Regular, modifier = Modifier.padding(12.dp), maxLines = 2, overflow = TextOverflow.Ellipsis) }
                     }
                 }
             }

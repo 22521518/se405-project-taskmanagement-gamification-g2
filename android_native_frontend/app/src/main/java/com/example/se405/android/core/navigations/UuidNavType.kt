@@ -27,6 +27,26 @@ val UuidType = object : NavType<Uuid>(isNullableAllowed = false) {
 }
 
 @OptIn(ExperimentalUuidApi::class)
+val NullableUuidType = object : NavType<Uuid?>(isNullableAllowed = true) {
+    override fun get(bundle: Bundle, key: String): Uuid? {
+        return bundle.getString(key)?.let { Uuid.parse(it) }
+    }
+
+    override fun parseValue(value: String): Uuid? {
+        return if (value == "null") null else Uuid.parse(value)
+    }
+
+    override fun put(bundle: Bundle, key: String, value: Uuid?) {
+        bundle.putString(key, value?.toString())
+    }
+
+    override fun serializeAsValue(value: Uuid?): String {
+        return value?.toString() ?: "null"
+    }
+}
+
+@OptIn(ExperimentalUuidApi::class)
 val UuidTypeMap: Map<KType, NavType<*>> = mapOf(
-    typeOf<Uuid>() to UuidType
+    typeOf<Uuid>() to UuidType,
+    typeOf<Uuid?>() to NullableUuidType
 )

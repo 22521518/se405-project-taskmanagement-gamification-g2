@@ -181,6 +181,7 @@ query GetProject($uuid: ID!) {
       status
       taskCompletionLogs {
         userId,
+        date
         taskCompletionId,
         status,
         completedAt

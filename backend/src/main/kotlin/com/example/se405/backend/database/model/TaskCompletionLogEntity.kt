@@ -33,4 +33,5 @@ data class TaskCompletionLogEntity(
 
     @Column(name = "completed_at", nullable = false)
     val completedAt: LocalDateTime,
+
 )
