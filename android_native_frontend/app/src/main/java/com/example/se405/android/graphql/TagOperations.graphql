@@ -25,6 +25,16 @@ query GetTagsByWorkspace($workspaceId: ID!) {
       projectId
       startDate
       dueDate
+      assignees {
+        userId
+        user {
+          uuid
+          username
+          displayName
+          email
+          avatarUrl
+        }
+      }
     }
   }
 }
@@ -56,6 +66,16 @@ query GetTagsByUser($userId: ID!) {
       projectId
       startDate
       dueDate
+      assignees {
+        userId
+        user {
+          uuid
+          username
+          displayName
+          email
+          avatarUrl
+        }
+      }
     }
   }
 }
@@ -87,6 +107,16 @@ query GetTagsForTaskOwnership($taskId: ID!) {
       projectId
       startDate
       dueDate
+      assignees {
+        userId
+        user {
+          uuid
+          username
+          displayName
+          email
+          avatarUrl
+        }
+      }
     }
   }
 }

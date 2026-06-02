@@ -13,6 +13,10 @@ import com.example.se405.android.core.authentication.ui.AuthSettingsScreen
 import com.example.se405.android.core.authentication.ui.BiometricAuthScreen
 import com.example.se405.android.core.authentication.ui.DeviceAuthSuccessScreen
 import com.example.se405.android.features.tasks_management.presentation.screen.TaskManagementScreen
+import com.example.se405.android.features.tasks_management.presentation.taskNavGraph
+import com.example.se405.android.features.workspaces_management.presentation.WorkspaceGraphNav
+import com.example.se405.android.features.workspaces_management.presentation.WorkspaceHomeNav
+import com.example.se405.android.features.workspaces_management.presentation.workspaceNavGraph
 import com.example.se405.android.navigation.AuthSettingsNav
 import com.example.se405.android.navigation.BiometricAuthNav
 import com.example.se405.android.navigation.DeviceAuthSuccessNav
@@ -35,7 +39,7 @@ fun MainNavHost(
     val authPreferences: AuthPreferences = koinInject()
     val authToken by authPreferences.authToken.collectAsState(initial = null)
     val isAuthenticated = !authToken.isNullOrBlank()
-    val startDestination = if (isAuthenticated) TaskManagementNav else BiometricAuthNav
+    val startDestination = if (isAuthenticated) WorkspaceGraphNav else BiometricAuthNav
 
     NavHost(
         navController = navController,
@@ -56,7 +60,7 @@ fun MainNavHost(
                 }
             )
         }
-        
+
         composable<DeviceAuthSuccessNav> {
             DeviceAuthSuccessScreen(
                 onLogout = {
@@ -66,7 +70,7 @@ fun MainNavHost(
                 }
             )
         }
-        
+
         composable<TaskManagementNav> {
             if (!isAuthenticated) {
                 LaunchedEffect(Unit) {
@@ -83,7 +87,7 @@ fun MainNavHost(
                 }
             )
         }
-        
+
         composable<AuthSettingsNav> {
             if (!isAuthenticated) {
                 LaunchedEffect(Unit) {
@@ -107,5 +111,8 @@ fun MainNavHost(
                 }
             )
         }
+
+        workspaceNavGraph(navController)
+        taskNavGraph(navController)
     }
 }

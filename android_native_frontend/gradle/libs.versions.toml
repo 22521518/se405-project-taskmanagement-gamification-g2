@@ -2,6 +2,7 @@
 #noinspection AndroidGradlePluginVersion
 agp = "8.13.2"
 biometric = "1.1.0"
+coilCompose = "2.7.0"
 koinCore = "4.2.1"
 kotlin = "2.3.10"
 coreKtx = "1.18.0"
@@ -16,15 +17,20 @@ activityCompose = "1.13.0"
 composeBom = "2026.03.01"
 composeNavigation = "2.9.7"
 mockk = "1.14.9"
+navigationTesting = "2.9.8"
 robolectric = "4.16.1"
 serialization = "1.11.0"
 apollo = "4.4.3"
 ktor = "3.4.2"
 datastore = "1.2.1"
+material3 = "1.4.0"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-navigation-testing = { module = "androidx.navigation:navigation-testing", version.ref = "navigationTesting" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -53,6 +59,7 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

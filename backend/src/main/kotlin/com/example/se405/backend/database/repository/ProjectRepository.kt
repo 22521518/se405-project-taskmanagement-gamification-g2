@@ -7,5 +7,5 @@ import java.util.UUID
 
 @Repository
 interface ProjectRepository : JpaRepository<ProjectEntity, UUID> {
-    fun findByWorkspaceId(workspaceId: UUID): List<ProjectEntity>
+    fun findByWorkspaceUuid(workspaceId: UUID): List<ProjectEntity>
 }

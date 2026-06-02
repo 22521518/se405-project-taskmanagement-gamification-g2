@@ -25,6 +25,11 @@ query GetTasks($userId: ID!) {
       color
       ownershipType
       workspaceId
+      label {
+        uuid
+        name
+        description
+      }
     }
     taskCompletionLogs {
       taskCompletionId
@@ -32,6 +37,172 @@ query GetTasks($userId: ID!) {
       userId
       date
       completedAt
+    }
+    assignees {
+      userId
+      user {
+        uuid
+        username
+        displayName
+        email
+        avatarUrl
+      }
+    }
+  }
+}
+
+query PersonalTasks($userId: UUID!) {
+  personalTasks(userId: $userId) {
+    uuid
+    title
+    description
+    repetition
+    type
+    status
+    priority
+    projectId
+    startDate
+    dueDate
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
+    tags {
+      uuid
+      name
+      color
+      ownershipType
+      workspaceId
+      createdBy
+      createdAt
+      updatedAt
+      creator {
+        uuid
+        username
+        email
+        displayName
+        avatarUrl
+        createdAt
+        updatedAt
+      }
+      label {
+        uuid
+        name
+        description
+      }
+    }
+    taskCompletionLogs {
+      taskCompletionId
+      taskId
+      userId
+      date
+      completedAt
+      status
+      user {
+        uuid
+        username
+        email
+        displayName
+        avatarUrl
+        createdAt
+        updatedAt
+      }
+    }
+    assignees {
+      taskId
+      userId
+      user {
+        uuid
+        username
+        displayName
+        email
+        avatarUrl
+        createdAt
+        updatedAt
+      }
+    }
+  }
+}
+
+query PersonalTasksByDateRange($userId: UUID!, $from: LocalDate!, $to: LocalDate!) {
+  personalTasksByDateRange(userId: $userId, from: $from, to: $to) {
+    uuid
+    title
+    description
+    repetition
+    type
+    status
+    priority
+    projectId
+    startDate
+    dueDate
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
+    tags {
+      uuid
+      name
+      color
+      ownershipType
+      workspaceId
+      createdBy
+      createdAt
+      updatedAt
+      creator {
+        uuid
+        username
+        email
+        displayName
+        avatarUrl
+        createdAt
+        updatedAt
+      }
+      label {
+        uuid
+        name
+        description
+      }
+    }
+    taskCompletionLogs {
+      taskCompletionId
+      taskId
+      userId
+      date
+      completedAt
+      status
+      user {
+        uuid
+        username
+        email
+        displayName
+        avatarUrl
+        createdAt
+        updatedAt
+      }
+    }
+    assignees {
+      taskId
+      userId
+      user {
+        uuid
+        username
+        displayName
+        email
+        avatarUrl
+        createdAt
+        updatedAt
+      }
     }
   }
 }
@@ -67,6 +238,16 @@ mutation CreateTask($input: CreateTaskInput!) {
       createdAt
       updatedAt
     }
+    assignees {
+      userId
+      user {
+        uuid
+        username
+        displayName
+        email
+        avatarUrl
+      }
+    }
   }
 }
 
@@ -82,6 +263,16 @@ mutation UpdateTask($input: UpdateTaskInput!) {
     projectId
     startDate
     dueDate
+    assignees {
+      userId
+      user {
+        uuid
+        username
+        displayName
+        email
+        avatarUrl
+      }
+    }
   }
 }
 

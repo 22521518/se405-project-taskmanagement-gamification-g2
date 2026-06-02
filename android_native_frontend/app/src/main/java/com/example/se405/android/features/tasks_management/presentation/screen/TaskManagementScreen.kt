@@ -187,6 +187,7 @@ fun TaskManagementScreen(
                                 baseTask = taskDraft,
                                 status = TaskStatus.TODO,
                                 uuid = Uuid.random(),
+                                membersInWorkspace = members,
                             )
                             viewModel.createTask(createdTask) { success ->
                                 if (success) {
@@ -311,7 +312,7 @@ fun TaskManagementScreen(
                                                  selectedDueDateMillis = taskToEdit.dueDate?.toEpochMillisAtStartOfDay(),
                                                  isTagSelectorVisible = false,
                                                  selectedProjectId = taskToEdit.projectId,
-                                                 selectedAssigneeId = null,
+                                                 selectedAssigneeId = taskToEdit.assignee?.uuid,
                                                  repetition = taskToEdit.repetition
                                              ))
                                          }
@@ -402,7 +403,10 @@ fun TaskManagementScreen(
                                                  }
                                              },
                                              onDone = {
-                                                 val updatedTask = editUiState.toDomainTask(taskToEdit)
+                                                 val updatedTask = editUiState.toDomainTask(
+                                                     baseTask = taskToEdit,
+                                                     membersInWorkspace = members,
+                                                 )
                                                  viewModel.updateTask(updatedTask) { success ->
                                                      if (success) {
                                                          onDismissEdit()

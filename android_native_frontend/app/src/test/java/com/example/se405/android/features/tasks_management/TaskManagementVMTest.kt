@@ -702,8 +702,8 @@ class TaskManagementVMLogicTest {
                 status = TaskStatus.DONE,
                 date = targetDate,
                 completedAt = LocalDateTime.now(),
-                task = habitTask.uuid,
-                user = fakeUserId,
+                taskId = habitTask.uuid,
+                userId = fakeUserId,
             )
             coEvery { mockMarkTaskDone(any(), any(), any()) } returns Optional.of(fakeLog)
             val doneTask = habitTask.copy(taskCompletionLog = listOf(fakeLog))

@@ -1,21 +1,30 @@
-# ═══════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────
+# Scalars
+# ───────────────────────────────────────────────────────────────
+
+scalar UUID
+scalar LocalDate
+
+# ───────────────────────────────────────────────────────────────
 # Enums — mirror frontend Kotlin enums exactly
-# ═══════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────
 
 enum TaskType       { PROJECT HABIT }
-enum TaskStatus     { TODO IN_PROGRESS DONE CANCELLED }
+enum TaskStatus     { TODO IN_PROGRESS DONE CANCELLED FAILED }
 enum TaskPriority   { LOW MEDIUM HIGH }
 enum TagOwnershipType { WORKSPACE PERSONAL }
 enum WorkspaceRole  { OWNER MEMBER }
 
-# ═══════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────
 # Root operations
-# ═══════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────
 
 type Query {
     # Task
     getTasks(userId: ID!): [Task!]!
     getTaskCompletionLogs(taskId: ID!): [TaskCompletionLog!]!
+    personalTasks(userId: UUID!): [Task!]!
+    personalTasksByDateRange(userId: UUID!, from: LocalDate!, to: LocalDate!): [Task!]!
 
     # Tag / Label
     getTagsByUser(userId: ID!): [Tag!]!
@@ -24,9 +33,17 @@ type Query {
     getHabitLabels: [HabitLabel!]!
 
     # Workspace
+    getWorkspaceListByUserId(userId: ID!): [Workspace!]!
     getWorkspace(uuid: ID!): Workspace
+    getProject(uuid: ID!): Project!
     getProjectsByWorkspace(workspaceId: ID!): [Project!]!
     getMembersByWorkspace(workspaceId: ID!): [WorkspaceMember!]!
+    getMembersByProject(projectId: ID!): [ProjectMember!]!
+
+    getWorkspaceActivities(uuid: ID!, pagination: PaginationInput): WorkspaceActivityPage!
+
+    # User
+    getUsersExcluding(excludeUserId: ID!): [User!]!
 }
 
 type Mutation {
@@ -49,11 +66,40 @@ type Mutation {
     deleteWorkspace(uuid: ID!): Workspace!
     createProject(input: CreateProjectInput!): Project!
     deleteProject(uuid: ID!): Project!
+
+    ## Members Workspace / Project
+    addMemberToWorkspace(workspaceId: ID!, userId: ID!, role: WorkspaceRole!): WorkspaceMember!
+    addMemberToProject(projectId: ID!, userId: ID!): ProjectMember!
+    addMembersToWorkspace(workspaceId: ID!, userIds: [ID!]!, role: WorkspaceRole!): [WorkspaceMember!]!
+    addMembersToProject(projectId: ID!, userIds: [ID!]!): [ProjectMember!]!
+    removeMemberFromProject(projectId: ID!, userId: ID!): Boolean!
+    removeMemberFromWorkspace(workspaceId: ID!, userId: ID!): Boolean!
 }
 
-# ═══════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────
 # Core types — full objects for all FK relations
-# ═══════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────
+
+# ── Pagination types ──────────────────────────────────────────
+
+input PaginationInput {
+    page: Int   # 0-based page index
+    size: Int   # number of items per page
+}
+
+type PageInfo {
+    totalElements: Int!
+    totalPages: Int!
+    currentPage: Int!
+    pageSize: Int!
+    hasNext: Boolean!
+    hasPrevious: Boolean!
+}
+
+type WorkspaceActivityPage {
+    content: [TaskCompletionLog!]!
+    pageInfo: PageInfo!
+}
 
 type Task {
     uuid: ID!
@@ -71,6 +117,7 @@ type Task {
     creator: User
     tags: [Tag!]!
     taskCompletionLogs: [TaskCompletionLog!]!
+    assignees: [TaskAssignee!]!
 }
 
 type Tag {
@@ -84,7 +131,7 @@ type Tag {
     updatedAt: String!
     # Resolved full objects
     creator: User
-    label: HabitLabel
+    label: HabitLabel!
     tasks: [Task!]!
 }
 
@@ -94,9 +141,10 @@ type TaskCompletionLog {
     userId: ID!
     date: String!
     completedAt: String!
+    status: String!
     # Resolved full objects
-    task: Task
-    user: User
+    task: Task!
+    user: User!
 }
 
 type Workspace {
@@ -105,14 +153,35 @@ type Workspace {
     # Resolved full objects
     projects: [Project!]!
     members: [WorkspaceMember!]!
+    owner: User!
 }
 
 type Project {
     uuid: ID!
     name: String!
     workspaceId: ID!
+    updatedAt: String!
+    createdAt: String!
     # Resolved full object
     workspace: Workspace
+    members: [ProjectMember!]!
+    tasks: [Task!]!
+}
+
+type ProjectMember {
+    projectId: ID!
+    workspaceId: ID!
+    userId: ID!
+    joinedAt: String!
+    user: User
+}
+
+type TaskAssignee {
+    taskId: ID!
+    userId: ID!
+
+    user: User!
+    task: Task!
 }
 
 type WorkspaceMember {
@@ -140,9 +209,9 @@ type User {
     updatedAt: String!
 }
 
-# ═══════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────
 # Input types
-# ═══════════════════════════════════════════════════════════════
+# ───────────────────────────────────────────────────────────────
 
 input CreateTaskInput {
     title: String!
@@ -157,6 +226,7 @@ input CreateTaskInput {
     startDate: String
     dueDate: String
     tagIds: [ID!]
+    assigneeIds: [ID!]
 }
 
 input UpdateTaskInput {
@@ -171,6 +241,7 @@ input UpdateTaskInput {
     startDate: String
     dueDate: String
     tagIds: [ID!]
+    assigneeIds: [ID!]
 }
 
 input MarkTaskDoneInput {
@@ -200,9 +271,11 @@ input UpdateTagInput {
 
 input CreateWorkspaceInput {
     name: String!
+    ownerId: ID!
 }
 
 input CreateProjectInput {
     name: String!
+    creatorId: ID!
     workspaceId: ID!
 }

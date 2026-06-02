@@ -8,6 +8,7 @@ import com.example.se405.android.features.tasks_management.domain.repository.*
 import com.example.se405.android.features.tasks_management.domain.use_case.*
 import com.example.se405.android.features.tasks_management.domain.use_case.crud.*
 import com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskManagementViewModel
+import com.example.se405.android.features.tasks_management.presentation.viewmodel.TaskDetailViewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
@@ -26,6 +27,11 @@ val taskDomainModule = module {
     }
 
     factory {
+        val personalTaskRepository: PersonalTaskRepository = get()
+        PersonalTaskUsecase(personalTaskRepository)
+    }
+
+    factory {
         val tagRepo: TagRepository = get()
         TagUseCases(
             getTagsForTaskOwnership = tagRepo::getTagsForTaskOwnership,
@@ -39,10 +45,7 @@ val taskDomainModule = module {
 
     factory {
         val workspaceRepo: WorkspaceRepository = get()
-        WorkspaceUseCases(
-            getProjectsByWorkspace = workspaceRepo::getProjectsByWorkspace,
-            getMembersByWorkspace = workspaceRepo::getMembersByWorkspace,
-        )
+        WorkspaceUseCases(workspaceRepo)
     }
 
     factory { MarkTaskDone(get()) }
@@ -51,10 +54,12 @@ val taskDomainModule = module {
 
 val taskDataModule = module {
     singleOf(::TaskApiImpl) { bind<TaskApi>() }
+    singleOf(::PersonalTaskApiImpl) { bind<PersonalTaskApi>() }
     singleOf(::TagApiImpl) { bind<TagApi>() }
     singleOf(::WorkspaceApiImpl) { bind<WorkspaceApi>() }
 
     singleOf(::TaskRepositoryImpl) { bind<TaskRepository>() }
+    singleOf(::PersonalTaskRepositoryImpl) { bind<PersonalTaskRepository>() }
     singleOf(::TagRepositoryImpl) { bind<TagRepository>() }
     singleOf(::WorkspaceRepositoryImpl) { bind<WorkspaceRepository>() }
     singleOf(::TaskCompletionLogRepositoryImpl) { bind<TaskCompletionLogRepository>() }
@@ -62,6 +67,7 @@ val taskDataModule = module {
 
 val taskPresentationModule = module {
     viewModelOf(::TaskManagementViewModel)
+    viewModelOf(::TaskDetailViewModel)
 }
 
 val taskManagementModule = listOf(taskDomainModule, taskDataModule, taskPresentationModule)

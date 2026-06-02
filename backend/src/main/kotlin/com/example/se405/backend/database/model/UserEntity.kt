@@ -6,7 +6,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "users")
-data class UserEntity(
+class UserEntity(
     @Id
     val uuid: UUID,
 

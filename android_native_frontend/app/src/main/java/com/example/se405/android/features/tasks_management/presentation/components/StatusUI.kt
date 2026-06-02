@@ -46,13 +46,13 @@ fun extractTaskStatusDescription(task: Task): TaskStatusDescription<String> {
         TaskStatus.DONE -> StatusUI("Done", Green40)
         TaskStatus.FAILED -> StatusUI("Cancelled", Orange40)
         TaskStatus.IN_PROGRESS -> StatusUI("Doing", Blue40)
-        TaskStatus.TODO -> StatusUI("Todo", BlueGrey80)
+        else -> StatusUI("Unknown", Color.Black)
     }
 
     val taskPriorityUI: StatusUI<String> = when (task.priority) {
         TaskPriority.HIGH -> StatusUI("High", Orange40)
         TaskPriority.MEDIUM -> StatusUI("Medium", Gold40)
-        TaskPriority.LOW -> StatusUI("Low", Green40)
+        else -> StatusUI("Unknown", Color.Black)
     }
     return TaskStatusDescription(statusScript = statusScriptUI, taskPriority = taskPriorityUI)
 }

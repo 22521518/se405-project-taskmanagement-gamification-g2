@@ -2,6 +2,7 @@
 
 package com.example.se405.android.features.tasks_management.utils
 
+import com.example.se405.android.features.tasks_management.domain.entity.Tag
 import com.example.se405.android.features.tasks_management.domain.entity.Task
 import com.example.se405.android.features.tasks_management.domain.entity.TaskPriority
 import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
@@ -28,7 +29,7 @@ val sampleDescriptions = listOf(
 
 fun getTimeSuffix(): String = if (Random.nextBoolean()) " (${Random.nextInt(1, 31)} ngày)" else " (${Random.nextInt(1, 24)} giờ)"
 
-fun generateHabitTasks(count: Int): List<Task> {
+fun generateHabitTasks(count: Int, type: TaskType = TaskType.HABIT, projectId: Uuid? = null, tags: List<Tag> = emptyList()): List<Task> {
     val tasks = mutableListOf<Task>()
     val priorities =
         TaskPriority.entries.toTypedArray() // Lấy tất cả các trạng thái Priority có sẵn
@@ -46,11 +47,12 @@ fun generateHabitTasks(count: Int): List<Task> {
             title = finalTitle,
             description = description,
             repetition = Random.nextInt(1, 7),
-            type = TaskType.HABIT,
+            type = type,
+            projectId = projectId,
             status = TaskStatus.TODO,
             priority = randomPriority,
             creator = null,
-            tags = emptyList(),
+            tags = tags,
             taskCompletionLog = emptyList(),
             startDate = LocalDate.now()
         )

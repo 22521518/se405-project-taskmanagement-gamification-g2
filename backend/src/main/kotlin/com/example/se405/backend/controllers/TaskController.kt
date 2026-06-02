@@ -1,12 +1,14 @@
 package com.example.se405.backend.controllers
 
 import com.example.se405.backend.database.model.TagEntity
+import com.example.se405.backend.database.model.TaskAssigneeEntity
 import com.example.se405.backend.database.model.TaskCompletionLogEntity
 import com.example.se405.backend.database.model.UserEntity
 import com.example.se405.backend.database.repository.TagRepository
 import com.example.se405.backend.database.repository.TaskCompletionLogRepository
 import com.example.se405.backend.database.repository.TaskRepository
 import com.example.se405.backend.database.repository.UserRepository
+import com.example.se405.backend.services.PersonalTaskService
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
@@ -22,14 +24,28 @@ class TaskController(
     private val tagRepository: TagRepository,
     private val userRepository: UserRepository,
     private val taskCompletionLogRepository: TaskCompletionLogRepository,
+    private val personalTaskService: PersonalTaskService,
 ) {
 
     @QueryMapping
-    fun getTasks(@Argument userId: UUID) = taskRepository.findByCreatorId(userId)
+    fun getTasks(@Argument userId: UUID) =
+        taskRepository.findTaskResponsibilitiesByUserIdWithAssignees(userId)
+//        taskRepository.findByCreatorId(userId)
 
     @QueryMapping
     fun getTaskCompletionLogs(@Argument taskId: UUID) =
         taskCompletionLogRepository.findByTaskId(taskId)
+
+    @QueryMapping
+    fun personalTasks(@Argument userId: UUID) =
+        personalTaskService.getPersonalTasks(userId)
+
+    @QueryMapping
+    fun personalTasksByDateRange(
+        @Argument userId: UUID,
+        @Argument from: LocalDate,
+        @Argument to: LocalDate,
+    ) = personalTaskService.getPersonalTasksByDateRange(userId, from, to)
 
     // ── Resolve nested fields ─────────────────────────────────────────────────
 
@@ -48,8 +64,15 @@ class TaskController(
     fun taskCompletionLogs(
         task: com.example.se405.backend.database.model.TaskEntity,
     ): List<TaskCompletionLogEntity> {
-        if(task.uuid == null) return emptyList()
-        return taskCompletionLogRepository.findByTaskId(task.uuid);
+        return task.taskCompletionLogs
+    }
+
+    /** Resolve assignees list for a Task */
+    @SchemaMapping(typeName = "Task", field = "assignees")
+    fun taskAssignees(
+        task: com.example.se405.backend.database.model.TaskEntity,
+    ): List<TaskAssigneeEntity> {
+        return task.assignees
     }
 
     /** Resolve user for a TaskCompletionLog */
@@ -62,6 +85,9 @@ class TaskController(
     fun completionLogTask(
         log: TaskCompletionLogEntity,
     ) = taskRepository.findById(log.taskId).orElse(null)
+    
+    @SchemaMapping(typeName = "TaskAssignee", field = "user")
+    fun taskAssigneeUser(taskAssignee: TaskAssigneeEntity) = taskAssignee.user
 
     // ── Mutations ─────────────────────────────────────────────────────────────
 
@@ -75,7 +101,9 @@ class TaskController(
             ?.mapNotNull { tagRepository.findById(it).orElse(null) }
             ?.toMutableList() ?: mutableListOf()
 
+        val taskUuid = UUID.randomUUID()
         val task = com.example.se405.backend.database.model.TaskEntity(
+            uuid = taskUuid,
             title = input.title,
             description = input.description,
             type = input.type,
@@ -88,6 +116,20 @@ class TaskController(
             repetition = input.repetition,
             tags = tags,
         )
+
+        input.assigneeIds?.forEach { userId ->
+            val user = userRepository.findById(userId).orElse(null)
+            if (user != null) {
+                task.assignees.add(
+                    com.example.se405.backend.database.model.TaskAssigneeEntity(
+                        id = com.example.se405.backend.database.model.TaskAssigneeId(taskId = taskUuid, userId = userId),
+                        task = task,
+                        user = user
+                    )
+                )
+            }
+        }
+
         return taskRepository.save(task)
     }
 
@@ -112,6 +154,23 @@ class TaskController(
             repetition = input.repetition ?: existing.repetition,
             tags = updatedTags,
         )
+
+        if (input.assigneeIds != null) {
+            updated.assignees.clear()
+            input.assigneeIds.forEach { userId ->
+                val user = userRepository.findById(userId).orElse(null)
+                if (user != null) {
+                    updated.assignees.add(
+                        com.example.se405.backend.database.model.TaskAssigneeEntity(
+                            id = com.example.se405.backend.database.model.TaskAssigneeId(taskId = updated.uuid!!, userId = userId),
+                            task = updated,
+                            user = user
+                        )
+                    )
+                }
+            }
+        }
+
         return taskRepository.save(updated)
     }
 
@@ -130,18 +189,19 @@ class TaskController(
             userId = input.userId,
             date = LocalDate.parse(input.date),
             completedAt = LocalDateTime.now(),
+            status = "DONE",
         )
         return taskCompletionLogRepository.save(log)
     }
 
     @MutationMapping
     fun markTaskWontDo(@Argument input: MarkTaskDoneInput): TaskCompletionLogEntity {
-        // Same shape as markTaskDone — caller passes appropriate status if needed
         val log = TaskCompletionLogEntity(
             taskId = input.taskId,
             userId = input.userId,
             date = LocalDate.parse(input.date),
             completedAt = LocalDateTime.now(),
+            status = "FAILED"
         )
         return taskCompletionLogRepository.save(log)
     }
@@ -160,6 +220,7 @@ data class CreateTaskInput(
     val startDate: String? = null,
     val dueDate: String? = null,
     val tagIds: List<UUID>? = null,
+    val assigneeIds: List<UUID>? = null,
 )
 
 data class UpdateTaskInput(
@@ -174,6 +235,7 @@ data class UpdateTaskInput(
     val startDate: String? = null,
     val dueDate: String? = null,
     val tagIds: List<UUID>? = null,
+    val assigneeIds: List<UUID>? = null,
 )
 
 data class MarkTaskDoneInput(

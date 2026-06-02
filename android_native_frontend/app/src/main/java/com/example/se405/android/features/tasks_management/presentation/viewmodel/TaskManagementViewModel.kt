@@ -13,7 +13,7 @@ import com.example.se405.android.features.tasks_management.domain.entity.Task
 import com.example.se405.android.features.tasks_management.domain.entity.TaskPriority
 import com.example.se405.android.features.tasks_management.domain.entity.TaskStatus
 import com.example.se405.android.features.tasks_management.domain.entity.TaskType
-import com.example.se405.android.features.tasks_management.domain.entity.Workspace
+import com.example.se405.android.features.workspaces_management.domain.entity.Workspace
 import com.example.se405.android.features.tasks_management.domain.entity.WorkspaceMember
 import com.example.se405.android.features.tasks_management.domain.entity.getTaskStatus
 import com.example.se405.android.features.tasks_management.domain.use_case.TagUseCases
@@ -55,39 +55,27 @@ class TaskManagementViewModel(
 ) : ViewModel() {
 
     private val _allWorkspaces = MutableStateFlow<List<Workspace>>(emptyList())
-
     private val _workspaces = MutableStateFlow<List<Workspace>>(emptyList())
     val workspaces: StateFlow<List<Workspace>> = _workspaces.asStateFlow()
-
     private val _availableTags = MutableStateFlow<List<Tag>>(emptyList())
     val availableTags: StateFlow<List<Tag>> = _availableTags.asStateFlow()
-
     private val _projects = MutableStateFlow<List<Project>>(emptyList())
     val projects: StateFlow<List<Project>> = _projects.asStateFlow()
-
     private val _members = MutableStateFlow<List<WorkspaceMember>>(emptyList())
     val members: StateFlow<List<WorkspaceMember>> = _members.asStateFlow()
-
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
     val tasks: StateFlow<List<Task>> = _tasks.asStateFlow()
-
     private val _selectedDate = MutableStateFlow(Calendar.getInstance())
     val selectedDate: StateFlow<Calendar> = _selectedDate.asStateFlow()
-
     private val _isDateFilterActive = MutableStateFlow(true)
-
     private val _currentUserId = MutableStateFlow<Uuid?>(null)
     val currentUserId: StateFlow<Uuid?> = _currentUserId.asStateFlow()
-
     private val _currentWorkspaceId = MutableStateFlow<Uuid?>(null)
     val currentWorkspaceId: StateFlow<Uuid?> = _currentWorkspaceId.asStateFlow()
-
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
-
     private val _uiEvent = kotlinx.coroutines.channels.Channel<TaskUiEvent>(kotlinx.coroutines.channels.Channel.BUFFERED)
     val uiEvent: Flow<TaskUiEvent> = _uiEvent.receiveAsFlow()
 

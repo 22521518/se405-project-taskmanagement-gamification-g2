@@ -25,6 +25,9 @@ data class TaskCompletionLogEntity(
     @Column(name = "user_id", nullable = false)
     val userId: UUID,
 
+    @Column(name = "status")
+    val status: String = "TODO",
+
     @Column(nullable = false)
     val date: LocalDate,
 

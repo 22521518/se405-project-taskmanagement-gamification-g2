@@ -7,7 +7,9 @@ import com.example.se405.android.di.networkModule
 import com.example.se405.android.features.tasks_management.MockAuthPreferences
 import com.example.se405.android.features.tasks_management.taskDataModule
 import com.example.se405.android.features.tasks_management.taskDomainModule
-
+import com.example.se405.android.features.tasks_management.taskManagementModule
+import com.example.se405.android.features.workspaces_management.workspaceDomainModule
+import com.example.se405.android.features.workspaces_management.workspaceManagementModule
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -18,15 +20,21 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.core.Koin
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.koin.mp.KoinPlatformTools
 
 fun runKoinApp(runWithKoin: suspend (Koin) -> Unit) = runBlocking {
+    if (GlobalContext.getOrNull() != null) {
+        stopKoin()
+    }
+
     startKoin {
+        modules(taskManagementModule)
+        modules(workspaceManagementModule)
         modules(
-            taskDomainModule, taskDataModule,
             networkModule,
             appModule,
             module {

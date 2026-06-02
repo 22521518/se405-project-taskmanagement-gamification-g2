@@ -4,6 +4,7 @@ package com.example.se405.android.core.presentation.theme
 
     // ===== Blue palette =====
     val Blue40 = Color(0xFF155DFC)        // pallet2-accent
+    val Blue50 = Color(0xFF4a8cf9)        // pallet2-accent
     val Blue60 = Color(0xFF2C5DA0)        // pallet2-2nd-accent
     val Blue80 = Color(0xFFC0CBD7)        // pallet2-2nd
     val Blue90 = Color(0xFFECF7FB)        // pallet2-1st

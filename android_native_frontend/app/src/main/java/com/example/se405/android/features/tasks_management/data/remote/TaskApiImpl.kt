@@ -69,6 +69,7 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
                 startDate = GqlOptional.present(task.startDate?.toString()),
                 dueDate = GqlOptional.present(task.dueDate?.toString()),
                 tagIds = GqlOptional.present(task.tags.map { it.uuid.toString() }),
+                assigneeIds = GqlOptional.present(task.assignees.map { it.uuid.toString() }),
             )
             android.util.Log.d("TaskApiImpl", "createTask inputs: $input")
             val response = apolloClient.mutation(CreateTaskMutation(input)).execute()
@@ -104,8 +105,19 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
                     },
                     tags = task.tags,
                     taskCompletionLog = emptyList(),
-                    startDate = created.startDate.toLocalDateOrNull(),
-                    dueDate = created.dueDate.toLocalDateOrNull(),
+                    assignees = created.assignees.map { assignee ->
+                        toDomainUser(
+                            uuid = assignee.user.uuid,
+                            email = assignee.user.email,
+                            username = assignee.user.username,
+                            displayName = assignee.user.displayName,
+                            avatarUrl = assignee.user.avatarUrl,
+                            createdAt = "",
+                            updatedAt = ""
+                        )
+                    },
+                    startDate = created.startDate.toLocalDateTimeOrNow().toLocalDate(),
+                    dueDate = created.dueDate.toLocalDateTimeOrNow().toLocalDate(),
                     projectId = created.projectId.toUuidOrNull(),
                 )
             )
@@ -130,6 +142,7 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
                 startDate = GqlOptional.present(task.startDate?.toString()),
                 dueDate = GqlOptional.present(task.dueDate?.toString()),
                 tagIds = GqlOptional.present(task.tags.map { it.uuid.toString() }),
+                assigneeIds = GqlOptional.present(task.assignees.map { it.uuid.toString() }),
             )
             android.util.Log.d("TaskApiImpl", "updateTask inputs: $input")
             val response = apolloClient.mutation(UpdateTaskMutation(input)).execute()
@@ -153,8 +166,19 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
                     status = updated.status.toDomainTaskStatus(),
                     priority = updated.priority.toDomainTaskPriority(),
                     projectId = updated.projectId.toUuidOrNull(),
-                    startDate = updated.startDate.toLocalDateOrNull(),
-                    dueDate = updated.dueDate.toLocalDateOrNull(),
+                    startDate = updated.startDate.toLocalDateTimeOrNow().toLocalDate(),
+                    dueDate = updated.dueDate.toLocalDateTimeOrNow().toLocalDate(),
+                    assignees = updated.assignees.map { assignee ->
+                        toDomainUser(
+                            uuid = assignee.user.uuid,
+                            email = assignee.user.email,
+                            username = assignee.user.username,
+                            displayName = assignee.user.displayName,
+                            avatarUrl = assignee.user.avatarUrl,
+                            createdAt = "",
+                            updatedAt = ""
+                        )
+                    },
                 )
             )
         } catch (e: Exception) {
@@ -209,8 +233,10 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
                     status = TaskStatus.DONE,
                     date = LocalDate.parse(logged.date),
                     completedAt = LocalDateTime.parse(logged.completedAt),
-                    task = Uuid.parse(logged.taskId),
-                    user = Uuid.parse(logged.userId),
+                    taskId = Uuid.parse(logged.taskId),
+                    userId = Uuid.parse(logged.userId),
+                    userDisplayName = null,
+                    taskTitle = null
                 )
             )
         } catch (e: Exception) {
@@ -244,8 +270,10 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
                     status = TaskStatus.FAILED,
                     date = LocalDate.parse(logged.date),
                     completedAt = LocalDateTime.parse(logged.completedAt),
-                    task = Uuid.parse(logged.taskId),
-                    user = Uuid.parse(logged.userId),
+                    taskId = Uuid.parse(logged.taskId),
+                    userId = Uuid.parse(logged.userId),
+                    userDisplayName = null,
+                    taskTitle = null,
                 )
             )
         } catch (e: Exception) {
@@ -276,8 +304,19 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
             },
             tags = task.tags.map { it.toDomainTag(parentTaskUuid = task.uuid) },
             taskCompletionLog = task.taskCompletionLogs.map { it.toDomainTaskCompletionLog() },
-            startDate = task.startDate.toLocalDateOrNull(),
-            dueDate = task.dueDate.toLocalDateOrNull(),
+            assignees = task.assignees.map { assignee ->
+                toDomainUser(
+                    uuid = assignee.user.uuid,
+                    email = assignee.user.email,
+                    username = assignee.user.username,
+                    displayName = assignee.user.displayName,
+                    avatarUrl = assignee.user.avatarUrl,
+                    createdAt = "",
+                    updatedAt = ""
+                )
+            },
+            startDate = task.startDate.toLocalDateTimeOrNow().toLocalDate(),
+            dueDate = task.dueDate.toLocalDateTimeOrNow().toLocalDate(),
             projectId = task.projectId.toUuidOrNull(),
         )
     }
@@ -288,8 +327,10 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
             status = TaskStatus.DONE,
             date = LocalDate.parse(date),
             completedAt = LocalDateTime.parse(completedAt),
-            task = Uuid.parse(taskId),
-            user = Uuid.parse(userId),
+            taskId = Uuid.parse(taskId),
+            userId = Uuid.parse(userId),
+            userDisplayName = null,
+            taskTitle = null,
         )
     }
 
@@ -300,6 +341,10 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
             ownershipType.name == TagOwnershipType.WORKSPACE.name -> TagOwnershipType.WORKSPACE
             else -> TagOwnershipType.WORKSPACE
         }
+        val targetLabelUuid = this.label.uuid
+        val resolvedLabel = BuiltinLabels.find { builtin ->
+            builtin.id.toString() == targetLabelUuid
+        } ?: BuiltinLabels.first()
 
         return Tag(
             createdBy = ZERO_UUID,
@@ -309,7 +354,7 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
             uuid = Uuid.parse(uuid),
             name = name,
             color = color,
-            label = BuiltinLabels.first(),
+            label = resolvedLabel,
             createdAt = LocalDateTime.now(),
             updatedAt = LocalDateTime.now(),
             creator = null,
@@ -362,24 +407,6 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
             TaskPriority.HIGH -> GqlTaskPriority.HIGH
         }
 
-    private fun String?.toLocalDateOrNull(): LocalDate? {
-        if (this.isNullOrBlank()) return null
-        return runCatching { LocalDate.parse(this) }
-            .recoverCatching { LocalDateTime.parse(this).toLocalDate() }
-            .recoverCatching { java.time.ZonedDateTime.parse(this).toLocalDate() }
-            .getOrNull()
-    }
-
-    private fun String?.toUuidOrNull(): Uuid? {
-        if (this.isNullOrBlank()) return null
-        return runCatching { Uuid.parse(this) }.getOrNull()
-    }
-
-    private fun String?.toLocalDateTimeOrNow(): LocalDateTime {
-        if (this.isNullOrBlank()) return LocalDateTime.now()
-        return runCatching { LocalDateTime.parse(this) }.getOrDefault(LocalDateTime.now())
-    }
-
     private fun toDomainUser(
         uuid: String,
         email: String,
@@ -404,4 +431,9 @@ class TaskApiImpl(private val apolloClient: ApolloClient) : TaskApi {
     private companion object {
         val ZERO_UUID: Uuid = Uuid.fromLongs(0L, 0L)
     }
+}
+
+fun String?.toUuidOrNull(): Uuid? {
+    if (this.isNullOrBlank()) return null
+    return runCatching { Uuid.parse(this) }.getOrNull()
 }
