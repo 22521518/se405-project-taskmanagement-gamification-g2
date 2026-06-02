@@ -1,0 +1,112 @@
+query GetTasks($userId: ID!) {
+  getTasks(userId: $userId) {
+    uuid
+    title
+    description
+    repetition
+    type
+    status
+    priority
+    projectId
+    startDate
+    dueDate
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
+    tags {
+      uuid
+      name
+      color
+      ownershipType
+      workspaceId
+    }
+    taskCompletionLogs {
+      taskCompletionId
+      taskId
+      userId
+      date
+      completedAt
+    }
+  }
+}
+
+query GetTaskCompletionLogs($taskId: ID!) {
+  getTaskCompletionLogs(taskId: $taskId) {
+    taskCompletionId
+    taskId
+    userId
+    date
+    completedAt
+  }
+}
+
+mutation CreateTask($input: CreateTaskInput!) {
+  createTask(input: $input) {
+    uuid
+    title
+    description
+    repetition
+    type
+    status
+    priority
+    projectId
+    startDate
+    dueDate
+    creator {
+      uuid
+      username
+      email
+      displayName
+      avatarUrl
+      createdAt
+      updatedAt
+    }
+  }
+}
+
+mutation UpdateTask($input: UpdateTaskInput!) {
+  updateTask(input: $input) {
+    uuid
+    title
+    description
+    repetition
+    type
+    status
+    priority
+    projectId
+    startDate
+    dueDate
+  }
+}
+
+mutation DeleteTask($uuid: ID!) {
+  deleteTask(uuid: $uuid) {
+    uuid
+  }
+}
+
+mutation MarkTaskDone($input: MarkTaskDoneInput!) {
+  markTaskDone(input: $input) {
+    taskCompletionId
+    taskId
+    userId
+    date
+    completedAt
+  }
+}
+
+mutation MarkTaskWontDo($input: MarkTaskDoneInput!) {
+  markTaskWontDo(input: $input) {
+    taskCompletionId
+    taskId
+    userId
+    date
+    completedAt
+  }
+}

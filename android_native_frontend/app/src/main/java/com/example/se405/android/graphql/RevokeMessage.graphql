@@ -1,0 +1,6 @@
+mutation RevokeMessage($messageId: ID!) {
+    revokeMessage(messageId: $messageId) {
+        uuid
+        isRevoked
+    }
+}

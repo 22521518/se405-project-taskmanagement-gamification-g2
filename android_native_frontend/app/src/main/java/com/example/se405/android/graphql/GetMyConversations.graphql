@@ -1,0 +1,26 @@
+query GetMyConversations {
+    getMyConversations {
+        uuid
+        type
+        name
+        taskUuid
+        participants {
+            uuid
+            displayName
+            avatarUrl
+            email
+            username
+            isOnline
+        }
+        lastMessage {
+            uuid
+            content
+            createdAt
+            sender {
+                uuid
+                displayName
+                isOnline
+            }
+        }
+    }
+}

@@ -1,0 +1,13 @@
+query GetConversationByTask($taskId: ID!, $taskName: String!) {
+    getConversationByTask(taskId: $taskId, taskName: $taskName) {
+        uuid
+        type
+        name
+        taskUuid
+        participants {
+            uuid
+            displayName
+            avatarUrl
+        }
+    }
+}

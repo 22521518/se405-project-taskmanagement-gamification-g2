@@ -1,0 +1,6 @@
+query GetSharedLinks($conversationId: ID!) {
+    getSharedLinks(conversationId: $conversationId) {
+        uuid content type createdAt isRevoked
+        sender { uuid displayName username email avatarUrl isOnline }
+    }
+}

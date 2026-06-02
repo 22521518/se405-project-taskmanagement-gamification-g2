@@ -1,0 +1,6 @@
+mutation RenameConversation($conversationId: ID!, $newName: String!) {
+    renameConversation(conversationId: $conversationId, newName: $newName) {
+        uuid
+        name
+    }
+}

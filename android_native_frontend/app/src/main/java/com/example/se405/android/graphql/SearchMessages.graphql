@@ -1,0 +1,6 @@
+query SearchMessages($conversationId: ID!, $keyword: String!) {
+    searchMessages(conversationId: $conversationId, keyword: $keyword) {
+        uuid content type createdAt isRevoked
+        sender { uuid displayName email username avatarUrl isOnline }
+    }
+}

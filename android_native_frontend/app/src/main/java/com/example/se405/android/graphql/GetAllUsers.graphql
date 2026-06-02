@@ -1,0 +1,10 @@
+query GetAllUsers {
+    getAllUsers {
+        uuid
+        username
+        email
+        displayName
+        avatarUrl
+        isOnline
+    }
+}

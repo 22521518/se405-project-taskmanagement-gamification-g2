@@ -1,0 +1,10 @@
+query GetConversationMembers($conversationId: ID!) {
+    getConversationMembers(conversationId: $conversationId) {
+        uuid
+        displayName
+        avatarUrl
+        email
+        username
+        isOnline
+    }
+}

@@ -1,0 +1,66 @@
+package com.example.se405.backend.controllers.dtos
+
+import com.example.se405.backend.database.model.MessageEntity
+import java.util.UUID
+
+data class RegisterRequest(
+    val email: String,
+    val username: String,
+    val password: String,
+    val displayName: String
+)
+
+data class LoginRequest(
+    val username: String,
+    val password: String,
+    val deviceId: String? = null
+)
+
+data class BiometricEnableRequest(
+    val deviceId: String,
+    val publicKey: String
+)
+
+data class BiometricLoginRequest(
+    val deviceId: String,
+    val payload: String,
+    val signature: String
+)
+
+data class UpdateProfileRequest(
+    val displayName: String?,
+    val email: String?,
+    val avatarUrl: String?
+)
+
+data class AuthResponse(
+    val token: String,
+    val userId: UUID,
+    val username: String,
+    val displayName: String,
+    val biometricEnabled: Boolean
+)
+
+data class SimpleMessageResponse(
+    val message: String
+)
+
+data class MessagePayload(
+    val eventType: String, // "CREATED", "REVOKED", "PINNED", "UNPINNED"
+    val message: MessageEntity
+)
+
+data class UserPayload(
+    val uuid: String,
+    val displayName: String?,
+    val avatarUrl: String?,
+    val email: String?
+)
+
+data class UserProfileResponse(
+    val uuid: UUID,
+    val email: String,
+    val username: String,
+    val displayName: String,
+    val avatarUrl: String?
+)

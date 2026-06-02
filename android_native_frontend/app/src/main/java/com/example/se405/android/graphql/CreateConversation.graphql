@@ -1,0 +1,7 @@
+mutation CreateConversation($type: ConversationType!, $name: String, $participantIds: [ID!]!) {
+    createConversation(type: $type, name: $name, participantIds: $participantIds) {
+        uuid
+        type
+        name
+    }
+}
